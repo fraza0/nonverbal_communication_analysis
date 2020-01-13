@@ -1,2 +1,5 @@
-# nonverbal_communication_analysis
+# Nonverbal Communication Analysis in Group Settings
 Master's Thesis Project - Computer Vision and Human Behavior Analysis
+
+Human communication is a major field of study in Psychology and social sciences. Topics such as emergent leadership and group dynamics are commonly studied cases when referring to groups. Group settings experiments are usually studied in conversational and collaborative tasks environments in order to study the communication process in small groups. Former study methods involved human analysis manual annotation of other's behaviors in communication settings. Later studies try to replace time consuming and failure prone annotations by using computational methods.
+For that purpose, we propose a multimodal approach to the study of the group communication phenomenon, capable of quantifying nonverbal aspects from video data. This can be achieved by means of nonverbal features extraction and respective individual analysis of each person, followed by hypothesis about task-specific features relevant to the use case by transforming feature data, and finally by correlating individuals' results in order to be able to extract knowledge about group dynamics and performance on the given task.
