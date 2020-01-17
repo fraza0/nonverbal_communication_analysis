@@ -1,3 +1,7 @@
+# Custom
+mei_tese/*
+packages/*/
+
 # KDE
 .directory
 
