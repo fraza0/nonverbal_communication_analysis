@@ -1,14 +1,22 @@
-import os
+from utils import print_assertion_error
+from os.path import isfile, join, splitext
+from os import listdir
 import subprocess
 import argparse
+from datetime import datetime
 
-import environment as env
-from utils import print_assertion_error
+from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
+                         OPENFACE_FEATURE_EXTRACTION,
+                         OPENFACE_FACE_LANDMARK_VID_MULTI,
+                         OPENFACE_OUTPUT_COMMANDS,
+                         VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
+
+timestampStr = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
 
 MEDIA_TYPE_IMAGE = 'img'
 MEDIA_TYPE_VIDEO = 'vid'
-MEDIA_TYPE_FEATURES = ''
 MEDIA_TYPE_CAM = 'cam'
+OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + timestampStr
 
 # class OpenFaceExtractor:
 
@@ -33,11 +41,11 @@ def openface_img(img_files: list, verbose: bool = False):
     '''
     assert isinstance(img_files, list), print_assertion_error(
         "img_files", "list")
-    cmd_list = [env.OPENFACE_FACE_LANDMARK_IMG]
+    cmd_list = [OPENFACE_FACE_LANDMARK_IMG]
     for file_path in img_files:
         cmd_list += ['-f', file_path]
 
-    cmd_list += ['-out_dir', env.OPENFACE_OUTPUT_DIR]
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
     print(cmd_list)
     subprocess.call(cmd_list)
 
@@ -58,15 +66,15 @@ def openface_vid(vid_files: list, multi: bool = False, verbose: bool = False):
         "multi", "bool")
 
     if not multi:
-        cmd_list = [env.OPENFACE_FEATURE_EXTRACTION]
+        cmd_list = [OPENFACE_FEATURE_EXTRACTION]
     else:
-        cmd_list = [env.OPENFACE_FACE_LANDMARK_VID_MULTI]
+        cmd_list = [OPENFACE_FACE_LANDMARK_VID_MULTI]
 
     for file_path in vid_files:
         cmd_list += ['-f', file_path]
 
-    cmd_list += env.OPENFACE_OUTPUT_COMMANDS
-    cmd_list += ['-out_dir', env.OPENFACE_OUTPUT_DIR]
+    cmd_list += OPENFACE_OUTPUT_COMMANDS
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
     print(cmd_list)
     subprocess.call(cmd_list)
 
@@ -78,9 +86,10 @@ def openface_cam(device: list = 0, verbose: bool = False):
     assert isinstance(device, int), print_assertion_error(
         "device", "int")
 
-    cmd_list = [env.OPENFACE_FEATURE_EXTRACTION]
+    cmd_list = [OPENFACE_FEATURE_EXTRACTION]
+    cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-device', '0']
-    cmd_list += ['-out_dir', env.OPENFACE_OUTPUT_DIR]
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
     print(cmd_list)
     subprocess.call(cmd_list)
 
@@ -88,22 +97,25 @@ def openface_cam(device: list = 0, verbose: bool = False):
 
 
 media_type = args['media_type']
-valid_types = (env.VALID_IMAGE_TYPES if media_type ==
-               MEDIA_TYPE_IMAGE else env.VALID_VIDEO_TYPES)
+valid_types = (VALID_IMAGE_TYPES if media_type ==
+               MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
 media_files = (args['media_files'] if 'media_files' in args else None)
 directory = args['directory']
 multi = args['multi']
 verbose = args['verbose']
 
+
+if directory:
+    media_files_directory = media_files
+    for _dir in media_files_directory:
+        media_files = [f for f in listdir(_dir) if isfile(join(_dir, f))]
+
 if not media_files and media_type != MEDIA_TYPE_CAM:
     print("Error: No media files passed")
     exit()
 
-
-# TODO: if directory, retrieve all files, pass through filetype validation
-
 for file in media_files:
-    _, file_extension = os.path.splitext(file)
+    _, file_extension = splitext(file)
     if file_extension not in valid_types:
         print("Not supported or invalid file type (%s). Check input files" % file)
         exit()
