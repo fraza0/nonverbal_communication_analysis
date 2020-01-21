@@ -3,20 +3,18 @@ from os.path import isfile, join, splitext
 from os import listdir
 import subprocess
 import argparse
-from datetime import datetime
 
 from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
                          OPENFACE_FEATURE_EXTRACTION,
                          OPENFACE_FACE_LANDMARK_VID_MULTI,
                          OPENFACE_OUTPUT_COMMANDS,
+                         OPENFACE_OUTPUT,
                          VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
-
-TIMESTAMP = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
 
 MEDIA_TYPE_IMAGE = 'img'
 MEDIA_TYPE_VIDEO = 'vid'
 MEDIA_TYPE_CAM = 'cam'
-OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + TIMESTAMP
+
 
 # class OpenFaceExtractor:
 

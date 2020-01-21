@@ -1,12 +1,13 @@
 import os
+from datetime import datetime
+
+TESE_HOME = os.path.dirname(os.path.abspath(__file__))
 
 # VARIABLES
 VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
 
 # PATHS
-TESE_HOME = os.path.dirname(os.path.abspath(__file__))
-
 # OpenFace
 # FaceLandmarkImg executable is for individual image analysis (can either contain one or more faces)
 # FaceLandmarkVidMulti is intended for sequence analysis that contain multiple faces
@@ -18,6 +19,8 @@ OPENFACE_FACE_LANDMARK_VID = OPENFACE_BUILD + "FaceLandmarkVid"
 OPENFACE_FACE_LANDMARK_VID_MULTI = OPENFACE_BUILD + "FaceLandmarkVidMulti"
 OPENFACE_FEATURE_EXTRACTION = OPENFACE_BUILD + "FeatureExtraction"
 OPENFACE_OUTPUT_DIR = "output/openface_output"
+OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + \
+    datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
 
 # OpenFace Output Commands:
 # -au_static    : static models only rely on a single image to make an estimate of AU
