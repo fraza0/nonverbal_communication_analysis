@@ -3,6 +3,7 @@ mei_tese/*
 packages/*/
 input/*
 output/*
+DATASET_DEP/*
 
 # KDE
 .directory
