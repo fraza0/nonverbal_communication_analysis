@@ -11,12 +11,12 @@ from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
                          OPENFACE_OUTPUT_COMMANDS,
                          VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
 
-timestampStr = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
+TIMESTAMP = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
 
 MEDIA_TYPE_IMAGE = 'img'
 MEDIA_TYPE_VIDEO = 'vid'
 MEDIA_TYPE_CAM = 'cam'
-OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + timestampStr
+OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + TIMESTAMP
 
 # class OpenFaceExtractor:
 
@@ -45,6 +45,7 @@ def openface_img(img_files: list, verbose: bool = False):
     for file_path in img_files:
         cmd_list += ['-f', file_path]
 
+    cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
     print(cmd_list)
     subprocess.call(cmd_list)

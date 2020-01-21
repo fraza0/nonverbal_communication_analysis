@@ -2,7 +2,7 @@ import os
 
 # VARIABLES
 VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
-VALID_VIDEO_TYPES = ['.avi', '.wmv']
+VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
 
 # PATHS
 TESE_HOME = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +43,7 @@ OPENFACE_OUTPUT_DIR = "output/openface_output"
 
 
 OPENFACE_OUTPUT_COMMANDS = ['-3Dfp', '-pdmparams',
-                            '-pose', '-aus', '-gaze']
+                            '-pose', '-aus', '-gaze', '-tracked']
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"
