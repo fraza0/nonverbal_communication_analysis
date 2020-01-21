@@ -1,6 +1,8 @@
 # Custom
 mei_tese/*
 packages/*/
+input/*
+output/*
 
 # KDE
 .directory
