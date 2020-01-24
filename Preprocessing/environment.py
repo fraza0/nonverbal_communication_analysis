@@ -3,8 +3,9 @@ import os
 TESE_HOME = os.path.dirname(os.path.abspath(__file__))
 
 # VARIABLES
-VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
+VALID_TIMESTAMP_FILES = ['.txt']
+TIMESTAMP_THRESHOLD = 100
 
 # PATHS
 DATASET_DIR = TESE_HOME + "/DATASET_DEP"
