@@ -15,11 +15,8 @@ MEDIA_TYPE_IMAGE = 'img'
 MEDIA_TYPE_VIDEO = 'vid'
 MEDIA_TYPE_CAM = 'cam'
 
-
-# class OpenFaceExtractor:
-
 parser = argparse.ArgumentParser(
-    description='Process Facial Data using OpenFace')
+    description='Extract facial data using OpenFace')
 parser.add_argument('media_type', type=str, choices=[
                     MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO, MEDIA_TYPE_CAM], help='Media type')
 parser.add_argument('media_files', type=str, nargs='*', help='Media files')
@@ -31,6 +28,14 @@ parser.add_argument('-v', '--verbose', help='Whether or not responses should be 
                     action='store_true')
 
 args = vars(parser.parse_args())
+
+media_type = args['media_type']
+valid_types = (VALID_IMAGE_TYPES if media_type ==
+               MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
+media_files = (args['media_files'] if 'media_files' in args else None)
+directory = args['directory']
+multi = args['multi']
+verbose = args['verbose']
 
 
 def openface_img(img_files: list, verbose: bool = False):
@@ -92,36 +97,27 @@ def openface_cam(device: list = 0, verbose: bool = False):
     print(cmd_list)
     subprocess.call(cmd_list)
 
-# print(args)
 
+if __name__ == "__main__":
+    if directory:
+        media_files_directory = media_files
+        for _dir in media_files_directory:
+            media_files = [f for f in listdir(_dir) if isfile(join(_dir, f))]
 
-media_type = args['media_type']
-valid_types = (VALID_IMAGE_TYPES if media_type ==
-               MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
-media_files = (args['media_files'] if 'media_files' in args else None)
-directory = args['directory']
-multi = args['multi']
-verbose = args['verbose']
-
-
-if directory:
-    media_files_directory = media_files
-    for _dir in media_files_directory:
-        media_files = [f for f in listdir(_dir) if isfile(join(_dir, f))]
-
-if not media_files and media_type != MEDIA_TYPE_CAM:
-    print("Error: No media files passed")
-    exit()
-
-for file in media_files:
-    _, file_extension = splitext(file)
-    if file_extension not in valid_types:
-        print("Not supported or invalid file type (%s). Check input files" % file)
+    if not media_files and media_type != MEDIA_TYPE_CAM:
+        print("Error: No media files passed")
         exit()
 
-if media_type == MEDIA_TYPE_IMAGE:
-    openface_img(media_files)
-elif media_type == MEDIA_TYPE_VIDEO:
-    openface_vid(media_files, multi=multi)
-elif media_type == MEDIA_TYPE_CAM:
-    openface_cam(device=0)
+    for file in media_files:
+        _, file_extension = splitext(file)
+        if file_extension not in valid_types:
+            print("Not supported or invalid file type (%s). File must be \{%s\}" % (
+                file, valid_types))
+            exit()
+
+    if media_type == MEDIA_TYPE_IMAGE:
+        openface_img(media_files)
+    elif media_type == MEDIA_TYPE_VIDEO:
+        openface_vid(media_files, multi=multi)
+    elif media_type == MEDIA_TYPE_CAM:
+        openface_cam(device=0)
