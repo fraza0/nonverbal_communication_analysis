@@ -2,23 +2,29 @@ from os.path import isfile, splitext
 import argparse
 import cv2
 
-from environment import VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES, TIMESTAMP_THRESHOLD
+from environment import VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES, TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC
 
 # python Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi -t DATASET_DEP/Videos_LAB_PC2/Timestamppc218102019021117.txt -f DATASET_DEP/Videos_LAB_PC3/Videopc318102019021104.avi -t DATASET_DEP/Videos_LAB_PC3/Timestamppc318102019021104.txt
 
 
 class CameraVideo:
     '''
+    Camera Video Object: Unit to Synchronize
     '''
     current_timestamp = 0
 
-    def __init__(self, title: str, video_path: str, timestamp_path: str):
+    def __init__(self, title: str, video_path: str, timestamp_path: str, output_path: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
         self.timestamps = open(timestamp_path, 'r')
         self.current_timestamp = 0
         self.ret = None
         self.frame = None
+        frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+        self.writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(
+            *FOURCC), fps, (frame_width, frame_height))
 
     def __str__(self):
         print("%s: %s" % (self.title, self.current_timestamp))
@@ -26,19 +32,19 @@ class CameraVideo:
 
 def timestamp_align(cap_list: list):
     '''
-    Determine which video(s) that need to be aligned
+    Determine which video(s) need to be aligned
 
-    Returns: True if they are aligned
+    Returns: True if they are aligned -- Second tuple element is needed to be able to unpack when videos are synced
              List of videos that need to be aligned
     '''
-
     align_by = max(cap_list, key=lambda x: x.current_timestamp)
     is_synced = all(align_by.current_timestamp - vid.current_timestamp <=
                     TIMESTAMP_THRESHOLD for vid in cap_list)
-    if is_synced:
-        return True
+    if is_synced == True:
+        if align_by.current_timestamp == 0:
+            return True, None
+        return True, True
 
-    # align_by = max(cap_list, key=lambda x: x.current_timestamp)
     align_ts = align_by.current_timestamp
 
     to_align = list()
@@ -49,7 +55,7 @@ def timestamp_align(cap_list: list):
 
     # print([vid.current_timestamp for vid in cap_list])
     # print([vid.title for vid in to_align])
-    return to_align
+    return to_align, align_by
 
 
 parser = argparse.ArgumentParser(
@@ -88,27 +94,23 @@ if len(video_files) != 3 and len(timestamp_files) != 3:
     print("Only 3 video files and corresponding timestamps available")
     exit()
 
-vid1 = CameraVideo("PC1", video_files[0], timestamp_files[0])
-vid2 = CameraVideo("PC2", video_files[1], timestamp_files[1])
-vid3 = CameraVideo("PC3", video_files[2], timestamp_files[2])
+vid1 = CameraVideo("VID1", video_files[0], timestamp_files[0],
+                   DATASET_SYNC+"/out_vid1_"+splitext(video_files[0])[0].split('/')[-1]+".avi")
+vid2 = CameraVideo("VID2", video_files[1], timestamp_files[1],
+                   DATASET_SYNC+"/out_vid2_"+splitext(video_files[1])[0].split('/')[-1]+".avi")
+vid3 = CameraVideo("VID3", video_files[2], timestamp_files[2],
+                   DATASET_SYNC+"/out_vid3_"+splitext(video_files[2])[0].split('/')[-1]+".avi")
 
 cap_list = [vid1, vid2, vid3]
 
-if (vid1.cap.isOpened() == False or vid2.cap.isOpened() == False or vid3.cap.isOpened() == False):
+if not all(vid.cap.isOpened() for vid in cap_list):
     print("Error opening video stream or file")
     exit()
 
-cap = (vid1.cap.isOpened() and vid1.cap.isOpened() and vid1.cap.isOpened())
-# CAP_PROP_FRAME_COUNT
 
-fourcc = cv2.VideoWriter_fourcc('H', '2', '6', '4')
-writer_list = [cv2.VideoWriter('', fourcc, vid.cap.get(cv2.CAP_PROP_FPS), (vid.cap.get(
-    cv2.CAP_PROP_FRAME_WIDTH), vid.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) for vid in cap_list]
+while((vid1.cap.isOpened() and vid2.cap.isOpened() and vid3.cap.isOpened())):
 
-
-while(cap):
-
-    alignment = timestamp_align(cap_list)
+    alignment, align_by = timestamp_align(cap_list)
     to_align_list = cap_list if alignment is True else alignment
 
     for vid in to_align_list:
@@ -126,7 +128,11 @@ while(cap):
     if all([vid.ret for vid in cap_list]):
 
         for vid in cap_list:
-            cv2.imshow(vid.title, vid.frame)
+
+            if alignment == True and align_by is not None:
+                # print("WRITE BECAUSE THEY ARE SYNCED")
+                vid.writer.write(vid.frame)
+                cv2.imshow(vid.title, vid.frame)
 
         if key == ord('q'):
             break
@@ -136,5 +142,6 @@ while(cap):
 
 for vid in cap_list:
     vid.cap.release()
+    vid.writer.release()
 
 cv2.destroyAllWindows()
