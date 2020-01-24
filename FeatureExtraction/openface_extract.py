@@ -111,7 +111,7 @@ if __name__ == "__main__":
     for file in media_files:
         _, file_extension = splitext(file)
         if file_extension not in valid_types:
-            print("Not supported or invalid file type (%s). File must be \{%s\}" % (
+            print("Not supported or invalid file type (%s). File must be {%s}" % (
                 file, valid_types))
             exit()
 
