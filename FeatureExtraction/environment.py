@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-TESE_HOME = os.path.dirname(os.path.abspath(__file__))
+TESE_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # VARIABLES
 VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']

@@ -1,11 +1,12 @@
 import os
 
-TESE_HOME = os.path.dirname(os.path.abspath(__file__))
+TESE_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # VARIABLES
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
 VALID_TIMESTAMP_FILES = ['.txt']
 TIMESTAMP_THRESHOLD = 100
+FOURCC = 'MJPG' # 'H264' Error -- https://github.com/skvark/opencv-python/issues/81, https://github.com/skvark/opencv-python/issues/100
 
 # PATHS
 DATASET_DIR = TESE_HOME + "/DATASET_DEP"
