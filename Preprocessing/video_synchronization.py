@@ -154,7 +154,7 @@ if __name__ == "__main__":
     for i in range(len(video_files)):
         _id = str(i+1)
         vid = CameraVideo("VID"+_id, video_files[i], timestamp_files[i], out_dir +
-                          "sync_vid"+_id+"_"+splitext(video_files[i])[0].split('/')[-1]+".avi", write)
+                          "sync_vid"+_id+"_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
         cap_list.append(vid)
 
     if not all(vid.cap.isOpened() for vid in cap_list):
@@ -199,6 +199,7 @@ if __name__ == "__main__":
                 # vid.timestamps.seek(vid.timestamps.tell())
 
         if key >= ord('1') and key <= ord('4'):
+            print("Marker " % chr(key))
             idx = key  # 49,50,51,52
             marker_validator[idx] = True
             for vid in cap_list:
