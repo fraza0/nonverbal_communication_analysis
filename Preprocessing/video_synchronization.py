@@ -10,7 +10,27 @@ import errno
 
 from environment import VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES, TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC, FRAME_SKIP
 
-# python Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi -t DATASET_DEP/Videos_LAB_PC2/Timestamppc218102019021117.txt -f DATASET_DEP/Videos_LAB_PC3/Videopc318102019021104.avi -t DATASET_DEP/Videos_LAB_PC3/Timestamppc318102019021104.txt
+'''
+Video synchronization and cut for DEP experiment Dataset.
+
+This script allows video synchronization from 3 different data sources (easily adapted to more).
+Needs videos timestamp files for the synchronization process.
+
+3 Windows are opened as soon as the videos are in sync.
+After that, use 'a' and 'd' keys to navigate through the video.
+Use 1-4 keys to set markers. Markers 1-2 should be mark the first task, and 3-4 should mark the second task.
+Use 's' key to save.
+Use 'q' key to quit without saving.
+
+
+Example command: 
+$ python Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi
+                                                -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt
+                                                -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi
+                                                -t DATASET_DEP/Videos_LAB_PC2/Timestamppc218102019021117.txt
+                                                -f DATASET_DEP/Videos_LAB_PC3/Videopc318102019021104.avi
+                                                -t DATASET_DEP/Videos_LAB_PC3/Timestamppc318102019021104.txt
+'''
 
 
 class CameraVideo:
@@ -81,26 +101,25 @@ def cut_from_until(vid, _from: int, _until: int):
         vid.writer.write(vid.frame)
 
 
-parser = argparse.ArgumentParser(
-    description='Syncronize Videos')
-parser.add_argument('-f', '--file', type=str, nargs=1, dest='video_files',
-                    action='append', help='Video file path')
-parser.add_argument('-t' '--timestamp', type=str, nargs=1,
-                    dest='timestamp_files', action='append', help='Media files')
-parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
-                    action='store_true')
-parser.add_argument('-w', '--write', help="Where or not to output synchronized videos",
-                    action='store_true')
-args = vars(parser.parse_args())
-
-video_files = [vf[0] for vf in args['video_files']]
-timestamp_files = [tf[0] for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
-    splitext(f[0])[::-1].replace('Video'[::-1], 'Timestamp'[::-1])[::-1] + ".txt" for f in video_files]
-write = args['write']
-verbose = args['verbose']
-
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Syncronize Videos')
+    parser.add_argument('-f', '--file', type=str, nargs=1, dest='video_files',
+                        action='append', help='Video file path')
+    parser.add_argument('-t' '--timestamp', type=str, nargs=1,
+                        dest='timestamp_files', action='append', help='Media files')
+    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
+                        action='store_true')
+    parser.add_argument('-w', '--write', help="Where or not to output synchronized videos",
+                        action='store_true')
+    args = vars(parser.parse_args())
+
+    video_files = [vf[0] for vf in args['video_files']]
+    timestamp_files = [tf[0] for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
+        splitext(f[0])[::-1].replace('Video'[::-1], 'Timestamp'[::-1])[::-1] + ".txt" for f in video_files]
+    write = args['write']
+    verbose = args['verbose']
+
     for file in video_files:
         _, file_extension = splitext(file)
         if file_extension not in VALID_VIDEO_TYPES:
