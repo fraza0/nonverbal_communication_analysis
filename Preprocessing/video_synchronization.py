@@ -37,12 +37,14 @@ class CameraVideo:
     '''
     Camera Video Object: Unit to Synchronize
 
-    TODO: EXPLAIN EACH ATTRIBUTE OF CAMERAVIDEO OBJECT
-
+    title: video/camera identification. Visual purposes only
+    video_path: video file path
+    timestamp_path: timestamp file path
+    output_path: output path
     '''
     current_timestamp = 0
 
-    def __init__(self, title: str, video_path: str, timestamp_path: str, output_path: str, write: bool = True):
+    def __init__(self, title: str, video_path: str, timestamp_path: str, output_path: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
         self.timestamps = open(timestamp_path, 'r')
@@ -64,6 +66,8 @@ class CameraVideo:
 def timestamp_align(cap_list: list):
     '''
     Determine which video(s) need to be aligned
+
+    cap_list: list of cv2 captures
 
     Returns Tuple:
         * (True, None) - If they are aligned. Ignore first iteration when frame and timestamp is read.
