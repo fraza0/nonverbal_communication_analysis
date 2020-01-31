@@ -11,32 +11,6 @@ from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
                          OPENFACE_OUTPUT,
                          VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
 
-MEDIA_TYPE_IMAGE = 'img'
-MEDIA_TYPE_VIDEO = 'vid'
-MEDIA_TYPE_CAM = 'cam'
-
-parser = argparse.ArgumentParser(
-    description='Extract facial data using OpenFace')
-parser.add_argument('media_type', type=str, choices=[
-                    MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO, MEDIA_TYPE_CAM], help='Media type')
-parser.add_argument('media_files', type=str, nargs='*', help='Media files')
-parser.add_argument('-dir', '--directory', action="store_true",
-                    help='Media files path')
-parser.add_argument('--multi', action="store_true",
-                    help='Multiple individuals')
-parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
-                    action='store_true')
-
-args = vars(parser.parse_args())
-
-media_type = args['media_type']
-valid_types = (VALID_IMAGE_TYPES if media_type ==
-               MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
-media_files = (args['media_files'] if 'media_files' in args else None)
-directory = args['directory']
-multi = args['multi']
-verbose = args['verbose']
-
 
 def openface_img(img_files: list, verbose: bool = False):
     '''
@@ -99,6 +73,33 @@ def openface_cam(device: list = 0, verbose: bool = False):
 
 
 if __name__ == "__main__":
+
+    MEDIA_TYPE_IMAGE = 'img'
+    MEDIA_TYPE_VIDEO = 'vid'
+    MEDIA_TYPE_CAM = 'cam'
+
+    parser = argparse.ArgumentParser(
+        description='Extract facial data using OpenFace')
+    parser.add_argument('media_type', type=str, choices=[
+                        MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO, MEDIA_TYPE_CAM], help='Media type')
+    parser.add_argument('media_files', type=str, nargs='*', help='Media files')
+    parser.add_argument('-dir', '--directory', action="store_true",
+                        help='Media files path')
+    parser.add_argument('--multi', action="store_true",
+                        help='Multiple individuals')
+    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
+                        action='store_true')
+
+    args = vars(parser.parse_args())
+
+    media_type = args['media_type']
+    valid_types = (VALID_IMAGE_TYPES if media_type ==
+                   MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
+    media_files = (args['media_files'] if 'media_files' in args else None)
+    directory = args['directory']
+    multi = args['multi']
+    verbose = args['verbose']
+
     if directory:
         media_files_directory = media_files
         for _dir in media_files_directory:
