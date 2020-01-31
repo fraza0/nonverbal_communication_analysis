@@ -12,7 +12,7 @@ from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
                          VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
 
 
-def openface_img(img_files: list, verbose: bool = False):
+def openface_img(img_files: list, write: bool, verbose: bool = False):
     '''
     Process single image input. Only supports single face processing.
     '''
@@ -24,12 +24,14 @@ def openface_img(img_files: list, verbose: bool = False):
 
     cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
+    if write:
+        cmd_list += ['-tracked']
     if verbose:
         print(cmd_list)
     subprocess.call(cmd_list)
 
 
-def openface_vid(vid_files: list, multi: bool = False, verbose: bool = False):
+def openface_vid(vid_files: list, multi: bool, write: bool, verbose: bool = False):
     '''
     Process video input with single of multiple faces.
 
@@ -54,12 +56,14 @@ def openface_vid(vid_files: list, multi: bool = False, verbose: bool = False):
 
     cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
+    if write:
+        cmd_list += ['-tracked']
     if verbose:
         print(cmd_list)
     subprocess.call(cmd_list)
 
 
-def openface_cam(device: list = 0, verbose: bool = False):
+def openface_cam(device: int, write: bool, verbose: bool = False):
     '''
     Process data directly from device (webcam = 0) input
     '''
@@ -72,6 +76,8 @@ def openface_cam(device: list = 0, verbose: bool = False):
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
     if verbose:
         print(cmd_list)
+    if write:
+        cmd_list += ['-tracked']
     subprocess.call(cmd_list)
 
 
@@ -92,6 +98,8 @@ if __name__ == "__main__":
                         help='Multiple individuals')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
+    parser.add_argument('-w', '--write', help="Write video with facial features",
+                        action='store_true')
 
     args = vars(parser.parse_args())
 
@@ -102,6 +110,7 @@ if __name__ == "__main__":
     directory = args['directory']
     multi = args['multi']
     verbose = args['verbose']
+    write = args['write']
 
     if directory:
         media_files_directory = media_files
@@ -120,8 +129,8 @@ if __name__ == "__main__":
             exit()
 
     if media_type == MEDIA_TYPE_IMAGE:
-        openface_img(media_files)
+        openface_img(media_files, write)
     elif media_type == MEDIA_TYPE_VIDEO:
-        openface_vid(media_files, multi=multi)
+        openface_vid(media_files, multi, write)
     elif media_type == MEDIA_TYPE_CAM:
-        openface_cam(device=0)
+        openface_cam(0, write)
