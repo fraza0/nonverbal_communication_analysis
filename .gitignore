@@ -5,6 +5,7 @@ input/*
 output/*
 DATASET_DEP/*
 test.py
+NOTES.md
 
 # KDE
 .directory
