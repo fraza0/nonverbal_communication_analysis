@@ -4,6 +4,7 @@ packages/*/
 input/*
 output/*
 DATASET_DEP/*
+test.py
 
 # KDE
 .directory
