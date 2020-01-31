@@ -182,6 +182,7 @@ if __name__ == "__main__":
 
         key = cv2.waitKey(25) & 0xff
 
+        # TODO: On paused, allow to set markers
         if key == 0x20:                             # Pause Video
             while cv2.waitKey(-1) & 0xFF != 0x20:   # Resume Video
                 pass
@@ -199,11 +200,10 @@ if __name__ == "__main__":
                 # vid.timestamps.seek(vid.timestamps.tell())
 
         if key >= ord('1') and key <= ord('4'):
-            print("Marker " % chr(key))
-            idx = key  # 49,50,51,52
-            marker_validator[idx] = True
+            print("Marker %s" % chr(key))
+            marker_validator[key] = True
             for vid in cap_list:
-                vid.markers[idx] = vid.current_frame_idx
+                vid.markers[key] = vid.current_frame_idx
 
         if all([vid.ret for vid in cap_list]):
             for vid in cap_list:
@@ -211,6 +211,7 @@ if __name__ == "__main__":
                     cv2.imshow(vid.title, vid.frame)
 
             if key == ord('s'):                 # Save
+                print("Saving ...")
                 if write:
                     if all(flag is True for flag in marker_validator.values()):
                         if verbose:
