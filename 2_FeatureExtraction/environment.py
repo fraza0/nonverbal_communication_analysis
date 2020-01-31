@@ -22,6 +22,10 @@ OPENFACE_OUTPUT_DIR = "output/openface_output"
 OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + \
     datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
 
+NUM_EYE_LANDMARKS = 56
+NUM_FACE_LANDMARKS = 68
+NUM_NON_RIGID = 34
+
 # OpenFace Output Commands:
 # -au_static    : static models only rely on a single image to make an estimate of AU
 #                   presence or intensity, while dynamic ones calibrate to a person by performing person
