@@ -46,7 +46,7 @@ OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + \
 
 
 OPENFACE_OUTPUT_COMMANDS = ['-3Dfp', '-pdmparams',
-                            '-pose', '-aus', '-gaze', '-tracked']
+                            '-pose', '-aus', '-gaze']#, '-tracked']
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"

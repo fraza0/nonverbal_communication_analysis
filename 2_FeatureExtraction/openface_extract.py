@@ -24,7 +24,8 @@ def openface_img(img_files: list, verbose: bool = False):
 
     cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
-    print(cmd_list)
+    if verbose:
+        print(cmd_list)
     subprocess.call(cmd_list)
 
 
@@ -53,7 +54,8 @@ def openface_vid(vid_files: list, multi: bool = False, verbose: bool = False):
 
     cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
-    print(cmd_list)
+    if verbose:
+        print(cmd_list)
     subprocess.call(cmd_list)
 
 
@@ -68,7 +70,8 @@ def openface_cam(device: list = 0, verbose: bool = False):
     cmd_list += OPENFACE_OUTPUT_COMMANDS
     cmd_list += ['-device', '0']
     cmd_list += ['-out_dir', OPENFACE_OUTPUT]
-    print(cmd_list)
+    if verbose:
+        print(cmd_list)
     subprocess.call(cmd_list)
 
 
