@@ -18,13 +18,13 @@ Needs videos timestamp files for the synchronization process.
 
 3 Windows are opened as soon as the videos are in sync.
 After that, use 'a' and 'd' keys to navigate through the video.
-Use 1-4 keys to set markers. Markers 1-2 should be mark the first task, and 3-4 should mark the second task.
+Use 1-8 keys to set markers. Only 4 clips are allowed.
 Use 's' key to save.
 Use 'q' key to quit without saving.
 
 
 Example command: 
-$ python Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi
+$ python 1_Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi
                                                 -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt
                                                 -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi
                                                 -t DATASET_DEP/Videos_LAB_PC2/Timestamppc218102019021117.txt
@@ -34,14 +34,15 @@ $ python Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Vi
 
 
 class CameraVideo:
-    '''
+    """
     Camera Video Object: Unit to Synchronize
 
     title: video/camera identification. Visual purposes only
     video_path: video file path
     timestamp_path: timestamp file path
     output_path: output path
-    '''
+    """
+
     current_timestamp = 0
 
     def __init__(self, title: str, video_path: str, timestamp_path: str, output_path: str):
@@ -64,16 +65,19 @@ class CameraVideo:
 
 
 def timestamp_align(cap_list: list):
-    '''
-    Determine which video(s) need to be aligned
+    """ Determine which video(s) need to be aligned
 
     cap_list: list of cv2 captures
 
-    Returns Tuple:
+    Arguments:
+        cap_list {list} -- [description]
+
+    Returns:
+        Tuple: 
         * (True, None) - If they are aligned. Ignore first iteration when frame and timestamp is read.
         * (True, True) - If they are aligned.
         * (to_align: list, align_by: CameraVideo) - List of videos that need to be aligned, CameraVideo object of reference video
-    '''
+    """
     align_by = max(cap_list, key=lambda x: x.current_timestamp)
     is_synced = all(align_by.current_timestamp - vid.current_timestamp <=
                     TIMESTAMP_THRESHOLD for vid in cap_list)
@@ -94,9 +98,13 @@ def timestamp_align(cap_list: list):
 
 
 def cut_from_until(vid, _from: int, _until: int):
-    '''
-    Write video from frame f_init until f_end
-    '''
+    """ Write video from frame f_init until f_end
+
+    Arguments:
+        vid {[type]} -- [description]
+        _from {int} -- [description]
+        _until {int} -- [description]
+    """
 
     vid.cap.set(cv2.CAP_PROP_POS_FRAMES, _from)
 
@@ -114,14 +122,11 @@ if __name__ == "__main__":
                         dest='timestamp_files', action='append', help='Media files')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
-    parser.add_argument('-w', '--write', help="Where or not to output synchronized videos",
-                        action='store_true')
     args = vars(parser.parse_args())
 
     video_files = [vf[0] for vf in args['video_files']]
     timestamp_files = [tf[0] for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
-        splitext(f[0])[::-1].replace('Video'[::-1], 'Timestamp'[::-1])[::-1] + ".txt" for f in video_files]
-    write = args['write']
+        splitext(f)[0][::-1].replace('Video'[::-1], 'Timestamp'[::-1], 1)[::-1] + ".txt" for f in video_files]
     verbose = args['verbose']
 
     for file in video_files:
@@ -145,6 +150,9 @@ if __name__ == "__main__":
     cap_list = list()
     out_dir = DATASET_SYNC+"/%s/" % video_files[0][-18:-8]
 
+    if verbose:
+        print("Saving to: ", out_dir)
+
     try:
         os.makedirs(out_dir)
     except OSError as e:
@@ -162,8 +170,7 @@ if __name__ == "__main__":
         exit()
 
     frame_count = 0
-    marker_validator = {ord('1'): False, ord('2'): False,
-                        ord('3'): False, ord('4'): False}
+    marker_validator = {ord(str(i)): False for i in range(1, 9)}
 
     INIT_TIME = datetime.now()
 
@@ -182,7 +189,7 @@ if __name__ == "__main__":
 
         key = cv2.waitKey(25) & 0xff
 
-        # TODO: On paused, allow to set markers
+        # TODO: While paused, allow to set markers
         if key == 0x20:                             # Pause Video
             while cv2.waitKey(-1) & 0xFF != 0x20:   # Resume Video
                 pass
@@ -199,8 +206,8 @@ if __name__ == "__main__":
                 vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
                 # vid.timestamps.seek(vid.timestamps.tell())
 
-        if key >= ord('1') and key <= ord('4'):
-            print("Marker %s" % chr(key))
+        if key >= ord('1') and key <= ord('8'):
+            print("Marker %s set" % chr(key))
             marker_validator[key] = True
             for vid in cap_list:
                 vid.markers[key] = vid.current_frame_idx
@@ -211,27 +218,34 @@ if __name__ == "__main__":
                     cv2.imshow(vid.title, vid.frame)
 
             if key == ord('s'):                 # Save
-                print("Saving ...")
-                if write:
-                    if all(flag is True for flag in marker_validator.values()):
+                if verbose:
+                    print("Start writting phase")
+
+                for vid in cap_list:
+
+                    valid_markers = [
+                        marker for marker in marker_validator.items() if marker[1] == True]
+                    if len(valid_markers) % 2 != 0:
+                        print(
+                            "Odd number of markers. Number of markers should be an even number.")
+                        exit()
+
+                    first_experience_markers = list(
+                        vid.markers.keys())[:2]
+                    second_experience_markers = list(
+                        vid.markers.keys())[2:4]
+                    third_experience_markers = list(
+                        vid.markers.keys())[4:6]
+                    fourth_experience_markers = list(
+                        vid.markers.keys())[6:8]
+
+                    for i in range(0, (len(vid.markers.keys())+1)-1, 2):
+                        task_markers = list(vid.markers.keys())[i:i+2]
+
                         if verbose:
-                            print("Start writting phase")
-
-                        for vid in cap_list:
-                            first_experience_markers = list(
-                                vid.markers.keys())[:2]
-                            second_experience_markers = list(
-                                vid.markers.keys())[2:]
-
-                            if verbose:
-                                print("Vid%s Saving Task 1" % vid.title)
-                            cut_from_until(
-                                vid, vid.markers[first_experience_markers[0]], vid.markers[first_experience_markers[1]])
-
-                            if verbose:
-                                print("Vid%s Saving Task 2" % vid.title)
-                            cut_from_until(
-                                vid, vid.markers[second_experience_markers[0]], vid.markers[second_experience_markers[1]])
+                            print("Vid %s Saving Task 1" % vid.title)
+                        cut_from_until(
+                            vid, vid.markers[task_markers[0]], vid.markers[task_markers[1]])
 
                 break
 
@@ -243,7 +257,6 @@ if __name__ == "__main__":
 
     for vid in cap_list:
         vid.cap.release()
-        if write:
-            vid.writer.release()
+        vid.writer.release()
 
     cv2.destroyAllWindows()
