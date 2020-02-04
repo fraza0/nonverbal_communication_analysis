@@ -1,15 +1,35 @@
-from utils import print_assertion_error
-from os.path import isfile, join, splitext
-from os import listdir
-import subprocess
 import argparse
+import re
+import subprocess
+from datetime import datetime
+from os import listdir
+from os.path import isfile, join, splitext
 
-from environment import (OPENFACE_OUTPUT_DIR, OPENFACE_FACE_LANDMARK_IMG,
-                         OPENFACE_FEATURE_EXTRACTION,
+from environment import (OPENFACE_FACE_LANDMARK_IMG,
                          OPENFACE_FACE_LANDMARK_VID_MULTI,
-                         OPENFACE_OUTPUT_COMMANDS,
-                         OPENFACE_OUTPUT,
-                         VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
+                         OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_COMMANDS,
+                         OPENFACE_OUTPUT_DIR, VALID_IMAGE_TYPES,
+                         VALID_VIDEO_TYPES)
+from utils import print_assertion_error
+
+OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/"
+
+
+def format_output_string(file_path):
+
+    output_string = ""
+
+    if "Videopc" not in file_path:
+        output_string = OPENFACE_OUTPUT + datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
+        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % output_string)
+    else:
+        file_timestamp = re.compile(
+            "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
+        output_string = "%s_%s_%s_%s" % (
+            file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
+        print("INFO: Output directory: %s" % (OPENFACE_OUTPUT + output_string))
+
+    return output_string
 
 
 def openface_img(img_files: list, write: bool, verbose: bool = False):
@@ -127,6 +147,8 @@ if __name__ == "__main__":
             print("Not supported or invalid file type (%s). File must be {%s}" % (
                 file, valid_types))
             exit()
+
+    OPENFACE_OUTPUT += format_output_string(media_files[0])
 
     if media_type == MEDIA_TYPE_IMAGE:
         openface_img(media_files, write)
