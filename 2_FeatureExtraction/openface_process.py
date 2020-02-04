@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
-                         OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES)
+                         OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING)
 from utils import fetch_files_from_directory, filter_files
 
 '''
@@ -76,18 +76,15 @@ columns_aus_intensity = ['AU01_r', 'AU02_r', 'AU04_r', 'AU05_r', 'AU06_r', 'AU07
                          'AU09_r', 'AU10_r', 'AU12_r', 'AU14_r', 'AU15_r', 'AU17_r',
                          'AU20_r', 'AU23_r', 'AU25_r', 'AU26_r', 'AU45_r']
 
-columns_features_ = ['facial_expression',
-                     'head_pitch', 'head_yaw', 'head_roll']
+columns_features = ['emotion',
+                    'head_movement_pitch', 'head_movement_yaw', 'head_movement_roll',
+                    'eye_movement_x', 'eye_movement_y']
 
-columns_output = columns_basic + \
+columns_relevant = columns_basic + \
     columns_facial_lmks + \
-    ['emotion',
-     'head_movement_pitch',
-     'head_movement_yaw',
-     'head_movement_roll',
-     'eye_movement_x',
-     'eye_movement_y',
-     ]
+    columns_aus_intensity
+
+columns_output = columns_relevant + columns_features
 
 
 def radians_to_degrees(rads):
@@ -111,38 +108,33 @@ def calculate_au_vector_coef(au_intensity_list: list, decrease_factor: float):
     return au_coef
 
 
-def predict_emotion(df: pd.DataFrame, decrease_factor: float = 1/4):
-    """Predict Emotion Based on Relation Matrix using
-    Discriminative Power, as proposed by S. Velusamy et al.
-        in "A method to infer emotions from facial action units"
+def predict_emotion(aus_vector: pd.Series):
+    aus_vector = aus_vector[columns_aus_intensity]
+    # print(calculate_au_vector_coef(aus_vector, decrease_factor))
 
-    Arguments:
-        df {pd.DataFrame} -- DataFrame containing intensity of Facial Action Units.
-        decrease_factor {float} -- AU weight decrease according to relevance for emotion prediction
-    """
+    emotion_vector_coefs = dict()
+    for emotion_name, emotion_aus_vector in EMOTIONS_ENCONDING.items():
+        decrease_factor = 1/len(emotion_aus_vector)
+        emotion_aus = list()
+        for au in emotion_aus_vector:
+            emotion_aus.append(au+"_r")
 
-    emotions_encoding = {
-        'ANGER': ['AU23', 'AU07', 'AU17', 'AU04'],
-        'FEAR': ['AU20', 'AU04', 'AU01', 'AU05'],
-        'SADNESS': ['AU15', 'AU01', 'AU04', 'AU17'],
-        'HAPPINESS': ['AU12', 'AU06', 'AU26', 'AU10'],
-        'SURPRISE': ['AU02', 'AU01', 'AU05', 'AU26'],
-        'DISGUST': ['AU09', 'AU07', 'AU04', 'AU17']
-    }
+        emotion_vector_coefs[emotion_name] = calculate_au_vector_coef(
+            aus_vector.filter(emotion_aus), decrease_factor)
 
-    for index, row in df.iterrows():
-        emotion_vector_coefs = dict()
-        for emotion_name, emotion_vector in emotions_encoding.items():
-            emotion_vector_coefs[emotion_name] = (calculate_au_vector_coef(
-                [row[col+"_r"] for col in emotion_vector], decrease_factor))
+    emotion_pred = max(emotion_vector_coefs, key=emotion_vector_coefs.get)
 
-        emotion_pred = max(emotion_vector_coefs, key=emotion_vector_coefs.get)
-        DF_OUTPUT.loc[index, 'emotion'] = emotion_pred
+    if verbose:
+        print("PREDICTED EMOTION: %s" % emotion_pred)
+
+    return emotion_pred
+
 
 # calculate pitch movement
 # calculate yaw movement
 # calculate roll movement
 # calculate eye movement (x,y)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -188,7 +180,7 @@ if __name__ == "__main__":
             df[columns_aus_intensity], columns=columns_aus_intensity)
 
         DF_OUTPUT = pd.DataFrame(
-            df[columns_basic + columns_facial_lmks], columns=columns_output)
-        predict_emotion(df_aus_intensity)
+            df[columns_relevant], columns=columns_output)
+        DF_OUTPUT['emotion'] = DF_OUTPUT.apply(predict_emotion, axis=1)
 
         print(DF_OUTPUT)

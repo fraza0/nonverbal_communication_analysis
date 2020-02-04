@@ -62,6 +62,18 @@ OPENFACE_OUTPUT_COMMANDS = ['-3Dfp', '-pdmparams',
 # VARIABLES
 VALID_FILE_TYPES = ['.csv']
 
+'''
+Emotions enconding. AUs are ordered by relevance to emotion identification according to 
+'''
+EMOTIONS_ENCONDING = {
+    'ANGER': ['AU23', 'AU07', 'AU17', 'AU04'],
+    'FEAR': ['AU20', 'AU04', 'AU01', 'AU05'],
+    'SADNESS': ['AU15', 'AU01', 'AU04', 'AU17'],
+    'HAPPINESS': ['AU12', 'AU06', 'AU26', 'AU10'],
+    'SURPRISE': ['AU02', 'AU01', 'AU05', 'AU26'],
+    'DISGUST': ['AU09', 'AU07', 'AU04', 'AU17']
+}
+
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"
