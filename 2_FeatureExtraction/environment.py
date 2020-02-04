@@ -3,6 +3,10 @@ from datetime import datetime
 
 TESE_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+####################
+# OPENFACE_EXTRACT #
+####################
+
 # VARIABLES
 VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
@@ -49,6 +53,15 @@ NUM_NON_RIGID = 34
 
 OPENFACE_OUTPUT_COMMANDS = ['-3Dfp', '-pdmparams',
                             '-pose', '-aus', '-gaze']
+
+
+####################
+# OPENFACE_PROCESS #
+####################
+
+# VARIABLES
+VALID_FILE_TYPES = ['.csv']
+
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"

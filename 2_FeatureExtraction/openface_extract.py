@@ -10,7 +10,7 @@ from environment import (OPENFACE_FACE_LANDMARK_IMG,
                          OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_COMMANDS,
                          OPENFACE_OUTPUT_DIR, VALID_IMAGE_TYPES,
                          VALID_VIDEO_TYPES)
-from utils import print_assertion_error
+from utils import print_assertion_error, fetch_files_from_directory, filter_files
 
 OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/"
 
@@ -133,24 +133,21 @@ if __name__ == "__main__":
     write = args['write']
 
     if directory:
-        media_files_directory = media_files
-        for _dir in media_files_directory:
-            media_files = [f for f in listdir(_dir) if isfile(join(_dir, f))]
+        media_files = fetch_files_from_directory(media_files)
 
+    if media_type == MEDIA_TYPE_IMAGE:
+        media_files = filter_files(media_files, VALID_IMAGE_TYPES)
+    elif media_type == MEDIA_TYPE_VIDEO:
+        media_files = filter_files(media_files, VALID_VIDEO_TYPES)
+        
     if not media_files and media_type != MEDIA_TYPE_CAM:
-        print("Error: No media files passed")
+        print("Error: No media files passed or no valid media files in directory")
         exit()
-
-    for file in media_files:
-        _, file_extension = splitext(file)
-        if file_extension not in valid_types:
-            print("Not supported or invalid file type (%s). File must be {%s}" % (
-                file, valid_types))
-            exit()
 
     OPENFACE_OUTPUT += format_output_string(media_files[0])
 
     if media_type == MEDIA_TYPE_IMAGE:
+        media_files = filter_files(media_files, VALID_VIDEO_TYPES)
         openface_img(media_files, write)
     elif media_type == MEDIA_TYPE_VIDEO:
         openface_vid(media_files, multi, write)
