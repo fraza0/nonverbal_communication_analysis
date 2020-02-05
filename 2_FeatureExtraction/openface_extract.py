@@ -12,7 +12,7 @@ from environment import (OPENFACE_FACE_LANDMARK_IMG,
                          VALID_VIDEO_TYPES)
 from utils import print_assertion_error, fetch_files_from_directory, filter_files
 
-OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/"
+OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + "extract/"
 
 
 def format_output_string(file_path):
