@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 
 from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
-                         OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING)
+                         OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING,
+                         FRAME_THRESHOLD)
 from utils import fetch_files_from_directory, filter_files
 
 '''
@@ -37,8 +38,10 @@ columns_3d_eye_lmks = [('eye_lmk_X_%s' % lmk_idx) for lmk_idx in range(
     [('eye_lmk_Z_%s' % lmk_idx) for lmk_idx in range(
         NUM_EYE_LANDMARKS)]  # 3D Eye Landmarks (X,Y,Z) coordinates
 
-columns_head = ['pose_Tx', 'pose_Ty', 'pose_Tz',  # Relative Location to Camera
-                'pose_Rx', 'pose_Ry', 'pose_Rz']  # Rotation pitch, yaw, roll
+# Relative Location to Camera
+columns_head_loc = ['pose_Tx', 'pose_Ty', 'pose_Tz']
+columns_head_rot = ['pose_Rx', 'pose_Ry',
+                    'pose_Rz']  # Rotation pitch, yaw, roll
 
 columns_facial_lmks = [('X_%s' % lmk_idx) for lmk_idx in range(NUM_FACE_LANDMARKS)] + \
     [('Y_%s' % lmk_idx) for lmk_idx in range(NUM_FACE_LANDMARKS)] + \
@@ -82,13 +85,14 @@ columns_features = ['emotion',
 
 columns_relevant = columns_basic + \
     columns_facial_lmks + \
-    columns_aus_intensity
+    columns_aus_intensity + \
+    columns_head_rot
 
 columns_output = columns_relevant + columns_features
 
 
 def radians_to_degrees(rads):
-    """Conver Radians to Degrees
+    """Convert Radians to Degrees
 
     Arguments:
         rads {float} -- Radians
@@ -97,6 +101,14 @@ def radians_to_degrees(rads):
         float -- Degrees
     """
     return (rads * 180) / pi
+
+
+def radians_to_degrees_df(rads_list: pd.Series):
+
+    for a, val_rad in rads_list.items():
+        rads_list[a] = radians_to_degrees(val_rad)
+
+    return rads_list
 
 
 def calculate_au_vector_coef(au_intensity_list: list, decrease_factor: float):
@@ -108,9 +120,23 @@ def calculate_au_vector_coef(au_intensity_list: list, decrease_factor: float):
     return au_coef
 
 
-def predict_emotion(aus_vector: pd.Series):
+def identify_emotion(aus_vector: pd.Series):
+    """Emotion Identification based on relation matrix using \
+        Discriminative Power method as Velusamy et al. used \
+        in "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS"
+
+    Args:
+        aus_vector (pd.Series): Vectors of Action Units intensities
+
+    See Also:
+        "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS":
+        https://ieeexplore.ieee.org/document/5946910/
+
+    Returns:
+        str: identified emotion
+    """
+
     aus_vector = aus_vector[columns_aus_intensity]
-    # print(calculate_au_vector_coef(aus_vector, decrease_factor))
 
     emotion_vector_coefs = dict()
     for emotion_name, emotion_aus_vector in EMOTIONS_ENCONDING.items():
@@ -122,19 +148,61 @@ def predict_emotion(aus_vector: pd.Series):
         emotion_vector_coefs[emotion_name] = calculate_au_vector_coef(
             aus_vector.filter(emotion_aus), decrease_factor)
 
+    emotion_vector_coefs['NEUTRAL'] = 1
     emotion_pred = max(emotion_vector_coefs, key=emotion_vector_coefs.get)
 
-    if verbose:
-        print("PREDICTED EMOTION: %s" % emotion_pred)
-
     return emotion_pred
+
+
+def is_sequence_increasing(seq: list):
+    return all(earlier <= later for earlier, later in zip(seq, seq[1:]))
+
+
+def is_sequence_decreasing(seq: list):
+    return all(earlier >= later for earlier, later in zip(seq, seq[1:]))
+
+
+def identify_movement_orientation(col: str, vector: str):
+    col = col.lower()
+    orientation = {
+        'x': ['UP', 'DOWN'],
+        'y': ['LEFT', 'RIGHT'],
+        'z': ['CW', 'CCW']
+    }
+
+    for axis, label in orientation.items():
+        if axis in col:
+            break
+
+    VARIANCE_THRESHOLD = .3
+    vector_variance = np.var(vector)
+    valid_variance = vector_variance >= VARIANCE_THRESHOLD
+
+    if is_sequence_increasing(vector) and valid_variance:
+        return label[0]
+    elif is_sequence_decreasing(vector) and valid_variance:
+        return label[1]
+    else:
+        return 'NO SIGNIFICANT MOVEMENT'
+
+
+def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out):
+
+    head_pose_out = pd.DataFrame(columns=columns_head_rotation_out)
+    for df_split in np.split(head_pose_df, np.arange(FRAME_THRESHOLD, len(head_pose_df), FRAME_THRESHOLD)):
+        movement_split = list()
+        for col in df_split.columns:
+            movement = identify_movement_orientation(col, df_split[col])
+            movement_split.append(movement)
+
+        print(movement_split)
+    return head_pose_out
 
 
 # calculate pitch movement
 # calculate yaw movement
 # calculate roll movement
 # calculate eye movement (x,y)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -167,7 +235,8 @@ if __name__ == "__main__":
             df[columns_2d_eye_lmks], columns=columns_2d_eye_lmks)
         df_3d_eye_lmks = pd.DataFrame(
             df[columns_3d_eye_lmks], columns=columns_3d_eye_lmks)
-        df_head = pd.DataFrame(df[columns_head], columns=columns_head)
+        df_head = pd.DataFrame(
+            df[columns_head_loc + columns_head_rot], columns=columns_head_loc+columns_head_rot)
         df_face = pd.DataFrame(df[columns_facial_lmks],
                                columns=columns_facial_lmks)
         df_rigid = pd.DataFrame(df[columns_rigid_shape],
@@ -179,8 +248,17 @@ if __name__ == "__main__":
         df_aus_intensity = pd.DataFrame(
             df[columns_aus_intensity], columns=columns_aus_intensity)
 
+        # Identify emotions
         DF_OUTPUT = pd.DataFrame(
             df[columns_relevant], columns=columns_output)
-        DF_OUTPUT['emotion'] = DF_OUTPUT.apply(predict_emotion, axis=1)
+        DF_OUTPUT['emotion'] = DF_OUTPUT.apply(identify_emotion, axis=1)
 
-        print(DF_OUTPUT)
+        # Transform rotation rads to degrees
+        DF_OUTPUT[columns_head_rot] = DF_OUTPUT[columns_head_rot].apply(
+            radians_to_degrees_df, axis=1)
+
+        DF_OUTPUT[60:90][['head_movement_pitch', 'head_movement_yaw',
+                          'head_movement_roll']] = identify_head_movement(DF_OUTPUT[60:90][columns_head_rot], [
+                              'head_movement_pitch', 'head_movement_yaw', 'head_movement_roll'])
+
+        print(DF_OUTPUT[60:90])

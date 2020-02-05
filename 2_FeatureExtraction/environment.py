@@ -74,6 +74,8 @@ EMOTIONS_ENCONDING = {
     'DISGUST': ['AU09', 'AU07', 'AU04', 'AU17']
 }
 
+FRAME_THRESHOLD = 5
+
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"
