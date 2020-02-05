@@ -20,8 +20,8 @@ def format_output_string(file_path):
     output_string = ""
 
     if "Videopc" not in file_path:
-        output_string = OPENFACE_OUTPUT + datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
-        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % output_string)
+        output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
+        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (OPENFACE_OUTPUT + output_string))
     else:
         file_timestamp = re.compile(
             "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
