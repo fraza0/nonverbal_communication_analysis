@@ -153,6 +153,8 @@ def identify_emotion(aus_vector: pd.Series):
 
     return emotion_pred
 
+# TODO: predict_emotion(aus_vector: pd.Series) using ML
+
 
 def is_sequence_increasing(seq: list):
     return all(earlier <= later for earlier, later in zip(seq, seq[1:]))
@@ -178,12 +180,12 @@ def identify_movement_orientation(col: str, vector: str):
     vector_variance = np.var(vector)
     valid_variance = vector_variance >= VARIANCE_THRESHOLD
 
-    if is_sequence_increasing(vector) and valid_variance:
-        return label[0]
-    elif is_sequence_decreasing(vector) and valid_variance:
-        return label[1]
-    else:
+    if not valid_variance:
         return 'NO SIGNIFICANT MOVEMENT'
+    elif is_sequence_increasing(vector):
+        return label[0]
+    elif is_sequence_decreasing(vector):
+        return label[1]
 
 
 def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out):
@@ -199,9 +201,6 @@ def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out
     return head_pose_out
 
 
-# calculate pitch movement
-# calculate yaw movement
-# calculate roll movement
 # calculate eye movement (x,y)
 
 if __name__ == "__main__":
