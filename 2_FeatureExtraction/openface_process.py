@@ -8,8 +8,8 @@ import pandas as pd
 
 from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
                          OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING,
-                         FRAME_THRESHOLD)
-from utils import fetch_files_from_directory, filter_files
+                         FRAME_THRESHOLD, VARIANCE_THRESHOLD)
+from utils import fetch_files_from_directory, filter_files, strided_split
 
 '''
 https://www.cs.cmu.edu/~face/facs.htm
@@ -176,33 +176,35 @@ def identify_movement_orientation(col: str, vector: str):
         if axis in col:
             break
 
-    VARIANCE_THRESHOLD = .3
     vector_variance = np.var(vector)
     valid_variance = vector_variance >= VARIANCE_THRESHOLD
 
-    if not valid_variance:
-        return 'NO SIGNIFICANT MOVEMENT'
-    elif is_sequence_increasing(vector):
+    if is_sequence_increasing(vector) and valid_variance:
         return label[0]
-    elif is_sequence_decreasing(vector):
+    elif is_sequence_decreasing(vector) and valid_variance:
         return label[1]
+    else:
+        return 'NO SIGNIFICANT MOVEMENT'
 
 
-def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out):
-
+def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out: list):
     head_pose_out = pd.DataFrame(columns=columns_head_rotation_out)
-    for df_split in np.split(head_pose_df, np.arange(FRAME_THRESHOLD, len(head_pose_df), FRAME_THRESHOLD)):
+
+    for df_split in strided_split(head_pose_df, FRAME_THRESHOLD):
         movement_split = list()
         for col in df_split.columns:
             movement = identify_movement_orientation(col, df_split[col])
             movement_split.append(movement)
 
-        print(movement_split)
+        movement_split_df = pd.DataFrame([movement_split for _ in range(
+            len(df_split))], columns=columns_head_rotation_out)
+        head_pose_out = head_pose_out.append(
+            movement_split_df, ignore_index=True)
+
     return head_pose_out
 
 
 # calculate eye movement (x,y)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Extract facial data using OpenFace')
@@ -248,16 +250,14 @@ if __name__ == "__main__":
             df[columns_aus_intensity], columns=columns_aus_intensity)
 
         # Identify emotions
-        DF_OUTPUT = pd.DataFrame(
-            df[columns_relevant], columns=columns_output)
+        DF_OUTPUT = pd.DataFrame(df[columns_relevant], columns=columns_output)
         DF_OUTPUT['emotion'] = DF_OUTPUT.apply(identify_emotion, axis=1)
 
         # Transform rotation rads to degrees
         DF_OUTPUT[columns_head_rot] = DF_OUTPUT[columns_head_rot].apply(
             radians_to_degrees_df, axis=1)
 
-        DF_OUTPUT[60:90][['head_movement_pitch', 'head_movement_yaw',
-                          'head_movement_roll']] = identify_head_movement(DF_OUTPUT[60:90][columns_head_rot], [
-                              'head_movement_pitch', 'head_movement_yaw', 'head_movement_roll'])
+        DF_OUTPUT[['head_movement_pitch', 'head_movement_yaw', 'head_movement_roll']] = identify_head_movement(
+            DF_OUTPUT[columns_head_rot], ['head_movement_pitch', 'head_movement_yaw', 'head_movement_roll'])
 
         print(DF_OUTPUT[60:90])

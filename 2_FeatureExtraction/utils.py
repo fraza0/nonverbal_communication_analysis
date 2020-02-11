@@ -1,5 +1,7 @@
 from os import listdir
 from os.path import isfile, join, splitext
+from math import ceil
+import numpy as np
 
 
 def print_assertion_error(_obj, _type):
@@ -36,3 +38,11 @@ def filter_files(files: list, valid_types: list, verbose: bool = False):
                 print("WARN: Not supported or invalid file type (%s). File must be {%s}" % (
                     _file, valid_types))
     return valid_files
+
+
+def index_marks(nrows, chunk_size):
+    return range(chunk_size, ceil(nrows / chunk_size) * chunk_size, chunk_size)
+
+def strided_split(df, chunk_size):
+    indices = index_marks(df.shape[0], chunk_size)
+    return np.split(df, indices)
