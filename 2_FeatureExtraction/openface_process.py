@@ -8,7 +8,7 @@ import pandas as pd
 
 from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
                          OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING,
-                         FRAME_THRESHOLD, VARIANCE_THRESHOLD)
+                         FRAME_THRESHOLD, HEAD_MOV_VARIANCE_THRESHOLD)
 from utils import fetch_files_from_directory, filter_files, strided_split
 
 '''
@@ -86,7 +86,8 @@ columns_features = ['emotion',
 columns_relevant = columns_basic + \
     columns_facial_lmks + \
     columns_aus_intensity + \
-    columns_head_rot
+    columns_head_rot + \
+    columns_gaze
 
 columns_output = columns_relevant + columns_features
 
@@ -153,7 +154,7 @@ def identify_emotion(aus_vector: pd.Series):
 
     return emotion_pred
 
-# TODO: predict_emotion(aus_vector: pd.Series) using ML
+# TODO: predict_emotion(aus_vector: pd.Series) using a ML classifier
 
 
 def is_sequence_increasing(seq: list):
@@ -164,7 +165,7 @@ def is_sequence_decreasing(seq: list):
     return all(earlier >= later for earlier, later in zip(seq, seq[1:]))
 
 
-def identify_movement_orientation(col: str, vector: str):
+def identify_head_movement_orientation(col: str, vector: str):
     col = col.lower()
     orientation = {
         'x': ['UP', 'DOWN'],
@@ -177,14 +178,14 @@ def identify_movement_orientation(col: str, vector: str):
             break
 
     vector_variance = np.var(vector)
-    valid_variance = vector_variance >= VARIANCE_THRESHOLD
+    valid_variance = vector_variance >= HEAD_MOV_VARIANCE_THRESHOLD
 
     if is_sequence_increasing(vector) and valid_variance:
         return label[0]
     elif is_sequence_decreasing(vector) and valid_variance:
         return label[1]
     else:
-        return 'NO SIGNIFICANT MOVEMENT'
+        return 'CENTER'
 
 
 def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out: list):
@@ -193,7 +194,8 @@ def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out
     for df_split in strided_split(head_pose_df, FRAME_THRESHOLD):
         movement_split = list()
         for col in df_split.columns:
-            movement = identify_movement_orientation(col, df_split[col])
+            movement = identify_head_movement_orientation(
+                col, df_split[col])
             movement_split.append(movement)
 
         movement_split_df = pd.DataFrame([movement_split for _ in range(
@@ -204,7 +206,76 @@ def identify_head_movement(head_pose_df: pd.DataFrame, columns_head_rotation_out
     return head_pose_out
 
 
-# calculate eye movement (x,y)
+def identify_gaze_movement_orientation(col: str, vector: str):
+    """If a person is looking left-right this will results in the change of gaze_angle_x (from positive to negative) \
+    If a person is looking up-down this will result in change of gaze_angle_y (from negative to positive) \
+    If a person is looking straight ahead both of the angles will be close to 0 (within measurement error)
+
+    See Also:
+        Check 'Gaze related' section in OpenFace Documentation
+        https://github.com/TadasBaltrusaitis/OpenFace/wiki/Output-Format
+
+    Args:
+        col (str): [description]
+        vector (str): [description]
+
+    Returns:
+        str: [description]
+    """
+    col = col.lower()
+    orientation = {
+        'x': ['RIGHT', 'CENTER', 'LEFT'],
+        'y': ['UP', 'CENTER', 'DOWN'],
+    }
+
+    for axis, label in orientation.items():
+        if axis in col:
+            vector_mean = np.mean(vector)
+            vector_std = np.std(vector)
+
+            if (vector_mean-vector_std <= 0 <= vector_mean+vector_std):
+                return label[1]
+            elif vector_mean > 0:
+                return label[2]
+            elif vector_mean < 0:
+                return label[0]
+
+    return "MEASUREMENT ERROR"
+
+
+def identify_eye_gaze_movement(eye_gaze_df: pd.DataFrame, columns_eye_movement_out: list):
+    """If a person is looking left-right this will results in the change of gaze_angle_x (from positive to negative) \
+    If a person is looking up-down this will result in change of gaze_angle_y (from negative to positive) \
+    If a person is looking straight ahead both of the angles will be close to 0 (within measurement error)
+
+    See Also:
+        Check 'Gaze related' section in OpenFace Documentation
+        https://github.com/TadasBaltrusaitis/OpenFace/wiki/Output-Format
+
+    Args:
+        eye_gaze_df (pd.DataFrame): Gaze angles dataframe
+        columns_eye_movement_out (list): Output columns' names
+
+    Returns:
+        pd.DataFrame: Returns output columns dataframe
+    """
+    eye_movement_out = pd.DataFrame(columns=columns_eye_movement_out)
+
+    for df_split in strided_split(eye_gaze_df, FRAME_THRESHOLD):
+        movement_split = list()
+        for col in df_split.columns:
+            movement = identify_gaze_movement_orientation(
+                col, df_split[col])
+            movement_split.append(movement)
+
+        movement_split_df = pd.DataFrame([movement_split for _ in range(
+            len(df_split))], columns=columns_eye_movement_out)
+        eye_movement_out = eye_movement_out.append(
+            movement_split_df, ignore_index=True)
+
+    return eye_movement_out
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Extract facial data using OpenFace')
@@ -253,11 +324,25 @@ if __name__ == "__main__":
         DF_OUTPUT = pd.DataFrame(df[columns_relevant], columns=columns_output)
         DF_OUTPUT['emotion'] = DF_OUTPUT.apply(identify_emotion, axis=1)
 
-        # Transform rotation rads to degrees
+        # Transform head rotation from rads to degrees
         DF_OUTPUT[columns_head_rot] = DF_OUTPUT[columns_head_rot].apply(
             radians_to_degrees_df, axis=1)
 
-        DF_OUTPUT[['head_movement_pitch', 'head_movement_yaw', 'head_movement_roll']] = identify_head_movement(
-            DF_OUTPUT[columns_head_rot], ['head_movement_pitch', 'head_movement_yaw', 'head_movement_roll'])
+        # Identify head movement
+        head_movement_features = columns_features[1:4]
+        DF_OUTPUT[head_movement_features] = identify_head_movement(
+            DF_OUTPUT[columns_head_rot], head_movement_features)
 
-        print(DF_OUTPUT[60:90])
+        # Transform gaze angles from rads to degrees
+        gaze_angles = columns_gaze[6:8]
+        DF_OUTPUT[gaze_angles] = DF_OUTPUT[gaze_angles].apply(
+            radians_to_degrees_df, axis=1)
+
+        # Identify eye gaze movement
+        eye_movement_features = columns_features[4:6]
+        DF_OUTPUT[eye_movement_features] = identify_eye_gaze_movement(
+            DF_OUTPUT[gaze_angles], eye_movement_features)
+
+        DF_OUTPUT.dropna(axis=0, inplace=True)
+        
+        
