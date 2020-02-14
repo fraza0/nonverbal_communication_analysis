@@ -226,6 +226,8 @@ if __name__ == "__main__":
             for vid in cap_list:
                 if alignment == True and align_by is not None:  # Videos are in sync
                     roi = vid.roi
+                    cv2.rectangle(
+                        vid.frame, (roi['xmin'], roi['ymin']), (roi['xmax'], roi['ymax']), (0, 255, 0), 2)
                     cv2.imshow(vid.title, vid.frame)
 
             if key == ord('s'):                 # Save
