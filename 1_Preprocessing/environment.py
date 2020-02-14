@@ -6,8 +6,14 @@ TESE_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
 VALID_TIMESTAMP_FILES = ['.txt']
 TIMESTAMP_THRESHOLD = 100
-FOURCC = 'MP4V' # 'X264' # Error -- https://github.com/skvark/opencv-python/issues/81, https://github.com/skvark/opencv-python/issues/100
+FOURCC = 'MJPG'  # 'X264' # Error -- https://github.com/skvark/opencv-python/issues/81, https://github.com/skvark/opencv-python/issues/100
 FRAME_SKIP = 100
+
+CAM_ROI = {
+    '1': {'xmin': 130, 'xmax': 520, 'ymin': 150, 'ymax': 480},
+    '2': {'xmin': 80, 'xmax': 540, 'ymin': 110, 'ymax': 470},
+    '3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 520}
+}
 
 
 # PATHS

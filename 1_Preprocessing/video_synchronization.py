@@ -8,7 +8,9 @@ import cv2
 import os
 import errno
 
-from environment import VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES, TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC, FRAME_SKIP
+from environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
+                         TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
+                         FRAME_SKIP, CAM_ROI)
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
@@ -45,7 +47,7 @@ class CameraVideo:
 
     current_timestamp = 0
 
-    def __init__(self, title: str, video_path: str, timestamp_path: str, output_path: str):
+    def __init__(self, title: str, video_path: str, roi: dict, timestamp_path: str, output_path: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
         self.timestamps = open(timestamp_path, 'r')
@@ -57,6 +59,7 @@ class CameraVideo:
         frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+        self.roi = roi
         self.writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(
             *FOURCC), fps, (frame_width, frame_height))
 
@@ -124,6 +127,10 @@ if __name__ == "__main__":
                         action='store_true')
     args = vars(parser.parse_args())
 
+    if not args['video_files']:
+        print("Error: No camera video files passed")
+        exit()
+
     video_files = [vf[0] for vf in args['video_files']]
     timestamp_files = [tf[0] for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
         splitext(f)[0][::-1].replace('Video'[::-1], 'Timestamp'[::-1], 1)[::-1] + ".txt" for f in video_files]
@@ -144,7 +151,7 @@ if __name__ == "__main__":
             exit()
 
     if len(video_files) != 3 and len(timestamp_files) != 3:
-        print("Only 3 video files and corresponding timestamps available")
+        print("Specify only 3 video files (and corresponding timestamps - Optional: Default is searching for same file name)")
         exit()
 
     cap_list = list()
@@ -161,7 +168,7 @@ if __name__ == "__main__":
 
     for i in range(len(video_files)):
         _id = str(i+1)
-        vid = CameraVideo("VID"+_id, video_files[i], timestamp_files[i], out_dir +
+        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI[_id], timestamp_files[i], out_dir +
                           "sync_vid"+_id+"_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
         cap_list.append(vid)
 
@@ -182,6 +189,9 @@ if __name__ == "__main__":
         for vid in to_align_list:
             # Read frame
             vid.ret, vid.frame = vid.cap.read()
+            roi = vid.roi
+            # [y:y+height, x:x+width]
+            vid.frame = vid.frame[roi['xmin']:roi['xmax'], roi['ymin']:roi['ymax']]
             vid.current_frame_idx += 1
             # Update current_timestamp
             file_ts = vid.timestamps.readline()
