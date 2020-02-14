@@ -56,12 +56,13 @@ class CameraVideo:
         self.markers = dict()
         self.ret = None
         self.frame = None
-        frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
         self.roi = roi
+        frame_width = int(roi['xmax']-roi['xmin'])
+        frame_height = int(roi['ymax']-roi['ymin'])
+        size = (frame_width, frame_height)
+        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
         self.writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(
-            *FOURCC), fps, (frame_width, frame_height))
+            *FOURCC), fps, size)
 
     def __str__(self):
         print("%s: %s" % (self.title, self.current_timestamp))
@@ -111,8 +112,10 @@ def cut_from_until(vid, _from: int, _until: int):
 
     vid.cap.set(cv2.CAP_PROP_POS_FRAMES, _from)
 
+    roi = vid.roi
     for _ in range(_from, _until):
         vid.ret, vid.frame = vid.cap.read()
+        vid.frame = vid.frame[roi['ymin']:roi['ymax'], roi['xmin']:roi['xmax']]
         vid.writer.write(vid.frame)
 
 
@@ -189,9 +192,6 @@ if __name__ == "__main__":
         for vid in to_align_list:
             # Read frame
             vid.ret, vid.frame = vid.cap.read()
-            roi = vid.roi
-            # [y:y+height, x:x+width]
-            vid.frame = vid.frame[roi['xmin']:roi['xmax'], roi['ymin']:roi['ymax']]
             vid.current_frame_idx += 1
             # Update current_timestamp
             file_ts = vid.timestamps.readline()
@@ -225,6 +225,7 @@ if __name__ == "__main__":
         if all([vid.ret for vid in cap_list]):
             for vid in cap_list:
                 if alignment == True and align_by is not None:  # Videos are in sync
+                    roi = vid.roi
                     cv2.imshow(vid.title, vid.frame)
 
             if key == ord('s'):                 # Save
@@ -253,7 +254,7 @@ if __name__ == "__main__":
                         task_markers = list(vid.markers.keys())[i:i+2]
 
                         if verbose:
-                            print("Vid %s Saving Task 1" % vid.title)
+                            print("Vid %s Saving Task" % (vid.title))
                         cut_from_until(
                             vid, vid.markers[task_markers[0]], vid.markers[task_markers[1]])
 

@@ -11,8 +11,8 @@ FRAME_SKIP = 100
 
 CAM_ROI = {
     '1': {'xmin': 130, 'xmax': 520, 'ymin': 150, 'ymax': 480},
-    '2': {'xmin': 80, 'xmax': 540, 'ymin': 110, 'ymax': 470},
-    '3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 520}
+    '2': {'xmin': 80, 'xmax': 520, 'ymin': 110, 'ymax': 480},
+    '3': {'xmin': 100, 'xmax': 590, 'ymin': 110, 'ymax': 480}
 }
 
 
