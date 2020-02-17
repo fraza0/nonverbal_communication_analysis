@@ -276,6 +276,11 @@ def identify_eye_gaze_movement(eye_gaze_df: pd.DataFrame, columns_eye_movement_o
     return eye_movement_out
 
 
+def df_format_to_json(line):
+    # print(list(line))
+    return True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Extract facial data using OpenFace')
@@ -301,24 +306,9 @@ if __name__ == "__main__":
         df.rename(columns=lambda x: x.strip(), inplace=True)
         df.set_index('frame', inplace=True)
 
-        df_basic = pd.DataFrame(df[columns_basic], columns=columns_basic)
-        df_gaze = pd.DataFrame(df[columns_gaze], columns=columns_gaze)
-        df_2d_eye_lmks = pd.DataFrame(
-            df[columns_2d_eye_lmks], columns=columns_2d_eye_lmks)
-        df_3d_eye_lmks = pd.DataFrame(
-            df[columns_3d_eye_lmks], columns=columns_3d_eye_lmks)
-        df_head = pd.DataFrame(
-            df[columns_head_loc + columns_head_rot], columns=columns_head_loc+columns_head_rot)
-        df_face = pd.DataFrame(df[columns_facial_lmks],
-                               columns=columns_facial_lmks)
-        df_rigid = pd.DataFrame(df[columns_rigid_shape],
-                                columns=columns_rigid_shape)
-        df_non_rigid = pd.DataFrame(
-            df[columns_non_rigid_shape], columns=columns_non_rigid_shape)
-        df_aus_presence = pd.DataFrame(
-            df[columns_aus_presence], columns=columns_aus_presence)
-        df_aus_intensity = pd.DataFrame(
-            df[columns_aus_intensity], columns=columns_aus_intensity)
+        # Assign people IDs
+        
+        # exit()
 
         # Identify emotions
         DF_OUTPUT = pd.DataFrame(df[columns_relevant], columns=columns_output)
@@ -344,5 +334,6 @@ if __name__ == "__main__":
             DF_OUTPUT[gaze_angles], eye_movement_features)
 
         DF_OUTPUT.dropna(axis=0, inplace=True)
-        
-        
+        # DF_OUTPUT.apply(df_format_to_json)
+
+        print(DF_OUTPUT.head())

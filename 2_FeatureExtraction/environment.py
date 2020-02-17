@@ -77,6 +77,13 @@ EMOTIONS_ENCONDING = {
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
 
+# Actually not needed as I could just calculate the center using the ROI info,
+# but I prefered to specify it, because of some cam specific offsets on the axis
+PERSON_IDENTIFICATION_GRID = {
+    '1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 230}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
+    '2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
+    '3': {'horizontal': {'x0': 70, 'x1': 570, 'y': 255}, 'vertical': {'x': 320, 'y0': 110, 'y1': 460}}
+}
 
 # OpenPose
 OPENPOSE_HOME = TESE_HOME + "/packages/openpose"

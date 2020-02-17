@@ -10,7 +10,7 @@ import errno
 
 from environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
                          TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
-                         FRAME_SKIP, CAM_ROI)
+                         FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
@@ -47,7 +47,7 @@ class CameraVideo:
 
     current_timestamp = 0
 
-    def __init__(self, title: str, video_path: str, roi: dict, timestamp_path: str, output_path: str):
+    def __init__(self, title: str, video_path: str, roi: dict, grid: dict, timestamp_path: str, output_path: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
         self.timestamps = open(timestamp_path, 'r')
@@ -56,6 +56,7 @@ class CameraVideo:
         self.markers = dict()
         self.ret = None
         self.frame = None
+        self.grid = grid
         self.roi = roi
         frame_width = int(roi['xmax']-roi['xmin'])
         frame_height = int(roi['ymax']-roi['ymin'])
@@ -171,7 +172,7 @@ if __name__ == "__main__":
 
     for i in range(len(video_files)):
         _id = str(i+1)
-        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI[_id], timestamp_files[i], out_dir +
+        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI[_id], PERSON_IDENTIFICATION_GRID[_id], timestamp_files[i], out_dir +
                           "sync_vid"+_id+"_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
         cap_list.append(vid)
 
@@ -226,8 +227,15 @@ if __name__ == "__main__":
             for vid in cap_list:
                 if alignment == True and align_by is not None:  # Videos are in sync
                     roi = vid.roi
+                    grid = vid.grid
+                    grid_horitonzal_axis = grid['horizontal']
+                    grid_vertical_axis = grid['vertical']
                     cv2.rectangle(
                         vid.frame, (roi['xmin'], roi['ymin']), (roi['xmax'], roi['ymax']), (0, 255, 0), 2)
+                    cv2.line(
+                        vid.frame, (grid_horitonzal_axis['x0'], grid_horitonzal_axis['y']), (grid_horitonzal_axis['x1'], grid_horitonzal_axis['y']), (0, 0, 255), 1)
+                    cv2.line(
+                        vid.frame, (grid_vertical_axis['x'], grid_vertical_axis['y0']), (grid_vertical_axis['x'], grid_vertical_axis['y1']), (0, 0, 255), 1)
                     cv2.imshow(vid.title, vid.frame)
 
             if key == ord('s'):                 # Save
