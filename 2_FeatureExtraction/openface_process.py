@@ -296,8 +296,10 @@ if __name__ == "__main__":
     directory = args['directory']
     verbose = args['verbose']
 
+    print(csv_files)
     if directory:
         csv_files = fetch_files_from_directory(csv_files)
+    exit()
 
     csv_files = filter_files(csv_files, VALID_FILE_TYPES)
 
