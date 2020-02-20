@@ -5,13 +5,14 @@ from datetime import datetime
 from os import listdir
 from os.path import isfile, join, splitext
 
-from environment import (OPENFACE_FACE_LANDMARK_IMG,
-                         OPENFACE_FACE_LANDMARK_VID_MULTI,
-                         OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_DIR,
-                         OPENFACE_OUTPUT_FLAGS, VALID_IMAGE_TYPES,
-                         VALID_VIDEO_TYPES)
-from utils import (fetch_files_from_directory, filter_files,
-                   print_assertion_error)
+from nonverbal_communication_analysis.environment import (
+    OPENFACE_FACE_LANDMARK_IMG, OPENFACE_FACE_LANDMARK_VID_MULTI,
+    OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_DIR, OPENFACE_OUTPUT_FLAGS,
+    VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
+from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
+                                                    filter_files,
+                                                    print_assertion_error)
+
 
 """
 OpenFace Output Commands:

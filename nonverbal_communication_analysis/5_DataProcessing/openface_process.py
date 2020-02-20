@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
-                         OPENFACE_OUTPUT_DIR, VALID_FILE_TYPES, EMOTIONS_ENCONDING,
+                         OPENFACE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, EMOTIONS_ENCONDING,
                          FRAME_THRESHOLD, HEAD_MOV_VARIANCE_THRESHOLD)
 from utils import fetch_files_from_directory, filter_files, strided_split
 
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         csv_files = fetch_files_from_directory(csv_files)
     exit()
 
-    csv_files = filter_files(csv_files, VALID_FILE_TYPES)
+    csv_files = filter_files(csv_files, VALID_OUTPUT_FILE_TYPES)
 
     for csv_file in csv_files:
         df = pd.read_csv(csv_file)
