@@ -4,9 +4,6 @@ import argparse
 import cv2
 import os
 import errno
-import cv2
-import os
-import errno
 
 from environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
                            TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
