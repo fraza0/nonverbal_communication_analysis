@@ -5,11 +5,11 @@ import cv2
 import os
 import errno
 
-from environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
+from nonverbal_communication_analysis.environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
                            TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
                            FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
 
-from utils import log
+from nonverbal_communication_analysis.utils import log
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
