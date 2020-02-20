@@ -53,31 +53,23 @@ columns_rigid_shape = ['p_scale',                   # Face scale
                        'p_rx', 'p_ry', 'p_rz',      #
                        'p_tx', 'p_ty']              #
 
-columns_non_rigid_shape = [('p_%s' % lmk_idx)
-                           for lmk_idx in range(NUM_NON_RIGID)]
-
-columns_aus_presence = ['AU01_c',  # Inner Brow Raiser
-                        'AU02_c',  # Outer Brow Raiser
-                        'AU04_c',  # Brow Lowerer
-                        'AU05_c',  # Upper Lid Raiser
-                        'AU06_c',  # Cheek Raiser
-                        'AU07_c',  # Lid Tightener
-                        'AU09_c',  # Nose Wrinkler
-                        'AU10_c',  # Upper Lip Raiser
-                        'AU12_c',  # Lip Corner Puller
-                        'AU14_c',  # Dimpler
-                        'AU15_c',  # Lip Corner Depressor
-                        'AU17_c',  # Chin Raiser
-                        'AU20_c',  # Lip stretcher
-                        'AU23_c',  # Lip Tightener
-                        'AU25_c',  # Lips part
-                        'AU26_c',  # Jaw Drop
-                        'AU28_c',  # Lip Suck
-                        'AU45_c']  # Blink
-
-columns_aus_intensity = ['AU01_r', 'AU02_r', 'AU04_r', 'AU05_r', 'AU06_r', 'AU07_r',
-                         'AU09_r', 'AU10_r', 'AU12_r', 'AU14_r', 'AU15_r', 'AU17_r',
-                         'AU20_r', 'AU23_r', 'AU25_r', 'AU26_r', 'AU45_r']
+columns_aus_intensity = ['AU01_r',  # Inner Brow Raiser
+                         'AU02_r',  # Outer Brow Raiser
+                         'AU04_r',  # Brow Lowerer
+                         'AU05_r',  # Upper Lid Raiser
+                         'AU06_r',  # Cheek Raiser
+                         'AU07_r',  # Lid Tightener
+                         'AU09_r',  # Nose Wrinkler
+                         'AU10_r',  # Upper Lip Raiser
+                         'AU12_r',  # Lip Corner Puller
+                         'AU14_r',  # Dimpler
+                         'AU15_r',  # Lip Corner Depressor
+                         'AU17_r',  # Chin Raiser
+                         'AU20_r',  # Lip stretcher
+                         'AU23_r',  # Lip Tightener
+                         'AU25_r',  # Lips part
+                         'AU26_r',  # Jaw Drop
+                         'AU45_r']  # Blink
 
 columns_features = ['emotion',
                     'head_movement_pitch', 'head_movement_yaw', 'head_movement_roll',
@@ -309,7 +301,7 @@ if __name__ == "__main__":
         df.set_index('frame', inplace=True)
 
         # Assign people IDs
-        
+
         # exit()
 
         # Identify emotions
