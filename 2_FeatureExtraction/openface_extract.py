@@ -5,12 +5,13 @@ from datetime import datetime
 from os import listdir
 from os.path import isfile, join, splitext
 
-from ..environment import (OPENFACE_FACE_LANDMARK_IMG,
-                           OPENFACE_FACE_LANDMARK_VID_MULTI,
-                           OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_FLAGS,
-                           OPENFACE_OUTPUT_DIR, VALID_IMAGE_TYPES,
-                           VALID_VIDEO_TYPES)
-from ..utils import print_assertion_error, fetch_files_from_directory, filter_files
+from environment import (OPENFACE_FACE_LANDMARK_IMG,
+                         OPENFACE_FACE_LANDMARK_VID_MULTI,
+                         OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_DIR,
+                         OPENFACE_OUTPUT_FLAGS, VALID_IMAGE_TYPES,
+                         VALID_VIDEO_TYPES)
+from utils import (fetch_files_from_directory, filter_files,
+                   print_assertion_error)
 
 """
 OpenFace Output Commands:
@@ -36,6 +37,7 @@ OpenFace Output Commands:
 -tracked      : output video with detected landmarks
 """
 
+
 def format_output_string(file_path):
 
     output_string = ""
@@ -49,7 +51,8 @@ def format_output_string(file_path):
             "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
         output_string = "%s_%s_%s_%s" % (
             file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
-        print("INFO: Output directory: %s" % (OPENFACE_OUTPUT_DIR + output_string))
+        print("INFO: Output directory: %s" %
+              (OPENFACE_OUTPUT_DIR + output_string))
 
     return output_string
 

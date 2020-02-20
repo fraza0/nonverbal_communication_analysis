@@ -9,8 +9,10 @@ import os
 import errno
 
 from environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
-                         TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
-                         FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
+                           TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
+                           FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
+
+from utils import log
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
@@ -25,7 +27,7 @@ Use 's' key to save.
 Use 'q' key to quit without saving.
 
 
-Example command: 
+Example command:
 $ python 1_Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi
                                                 -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt
                                                 -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi
@@ -78,7 +80,7 @@ def timestamp_align(cap_list: list):
         cap_list {list} -- [description]
 
     Returns:
-        Tuple: 
+        Tuple:
         * (True, None) - If they are aligned. Ignore first iteration when frame and timestamp is read.
         * (True, True) - If they are aligned.
         * (to_align: list, align_by: CameraVideo) - List of videos that need to be aligned, CameraVideo object of reference video
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
 
     if not args['video_files']:
-        print("Error: No camera video files passed")
+        log('ERROR', 'No camera video files passed')
         exit()
 
     video_files = [vf[0] for vf in args['video_files']]
@@ -143,19 +145,19 @@ if __name__ == "__main__":
     for file in video_files:
         _, file_extension = splitext(file)
         if file_extension not in VALID_VIDEO_TYPES:
-            print("Not supported or invalid video file type (%s). File must be {%s}" % (
+            log('ERROR', 'Not supported or invalid video file type (%s). File must be {%s}' % (
                 file, VALID_VIDEO_TYPES))
             exit()
 
     for file in timestamp_files:
         _, file_extension = splitext(file)
         if file_extension not in VALID_TIMESTAMP_FILES:
-            print("Not supported or invalid timestamp file type (%s). Check input files" %
-                  VALID_TIMESTAMP_FILES)
+            log('ERROR', 'Not supported or invalid timestamp file type (%s). Check input files' %
+                VALID_TIMESTAMP_FILES)
             exit()
 
     if len(video_files) != 3 and len(timestamp_files) != 3:
-        print("Specify only 3 video files (and corresponding timestamps - Optional: Default is searching for same file name)")
+        log('ERROR', 'Specify only 3 video files (and corresponding timestamps - Optional: Default is searching for same file name)')
         exit()
 
     cap_list = list()
@@ -177,7 +179,7 @@ if __name__ == "__main__":
         cap_list.append(vid)
 
     if not all(vid.cap.isOpened() for vid in cap_list):
-        print("Error opening video stream or file")
+        log('ERROR', 'Error opening video stream or file')
         exit()
 
     frame_count = 0
@@ -247,9 +249,9 @@ if __name__ == "__main__":
                     valid_markers = [
                         marker for marker in marker_validator.items() if marker[1] == True]
                     if len(valid_markers) % 2 != 0:
-                        print(
-                            "Odd number of markers. Number of markers should be an even number.")
-                        exit()
+                        log('ERROR', 'Odd number of markers. Number of markers should be an even number.')
+                        # exit()
+                        break
 
                     first_experience_markers = list(
                         vid.markers.keys())[:2]
