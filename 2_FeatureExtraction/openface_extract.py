@@ -5,15 +5,36 @@ from datetime import datetime
 from os import listdir
 from os.path import isfile, join, splitext
 
-from environment import (OPENFACE_FACE_LANDMARK_IMG,
-                         OPENFACE_FACE_LANDMARK_VID_MULTI,
-                         OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_COMMANDS,
-                         OPENFACE_OUTPUT_DIR, VALID_IMAGE_TYPES,
-                         VALID_VIDEO_TYPES)
-from utils import print_assertion_error, fetch_files_from_directory, filter_files
+from ..environment import (OPENFACE_FACE_LANDMARK_IMG,
+                           OPENFACE_FACE_LANDMARK_VID_MULTI,
+                           OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_FLAGS,
+                           OPENFACE_OUTPUT_DIR, VALID_IMAGE_TYPES,
+                           VALID_VIDEO_TYPES)
+from ..utils import print_assertion_error, fetch_files_from_directory, filter_files
 
-OPENFACE_OUTPUT = OPENFACE_OUTPUT_DIR + "/" + "extract/"
-
+"""
+OpenFace Output Commands:
+-au_static    : static models only rely on a single image to make an estimate of AU
+                  presence or intensity, while dynamic ones calibrate to a person by performing person
+                  normalization in the video, they also attempt to correct for over and under prediction of AUs.
+                  By default OpenFace uses static models on images and dynamic models on image sequences and videos.
+                  DOC Ref: https://github.com/TadasBaltrusaitis/OpenFace/wiki/Action-Units#static-vs-dynamic
+-2Dfp         : output 2D landmarks in pixels
+-3Dfp         : output 3D landmarks in milimeters
+-pdmparams    : output rigid and non-rigid shape parameters:
+                  * Rigid shape parameters describe the placement of the face in the image
+                      (scaling, rotation, and translation);
+                  * Non-rigid shape parameters on the other hand describe the deformation
+                      of the face due to identity or expression (wider or taller faces, smiles, blinks etc.)
+-pose         : output head pose (location and rotation)
+-aus          : output the Facial Action Units
+-gaze         : output gaze and related features (2D and 3D locations of eye landmarks)
+-hogalign     : output extracted HOG feaure file
+-simalign     : output similarity aligned images of the tracked faces
+-nobadaligned : if outputting similarity aligned images, do not output from frames where detection failed
+                  or is unreliable (thus saving some disk space)
+-tracked      : output video with detected landmarks
+"""
 
 def format_output_string(file_path):
 
@@ -21,13 +42,14 @@ def format_output_string(file_path):
 
     if "Videopc" not in file_path:
         output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
-        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (OPENFACE_OUTPUT + output_string))
+        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (
+            OPENFACE_OUTPUT_DIR + output_string))
     else:
         file_timestamp = re.compile(
             "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
         output_string = "%s_%s_%s_%s" % (
             file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
-        print("INFO: Output directory: %s" % (OPENFACE_OUTPUT + output_string))
+        print("INFO: Output directory: %s" % (OPENFACE_OUTPUT_DIR + output_string))
 
     return output_string
 
@@ -42,8 +64,8 @@ def openface_img(img_files: list, write: bool, verbose: bool = False):
     for file_path in img_files:
         cmd_list += ['-f', file_path]
 
-    cmd_list += OPENFACE_OUTPUT_COMMANDS
-    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
+    cmd_list += OPENFACE_OUTPUT_FLAGS
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT_DIR]
     if write:
         cmd_list += ['-tracked']
     if verbose:
@@ -74,8 +96,8 @@ def openface_vid(vid_files: list, multi: bool, write: bool, verbose: bool = Fals
     for file_path in vid_files:
         cmd_list += ['-f', file_path]
 
-    cmd_list += OPENFACE_OUTPUT_COMMANDS
-    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
+    cmd_list += OPENFACE_OUTPUT_FLAGS
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT_DIR]
     if write:
         cmd_list += ['-tracked']
     if verbose:
@@ -91,9 +113,9 @@ def openface_cam(device: int, write: bool, verbose: bool = False):
         "device", "int")
 
     cmd_list = [OPENFACE_FEATURE_EXTRACTION]
-    cmd_list += OPENFACE_OUTPUT_COMMANDS
+    cmd_list += OPENFACE_OUTPUT_FLAGS
     cmd_list += ['-device', '0']
-    cmd_list += ['-out_dir', OPENFACE_OUTPUT]
+    cmd_list += ['-out_dir', OPENFACE_OUTPUT_DIR]
     if verbose:
         print(cmd_list)
     if write:
@@ -139,12 +161,12 @@ if __name__ == "__main__":
         media_files = filter_files(media_files, VALID_IMAGE_TYPES)
     elif media_type == MEDIA_TYPE_VIDEO:
         media_files = filter_files(media_files, VALID_VIDEO_TYPES)
-        
+
     if not media_files and media_type != MEDIA_TYPE_CAM:
         print("Error: No media files passed or no valid media files in directory")
         exit()
 
-    OPENFACE_OUTPUT += format_output_string(media_files[0])
+    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0])
 
     if media_type == MEDIA_TYPE_IMAGE:
         media_files = filter_files(media_files, VALID_VIDEO_TYPES)

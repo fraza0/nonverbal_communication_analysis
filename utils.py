@@ -2,6 +2,7 @@ from os import listdir
 from os.path import isfile, join, splitext
 from math import ceil
 import numpy as np
+import logging
 
 
 def print_assertion_error(_obj, _type):
@@ -29,13 +30,13 @@ def fetch_files_from_directory(dir_path: list):
 
 def filter_files(files: list, valid_types: list, verbose: bool = False, include: str = None):
     """Filter files based on file type
-    
+
     Args:
         files (list): files list
         valid_types (list): valid file types
         verbose (bool, optional): verbose. Defaults to False.
         include (str, optional): filename must include given terms
-    
+
     Returns:
         [type]: valid files
     """
@@ -43,8 +44,12 @@ def filter_files(files: list, valid_types: list, verbose: bool = False, include:
 
     for _file in files:
         file_name, file_extension = splitext(_file)
-        if file_extension in valid_types and include in file_name:
-            valid_files.append(_file)
+        if file_extension in valid_types:
+            if include is not None:
+                if include in file_name:
+                    valid_files.append(_file)
+            else:
+                valid_files.append(_file)
         else:
             if verbose:
                 print("WARN: Not supported or invalid file type (%s). File must be {%s}" % (
@@ -54,6 +59,7 @@ def filter_files(files: list, valid_types: list, verbose: bool = False, include:
 
 def index_marks(nrows, chunk_size):
     return range(chunk_size, ceil(nrows / chunk_size) * chunk_size, chunk_size)
+
 
 def strided_split(df, chunk_size):
     indices = index_marks(df.shape[0], chunk_size)
