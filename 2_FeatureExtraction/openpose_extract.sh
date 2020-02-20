@@ -1,2 +1,1 @@
-# Need to change path to openpose executable
-./openpose --video $1
+./build/examples/openpose/openpose.bin --video $1 --write_json $2 --write_video $2/output.avi --render_pose 1 --number_people_max 4
