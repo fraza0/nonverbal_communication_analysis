@@ -1,0 +1,95 @@
+import os
+from datetime import datetime
+
+TESE_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+####################
+# OPENFACE_EXTRACT #
+####################
+
+# VARIABLES
+VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
+VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
+
+# PATHS
+# OpenFace
+# FaceLandmarkImg executable is for individual image analysis (can either contain one or more faces)
+# FaceLandmarkVidMulti is intended for sequence analysis that contain multiple faces
+# FeatureExtraction executable is used for sequence analysis that contain a single face
+OPENFACE_HOME = TESE_HOME + "/packages/openface"
+OPENFACE_BUILD = OPENFACE_HOME + "/build/bin/"
+OPENFACE_FACE_LANDMARK_IMG = OPENFACE_BUILD + "FaceLandmarkImg"
+OPENFACE_FACE_LANDMARK_VID = OPENFACE_BUILD + "FaceLandmarkVid"
+OPENFACE_FACE_LANDMARK_VID_MULTI = OPENFACE_BUILD + "FaceLandmarkVidMulti"
+OPENFACE_FEATURE_EXTRACTION = OPENFACE_BUILD + "FeatureExtraction"
+OPENFACE_OUTPUT_DIR = TESE_HOME + "/output/openface_output"
+
+NUM_EYE_LANDMARKS = 56
+NUM_FACE_LANDMARKS = 68
+NUM_NON_RIGID = 34
+
+# OpenFace Output Commands:
+# -au_static    : static models only rely on a single image to make an estimate of AU
+#                   presence or intensity, while dynamic ones calibrate to a person by performing person
+#                   normalization in the video, they also attempt to correct for over and under prediction of AUs.
+#                   By default OpenFace uses static models on images and dynamic models on image sequences and videos.
+#                   DOC Ref: https://github.com/TadasBaltrusaitis/OpenFace/wiki/Action-Units#static-vs-dynamic
+# -2Dfp         : output 2D landmarks in pixels
+# -3Dfp         : output 3D landmarks in milimeters
+# -pdmparams    : output rigid and non-rigid shape parameters:
+#                   * Rigid shape parameters describe the placement of the face in the image
+#                       (scaling, rotation, and translation);
+#                   * Non-rigid shape parameters on the other hand describe the deformation
+#                       of the face due to identity or expression (wider or taller faces, smiles, blinks etc.)
+# -pose         : output head pose (location and rotation)
+# -aus          : output the Facial Action Units
+# -gaze         : output gaze and related features (2D and 3D locations of eye landmarks)
+# -hogalign     : output extracted HOG feaure file
+# -simalign     : output similarity aligned images of the tracked faces
+# -nobadaligned : if outputting similarity aligned images, do not output from frames where detection failed
+#                   or is unreliable (thus saving some disk space)
+# -tracked      : output video with detected landmarks
+
+
+OPENFACE_OUTPUT_COMMANDS = ['-3Dfp', '-pdmparams',
+                            '-pose', '-aus', '-gaze']
+
+
+####################
+# OPENFACE_PROCESS #
+####################
+
+# VARIABLES
+VALID_FILE_TYPES = ['.csv']
+
+'''
+Emotions enconding. AUs are ordered by relevance to emotion identification according to 
+'''
+EMOTIONS_ENCONDING = {
+    'ANGER': ['AU23', 'AU07', 'AU17', 'AU04'],
+    'FEAR': ['AU20', 'AU04', 'AU01', 'AU05'],
+    'SADNESS': ['AU15', 'AU01', 'AU04', 'AU17'],
+    'HAPPINESS': ['AU12', 'AU06', 'AU26', 'AU10'],
+    'SURPRISE': ['AU02', 'AU01', 'AU05', 'AU26'],
+    'DISGUST': ['AU09', 'AU07', 'AU04', 'AU17']
+}
+
+FRAME_THRESHOLD = 5
+HEAD_MOV_VARIANCE_THRESHOLD = .3
+
+# Actually not needed as I could just calculate the center using the ROI info,
+# but I prefered to specify it, because of some cam specific offsets on the axes
+PERSON_IDENTIFICATION_GRID = {
+    '1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 230}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
+    '2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
+    '3': {'horizontal': {'x0': 70, 'x1': 570, 'y': 255}, 'vertical': {'x': 320, 'y0': 110, 'y1': 460}}
+}
+
+# OpenPose
+OPENPOSE_HOME = TESE_HOME + "/packages/openpose"
+OPENPOSE_OUT = "output/openpose_output"
+OPENPOSE_OUTPUT_FILE_TYPE = ['.json']
+
+# OpenCV
+OPENCV_HOME = TESE_HOME + "/packages/opencv"
+OPENCV_OUT = "output/opencv_output"
