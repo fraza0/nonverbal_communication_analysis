@@ -71,7 +71,7 @@ OPENFACE_OUTPUT_FLAGS = ['-3Dfp', '-pdmparams',
 ####################
 
 # VARIABLES
-VALID_OUTPUT_FILE_TYPES = ['.csv']
+VALID_OUTPUT_FILE_TYPES = ['.csv', '.json']
 
 '''
 Emotions enconding. AUs are ordered by relevance to emotion identification according to 
