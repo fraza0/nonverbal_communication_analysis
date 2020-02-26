@@ -10,7 +10,7 @@ TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 # VARIABLES
 VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
 VALID_TIMESTAMP_FILES = ['.txt']
-TIMESTAMP_THRESHOLD = 100
+TIMESTAMP_THRESHOLD = 100 #ms
 FOURCC = 'X264'
 FRAME_SKIP = 100
 
@@ -30,12 +30,12 @@ PERSON_IDENTIFICATION_GRID = {
 
 
 # PATHS
-DATASET_DIR = TESE_HOME + "/DATASET_DEP"
-DATASET_PC1 = DATASET_DIR + "/" + "Videos_LAB_PC1"
-DATASET_PC2 = DATASET_DIR + "/" + "Videos_LAB_PC2"
-DATASET_PC3 = DATASET_DIR + "/" + "Videos_LAB_PC3"
+DATASET_DIR = TESE_HOME + "/DATASET_DEP/"
+DATASET_PC1 = DATASET_DIR + "Videos_LAB_PC1/"
+DATASET_PC2 = DATASET_DIR + "Videos_LAB_PC2/"
+DATASET_PC3 = DATASET_DIR + "Videos_LAB_PC3/"
 
-DATASET_SYNC = DATASET_DIR + "/" + "SYNC"
+DATASET_SYNC = DATASET_DIR + "SYNC/"
 
 ####################
 # OPENFACE_EXTRACT #
@@ -43,7 +43,7 @@ DATASET_SYNC = DATASET_DIR + "/" + "SYNC"
 
 # VARIABLES
 VALID_IMAGE_TYPES = ['.jpg', '.jpeg', '.png']
-VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
+VALID_VIDEO_TYPES = ['.avi']
 
 # PATHS
 # OpenFace

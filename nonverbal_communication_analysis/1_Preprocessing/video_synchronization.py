@@ -4,12 +4,15 @@ import argparse
 import cv2
 import os
 import errno
+from pathlib import Path
+import numpy as np
+from itertools import combinations
 
 from nonverbal_communication_analysis.environment import (VALID_VIDEO_TYPES, VALID_TIMESTAMP_FILES,
-                           TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
-                           FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
+                                                          TIMESTAMP_THRESHOLD, DATASET_SYNC, FOURCC,
+                                                          FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
 
-from nonverbal_communication_analysis.utils import log
+from nonverbal_communication_analysis.utils import log, fetch_files_from_directory, filter_files
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
@@ -52,6 +55,7 @@ class CameraVideo:
         self.timestamps = open(timestamp_path, 'r')
         self.current_frame_idx = 0
         self.current_timestamp = 0
+        self.init_synced_frame = 0
         self.markers = dict()
         self.ret = None
         self.frame = None
@@ -83,9 +87,11 @@ def timestamp_align(cap_list: list):
         * (to_align: list, align_by: CameraVideo) - List of videos that need to be aligned, CameraVideo object of reference video
     """
     align_by = max(cap_list, key=lambda x: x.current_timestamp)
-    is_synced = all(align_by.current_timestamp - vid.current_timestamp <=
-                    TIMESTAMP_THRESHOLD for vid in cap_list)
+    combs = combinations([vid.current_timestamp for vid in cap_list], 2)
+    is_synced = max([abs(ts1-ts2)for ts1, ts2 in combs]) <= TIMESTAMP_THRESHOLD
+
     if is_synced == True:
+        print([(v.current_timestamp, v.current_frame_idx) for v in cap_list])
         if align_by.current_timestamp == 0:
             return True, None
         return True, True
@@ -122,20 +128,29 @@ def cut_from_until(vid, _from: int, _until: int):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Syncronize Videos')
-    parser.add_argument('-f', '--file', type=str, nargs=1, dest='video_files',
+    parser.add_argument('-f', '--file', type=str, dest='video_files',
                         action='append', help='Video file path')
+    parser.add_argument('-d', '--directory', type=str,
+                        dest='group_files', help='Group Video files path')
     parser.add_argument('-t' '--timestamp', type=str, nargs=1,
                         dest='timestamp_files', action='append', help='Media files')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
     args = vars(parser.parse_args())
 
-    if not args['video_files']:
+    video_files = args['video_files']
+    directory = args['group_files']
+    if not video_files and not directory:
         log('ERROR', 'No camera video files passed')
         exit()
 
-    video_files = [vf[0] for vf in args['video_files']]
-    timestamp_files = [tf[0] for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
+    if not args['video_files'] and args['group_files']:
+        args['video_files'] = [directory + filename for filename in filter_files(fetch_files_from_directory(
+            [directory]), valid_types=VALID_VIDEO_TYPES)]
+
+    video_files = [vf for vf in args['video_files']]
+    video_files.sort()
+    timestamp_files = [tf for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
         splitext(f)[0][::-1].replace('Video'[::-1], 'Timestamp'[::-1], 1)[::-1] + ".txt" for f in video_files]
     verbose = args['verbose']
 
@@ -158,7 +173,11 @@ if __name__ == "__main__":
         exit()
 
     cap_list = list()
-    out_dir = DATASET_SYNC+"/%s/" % video_files[0][-18:-8]
+    if not directory:
+        out_dir = DATASET_SYNC+"%s/" % video_files[0][-18:-8]
+    else:
+        out_dir = DATASET_SYNC + \
+            "%s" % str(Path(video_files[0]).parent).split('/')[-1]+"/"
 
     if verbose:
         print("Saving to: ", out_dir)
@@ -172,7 +191,7 @@ if __name__ == "__main__":
     for i in range(len(video_files)):
         _id = str(i+1)
         vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI[_id], PERSON_IDENTIFICATION_GRID[_id], timestamp_files[i], out_dir +
-                          "sync_vid"+_id+"_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
+                          "sync_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
         cap_list.append(vid)
 
     if not all(vid.cap.isOpened() for vid in cap_list):
@@ -181,8 +200,6 @@ if __name__ == "__main__":
 
     frame_count = 0
     marker_validator = {ord(str(i)): False for i in range(1, 9)}
-
-    INIT_TIME = datetime.now()
 
     while(all(vid.cap.isOpened() for vid in cap_list)):
 
@@ -208,13 +225,14 @@ if __name__ == "__main__":
             for vid in cap_list:
                 vid.current_frame_idx += FRAME_SKIP
                 vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
-                # vid.timestamps.seek(vid.timestamps.tell())
 
         if key == ord('a'):                         # Jump Back
             for vid in cap_list:
                 vid.current_frame_idx -= FRAME_SKIP
+                if vid.current_frame_idx < vid.init_synced_frame:
+                    vid.current_frame_idx = vid.init_synced_frame
+
                 vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
-                # vid.timestamps.seek(vid.timestamps.tell())
 
         if key >= ord('1') and key <= ord('8'):
             print("Marker %s set" % chr(key))
@@ -223,8 +241,11 @@ if __name__ == "__main__":
                 vid.markers[key] = vid.current_frame_idx
 
         if all([vid.ret for vid in cap_list]):
-            for vid in cap_list:
-                if alignment == True and align_by is not None:  # Videos are in sync
+            if alignment == True and align_by is not None:  # Videos are in sync
+                for vid in cap_list:
+                    if vid.init_synced_frame == 0:
+                        vid.init_synced_frame = vid.current_frame_idx
+
                     roi = vid.roi
                     grid = vid.grid
                     grid_horitonzal_axis = grid['horizontal']
