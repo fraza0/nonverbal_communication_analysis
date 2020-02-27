@@ -17,7 +17,7 @@ FRAME_SKIP = 100
 CAM_ROI = {
     '1': {'xmin': 130, 'xmax': 520, 'ymin': 150, 'ymax': 400},
     '2': {'xmin': 80, 'xmax': 510, 'ymin': 110, 'ymax': 420},
-    '3': {'xmin': 70, 'xmax': 570, 'ymin': 110, 'ymax': 460}
+    '3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 460}
 }
 
 # Actually not needed as I could just calculate the center using the ROI info,
@@ -25,7 +25,7 @@ CAM_ROI = {
 PERSON_IDENTIFICATION_GRID = {
     '1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 230}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
     '2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
-    '3': {'horizontal': {'x0': 70, 'x1': 570, 'y': 255}, 'vertical': {'x': 320, 'y0': 110, 'y1': 460}}
+    '3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
 }
 
 

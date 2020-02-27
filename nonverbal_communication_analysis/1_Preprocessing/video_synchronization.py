@@ -91,7 +91,7 @@ def timestamp_align(cap_list: list):
     is_synced = max([abs(ts1-ts2)for ts1, ts2 in combs]) <= TIMESTAMP_THRESHOLD
 
     if is_synced == True:
-        print([(v.current_timestamp, v.current_frame_idx) for v in cap_list])
+        # print([(v.current_timestamp, v.current_frame_idx) for v in cap_list])
         if align_by.current_timestamp == 0:
             return True, None
         return True, True
