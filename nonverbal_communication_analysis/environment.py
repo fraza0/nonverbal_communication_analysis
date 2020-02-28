@@ -87,3 +87,9 @@ EMOTIONS_ENCONDING = {
 
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
+
+##############
+# STATISTICS #
+##############
+
+STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/plots/'

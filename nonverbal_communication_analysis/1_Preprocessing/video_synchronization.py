@@ -47,8 +47,6 @@ class CameraVideo:
     output_path: output path
     """
 
-    current_timestamp = 0
-
     def __init__(self, title: str, video_path: str, roi: dict, grid: dict, timestamp_path: str, output_path: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
@@ -210,6 +208,7 @@ if __name__ == "__main__":
             # Read frame
             vid.ret, vid.frame = vid.cap.read()
             vid.current_frame_idx += 1
+            # print(vid.current_frame_idx, vid.cap.get(cv2.CAP_PROP_POS_MSEC))
             # Update current_timestamp
             file_ts = vid.timestamps.readline()
             vid.current_timestamp = int(file_ts) if file_ts is not '' else -1

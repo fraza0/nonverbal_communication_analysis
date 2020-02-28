@@ -2,8 +2,11 @@ import argparse
 import pandas as pd
 from os.path import splitext
 from nonverbal_communication_analysis.utils import fetch_files_from_directory, filter_files, log
-from nonverbal_communication_analysis.environment import VALID_OUTPUT_FILE_TYPES
+from nonverbal_communication_analysis.environment import VALID_OUTPUT_FILE_TYPES, TESE_HOME
 from pandas_profiling import ProfileReport
+import matplotlib.pyplot as plt
+
+STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/plots/'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -34,11 +37,16 @@ if __name__ == "__main__":
 
     for file in input_files:
         df = pd.read_csv(file)
+        df.rename(columns=lambda x: x.strip(), inplace=True)
         df_description = df.describe()
-        if verbose:
-            print(df_description)
-        if write:
-            filename, _ = splitext(file)
-            df_description.to_csv(filename+"_description.csv")
-            profile = ProfileReport(df, minimal=True)
-            profile.to_file(output_file=filename+"_description.html")
+        confidence_over_time = df.plot.line(x='timestamp', y='success', title='success over time')
+        fig = confidence_over_time.get_figure()
+        fig.savefig(STATISTICS_PATH+'confidence_time.png')
+        
+        #if verbose:
+            #print(df_description)
+        #if write:
+            #filename, _ = splitext(file)
+            #df_description.to_csv(filename+"_description.csv")
+            #profile = ProfileReport(df, minimal=True)
+            #profile.to_file(output_file=filename+"_description.html")
