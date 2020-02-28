@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join, splitext
+from pathlib import Path
 
 from nonverbal_communication_analysis.environment import (
     OPENFACE_FACE_LANDMARK_IMG, OPENFACE_FACE_LANDMARK_VID_MULTI,
@@ -39,21 +40,24 @@ OpenFace Output Commands:
 """
 
 
-def format_output_string(file_path):
+def format_output_string(file_path: str, directory: bool = False):
 
     output_string = ""
 
-    if "Videopc" not in file_path:
-        output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
-        print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (
-            OPENFACE_OUTPUT_DIR + output_string))
+    if directory:
+        output_string = str(Path(file_path).parent).split('/')[-1]
     else:
-        file_timestamp = re.compile(
-            "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
-        output_string = "%s_%s_%s_%s" % (
-            file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
-        print("INFO: Output directory: %s" %
-              (OPENFACE_OUTPUT_DIR + output_string))
+        if "Videopc" not in file_path:
+            output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
+            print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (
+                OPENFACE_OUTPUT_DIR + output_string))
+        else:
+            file_timestamp = re.compile(
+                "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
+            output_string = "%s_%s_%s_%s" % (
+                file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
+            print("INFO: Output directory: %s" %
+                  (OPENFACE_OUTPUT_DIR + output_string))
 
     return output_string
 
@@ -159,7 +163,8 @@ if __name__ == "__main__":
     write = args['write']
 
     if directory:
-        media_files = fetch_files_from_directory(media_files)
+        media_files = [media_files[0] +
+                       file for file in fetch_files_from_directory(media_files)]
 
     if media_type == MEDIA_TYPE_IMAGE:
         media_files = filter_files(media_files, VALID_IMAGE_TYPES)
@@ -170,7 +175,7 @@ if __name__ == "__main__":
         print("Error: No media files passed or no valid media files in directory")
         exit()
 
-    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0])
+    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0], directory)
 
     if media_type == MEDIA_TYPE_IMAGE:
         media_files = filter_files(media_files, VALID_VIDEO_TYPES)

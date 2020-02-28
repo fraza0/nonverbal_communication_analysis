@@ -67,6 +67,12 @@ OPENFACE_OUTPUT_FLAGS = ['-3Dfp', '-pdmparams',
 
 
 ####################
+# OPENFACE RELATED #
+####################
+
+OPENPOSE_OUTPUT_DIR = TESE_HOME + "/output/openpose_output/extract/"
+
+####################
 # OPENFACE_PROCESS #
 ####################
 
