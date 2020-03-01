@@ -1,8 +1,8 @@
 # Custom
 mei_tese/*
 packages/*/
-input/*
-output/*
+Openface/*
+Openpose/*
 DATASET_DEP/*
 test.py
 NOTES.md
