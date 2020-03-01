@@ -94,6 +94,12 @@ EMOTIONS_ENCONDING = {
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
 
+######################
+# OPENPOSE FILTERING #
+######################
+
+CONFIDENCE_THRESHOLD = 0.55
+
 ##############
 # STATISTICS #
 ##############
