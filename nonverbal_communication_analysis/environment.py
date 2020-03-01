@@ -1,6 +1,10 @@
 import os
 from datetime import datetime
 
+###########
+# GENERAL #
+###########
+
 TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 
 #########################
@@ -8,7 +12,7 @@ TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 #########################
 
 # VARIABLES
-VALID_VIDEO_TYPES = ['.avi', '.wmv', '.mp4']
+VALID_VIDEO_TYPES = ['.avi']
 VALID_TIMESTAMP_FILES = ['.txt']
 TIMESTAMP_THRESHOLD = 100 #ms
 FOURCC = 'X264'
@@ -28,14 +32,13 @@ PERSON_IDENTIFICATION_GRID = {
     '3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
 }
 
+#################
+# DATASET PATHS #
+#################
 
-# PATHS
 DATASET_DIR = TESE_HOME + "/DATASET_DEP/"
-DATASET_PC1 = DATASET_DIR + "Videos_LAB_PC1/"
-DATASET_PC2 = DATASET_DIR + "Videos_LAB_PC2/"
-DATASET_PC3 = DATASET_DIR + "Videos_LAB_PC3/"
-
 DATASET_SYNC = DATASET_DIR + "SYNC/"
+
 
 ####################
 # OPENFACE_EXTRACT #
@@ -56,7 +59,7 @@ OPENFACE_FACE_LANDMARK_IMG = OPENFACE_BUILD + "FaceLandmarkImg"
 OPENFACE_FACE_LANDMARK_VID = OPENFACE_BUILD + "FaceLandmarkVid"
 OPENFACE_FACE_LANDMARK_VID_MULTI = OPENFACE_BUILD + "FaceLandmarkVidMulti"
 OPENFACE_FEATURE_EXTRACTION = OPENFACE_BUILD + "FeatureExtraction"
-OPENFACE_OUTPUT_DIR = TESE_HOME + "/output/openface_output/extract/"
+OPENFACE_OUTPUT_DIR = TESE_HOME + "/Openface/"
 
 NUM_EYE_LANDMARKS = 56
 NUM_FACE_LANDMARKS = 68
@@ -64,13 +67,6 @@ NUM_NON_RIGID = 34
 
 OPENFACE_OUTPUT_FLAGS = ['-3Dfp', '-pdmparams',
                          '-pose', '-aus', '-gaze']
-
-
-####################
-# OPENFACE RELATED #
-####################
-
-OPENPOSE_OUTPUT_DIR = TESE_HOME + "/output/openpose_output/extract/"
 
 ####################
 # OPENFACE_PROCESS #
@@ -94,6 +90,12 @@ EMOTIONS_ENCONDING = {
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
 
+####################
+# OPENPOSE RELATED #
+####################
+
+OPENPOSE_OUTPUT_DIR = TESE_HOME + "/Openpose/"
+
 ######################
 # OPENPOSE FILTERING #
 ######################
@@ -104,4 +106,4 @@ CONFIDENCE_THRESHOLD = 0.55
 # STATISTICS #
 ##############
 
-STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/plots/'
+STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/'
