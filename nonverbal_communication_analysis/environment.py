@@ -1,11 +1,15 @@
 import os
 from datetime import datetime
 
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import Point
+
 ###########
 # GENERAL #
 ###########
 
 TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
+CONFIG_FILE = TESE_HOME + 'config.yaml'
 
 #########################
 # VIDEO SYNCHRONIZATION #
@@ -14,7 +18,7 @@ TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 # VARIABLES
 VALID_VIDEO_TYPES = ['.avi']
 VALID_TIMESTAMP_FILES = ['.txt']
-TIMESTAMP_THRESHOLD = 100 #ms
+TIMESTAMP_THRESHOLD = 100  # ms
 FOURCC = 'X264'
 FRAME_SKIP = 100
 
@@ -101,6 +105,36 @@ OPENPOSE_OUTPUT_DIR = TESE_HOME + "/Openpose/"
 ######################
 
 CONFIDENCE_THRESHOLD = 0.55
+PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
+RELEVANT_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
+
+ROOM_GEOMETRY_REFERENCE = {
+    1: Polygon([(0, 0), (-1, 0), (-1, 1), (0, 1)]),
+    2: Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
+    3: Polygon([(0, 0), (0, -1), (-1, -1), (-1, 0)]),
+    4: Polygon([(0, 0), (1, 0), (1, -1), (0, -1)]),
+}
+
+CAMERA_ROOM_GEOMETRY = {
+    'pc1': {
+        1: ROOM_GEOMETRY_REFERENCE[2],
+        2: ROOM_GEOMETRY_REFERENCE[4],
+        3: ROOM_GEOMETRY_REFERENCE[1],
+        4: ROOM_GEOMETRY_REFERENCE[3]
+    },
+    'pc2': {
+        1: ROOM_GEOMETRY_REFERENCE[4],
+        2: ROOM_GEOMETRY_REFERENCE[3],
+        3: ROOM_GEOMETRY_REFERENCE[2],
+        4: ROOM_GEOMETRY_REFERENCE[1]
+    },
+    'pc3': {
+        1: ROOM_GEOMETRY_REFERENCE[1],
+        2: ROOM_GEOMETRY_REFERENCE[2],
+        3: ROOM_GEOMETRY_REFERENCE[3],
+        4: ROOM_GEOMETRY_REFERENCE[4]
+    }
+}
 
 ##############
 # STATISTICS #
