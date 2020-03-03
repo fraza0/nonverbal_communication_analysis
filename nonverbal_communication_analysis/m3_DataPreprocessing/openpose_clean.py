@@ -12,7 +12,8 @@ from nonverbal_communication_analysis.environment import (
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
 
-from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, ExperimentCameraFrame
+from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
+from nonverbal_communication_analysis.m0_Classes.ExperimentFrame import ExperimentCameraFrame
 
 
 def main(input_directories: list, verbose: bool):
