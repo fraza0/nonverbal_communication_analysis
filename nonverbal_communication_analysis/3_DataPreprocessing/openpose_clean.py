@@ -37,7 +37,8 @@ def main(input_directories: list, verbose: bool):
             with open(file) as json_data:
                 data = json.load(json_data)
                 file_people_df = json_normalize(data['people'])
-                frame = ExperimentCameraFrame(camera, frame_counter, file_people_df)
+                frame = ExperimentCameraFrame(
+                    camera, frame_counter, file_people_df)
                 experiment.people[camera].append(frame)
 
     print(experiment)
