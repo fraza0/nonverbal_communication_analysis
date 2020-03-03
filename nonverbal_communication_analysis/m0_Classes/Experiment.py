@@ -1,6 +1,6 @@
 from nonverbal_communication_analysis.environment import DATASET_SYNC, PEOPLE_FIELDS
 import pandas as pd
-from nonverbal_communication_analysis.s0_Classes.Subject import Subject
+from nonverbal_communication_analysis.m0_Classes.Subject import Subject
 
 
 class Experiment(object):
