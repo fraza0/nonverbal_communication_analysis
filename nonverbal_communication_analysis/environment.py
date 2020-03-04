@@ -106,7 +106,8 @@ OPENPOSE_OUTPUT_DIR = TESE_HOME + "/Openpose/"
 
 CONFIDENCE_THRESHOLD = 0.55
 PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
-RELEVANT_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
+RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
+RELEVANT_FACE_KEYPOINTS = range(0, 70)
 
 ROOM_GEOMETRY_REFERENCE = {
     1: Polygon([(0, 0), (-1, 0), (-1, 1), (0, 1)]),

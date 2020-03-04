@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 
 from nonverbal_communication_analysis.environment import PEOPLE_FIELDS
@@ -18,6 +20,18 @@ class ExperimentCameraFrame(object):
                 Subject(self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d']))
 
         return subject_list
+
+    def to_json(self):
+
+        obj = {
+            "frame": self.frame,
+            "subjects": [subject.to_json() for subject in self.subjects]
+        }
+
+        return obj
+
+    def from_json(self):
+        return None
 
     def __str__(self):
         return "ExperimentFrame { frame: %s, subjects: %s }" % (self.frame, [str(subject) for subject in self.subjects])
