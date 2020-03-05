@@ -43,7 +43,7 @@ def main(input_directories: list, single_step: bool, verbose: bool = False):
         # frame_counter is equal to frame number written on file name as we sort the files.
         frame_counter = 0
         last_checkpoint = 0
-        for file in input_files[:10]:
+        for file in input_files[:]:
             if verbose:
                 progress = round(frame_counter / total_files * 100)
                 if progress % 10 == 0:
@@ -76,7 +76,6 @@ def main(input_directories: list, single_step: bool, verbose: bool = False):
 
 
 if __name__ == "__main__":
-    # TODO: adjust program to receive GROUP directory with 3 cameras' outputs
     parser = argparse.ArgumentParser(
         description='Extract facial data using OpenFace')
     parser.add_argument('openpose_data_dir', nargs=3, type=str,
