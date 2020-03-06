@@ -12,11 +12,11 @@ from nonverbal_communication_analysis.environment import (
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
 
-from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
+from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, ExperimentEncoder
 from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import ExperimentCameraFrame
 
 
-def main(input_directories: list, single_step: bool, verbose: bool = False):
+def main(input_directories: list, single_step: bool, prettify: bool, verbose: bool = False):
     group_id = re.match('Openpose/(.*)/output', input_directories[0]).group(1)
     output_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean"
     experiment = Experiment(group_id)
@@ -69,7 +69,10 @@ def main(input_directories: list, single_step: bool, verbose: bool = False):
 
     output_file = output_dir + "/" + group_id+"_clean.json"
     with open(output_file, 'w') as output:
-        output.write(experiment.to_json())
+        if prettify:
+            json.dump(json.loads(experiment.to_json()), output, indent=2)
+        else:
+            output.write(experiment.to_json())
     output.close()
 
     return
@@ -84,6 +87,8 @@ if __name__ == "__main__":
                         help='Output file path and filename')
     parser.add_argument('-ss', '--single-step', dest="single_step", action='store_true',
                         help='Number of processing steps. Single or Multiple')
+    parser.add_argument('-p', '--prettify', dest="prettify", action='store_true',
+                        help='Output pretty printed JSON')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
 
@@ -91,6 +96,7 @@ if __name__ == "__main__":
 
     input_directory = args['openpose_data_dir']
     single_step = args['single_step']
+    prettify = args['prettify']
     verbose = args['verbose']
 
-    main(input_directory, single_step, verbose)
+    main(input_directory, single_step, prettify, verbose)
