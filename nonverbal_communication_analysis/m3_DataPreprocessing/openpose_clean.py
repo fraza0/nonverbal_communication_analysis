@@ -12,7 +12,7 @@ from nonverbal_communication_analysis.environment import (
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
 
-from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, ExperimentEncoder
+from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
 from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import ExperimentCameraFrame
 
 
@@ -43,7 +43,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
         # frame_counter is equal to frame number written on file name as we sort the files.
         frame_counter = 0
         last_checkpoint = 0
-        for file in input_files[:]:
+        for file in input_files[-1:]:
             if verbose:
                 progress = round(frame_counter / total_files * 100)
                 if progress % 10 == 0:

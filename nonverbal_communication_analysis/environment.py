@@ -29,7 +29,7 @@ CAM_ROI = {
 # Actually not needed as I could just calculate the center using the ROI info,
 # but I prefered to specify it, because of some cam specific offsets on the axis
 PERSON_IDENTIFICATION_GRID = {
-    'pc1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 280}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
+    'pc1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 260}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
     'pc2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
     'pc3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
 }

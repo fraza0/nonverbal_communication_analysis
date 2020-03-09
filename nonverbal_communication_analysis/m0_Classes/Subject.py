@@ -1,13 +1,19 @@
 import json
 
+import cv2
+import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import cm
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
-    RELEVANT_POSE_KEYPOINTS, ROOM_GEOMETRY_REFERENCE)
+    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID)
 from nonverbal_communication_analysis.utils import log
+
+matplotlib.use('QT5Agg')
 
 
 def is_relevant_pose_keypoint(entry):
@@ -39,6 +45,7 @@ def parse_keypoints(_type: str, keypoints: list):
 
 
 class Subject(object):
+
     def __init__(self, camera: str, face_features: list, pose_features: list):
         self.camera = camera
         self.pose = {
@@ -49,20 +56,77 @@ class Subject(object):
             "openpose": self.parse_face_features(face_features),
             "openface": list()
         }
-        self._id = -1  # self.set_subject_id(camera,
-        #    self.pose_features, self.face_features)  # Self assigned attribute
+        self._id = -1
 
-    def set_subject_id(self, camera, pose_features, face_features):
-        id_weighing = dict().fromkeys(ROOM_GEOMETRY_REFERENCE.keys(), 0)
+    def set_id(self, _id):
+        self._id = _id
 
-        for keypoint in pose_features.values():
+    def identify_subject(self):
+        # TODO: possibly need to complement this method
+        # with densepose and openface data
+        id_weighing = dict().fromkeys(
+            SUBJECT_IDENTIFICATION_GRID[self.camera].keys(), 0)
+        openpose_pose_features = self.pose['openpose']
+        # openpose_face_features = self.face['openpose']
+
+        for keypoint in openpose_pose_features.values():
+            # print(keypoint)
             keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
             point = Point(keypoint_x, keypoint_y)
-            for quadrant in CAMERA_ROOM_GEOMETRY[camera]:
-                if point.intersects(CAMERA_ROOM_GEOMETRY[camera][quadrant]):
+            for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
+                # print(quadrant, polygon)
+                if point.intersects(polygon):
                     id_weighing[quadrant] += keypoint_confidence
 
-        return max(id_weighing, key=id_weighing.get)
+        # print((id_weighing, max(id_weighing, key=id_weighing.get)))
+
+        if False:
+            pose_keypoints_df = pd.DataFrame(
+                openpose_pose_features.values(), columns=['x', 'y', 'c'])
+            _, ax = plt.subplots()
+            image = cv2.imread(
+                '/home/fraza0/Desktop/MEI/TESE/nonverbal_communication_analysis/DATASET_DEP/SYNC/3CLC9VWR/last_frame_vid%s.png' % self.camera)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            ax.set_xlim(-1, 1)
+            ax.set_ylim(1, -1)
+            ax.imshow(image, aspect='auto',
+                      extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
+            ax.set_title('Subjects Keypoints Position')
+            for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
+                pol_x, pol_y = polygon.exterior.xy
+                plt.plot(pol_x, pol_y)
+            ax.scatter(
+                x=pose_keypoints_df['x'], y=pose_keypoints_df['y'], c=pose_keypoints_df['c'], cmap=cm.rainbow)
+            plt.show()
+
+        return sorted(id_weighing, key=id_weighing.get, reverse=True)
+
+    def is_valid_keypoint(self, keypoint: list):
+        return keypoint != [-1, -1, 0]
+
+    def get_valid_keypoints(self, key: str = 'openpose'):
+        valid_keypoints = dict()
+        for keypoint_index, keypoint_value in self.pose[key].items():
+            if self.is_valid_keypoint(keypoint_value):
+                valid_keypoints[keypoint_index] = keypoint_value
+
+        return valid_keypoints
+
+    def has_keypoints(self, keypoints: list, key: str = 'openpose'):
+        has_keypoints = False
+        pose = self.pose[key]
+
+        for keypoint_index in keypoints.keys():
+            if self.is_valid_keypoint(pose[keypoint_index]):
+                has_keypoints = True
+                break
+
+        return has_keypoints
+
+    def attach_keypoints(self, features: list, key: str = 'openpose'):
+        merged_keypoints = {**self.pose[key], **features}
+        self.pose[key] = merged_keypoints
+        return True
 
     def parse_face_features(self, face_features):
         keypoints = parse_keypoints('FACE', face_features)
@@ -87,4 +151,4 @@ class Subject(object):
         return None
 
     def __str__(self):
-        return "Subject { id: %s, pose: %s }" % (self._id, self.pose)
+        return "Subject { id: %s, pose: %s }" % (self._id, "(...)")
