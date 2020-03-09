@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     for i in range(len(video_files)):
         _id = str(i+1)
-        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI[_id], PERSON_IDENTIFICATION_GRID[_id], timestamp_files[i], out_dir +
+        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI['pc'+_id], PERSON_IDENTIFICATION_GRID['pc'+_id], timestamp_files[i], out_dir +
                           "sync_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
         cap_list.append(vid)
 

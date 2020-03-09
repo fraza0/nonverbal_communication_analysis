@@ -3,32 +3,9 @@ from os.path import isfile, join, splitext
 from math import ceil
 import numpy as np
 import logging
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import Point
 
-# print("UTILS HERE")
-
-# # create logger
-# logger = logging.getLogger('simple_example')
-# logger.setLevel(logging.DEBUG)
-
-# # create console handler and set level to debug
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.DEBUG)
-
-# # create formatter
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# # add formatter to ch
-# ch.setFormatter(formatter)
-
-# # add ch to logger
-# logger.addHandler(ch)
-
-# # 'application' code
-# logger.debug('debug message')
-# logger.info('info message')
-# logger.warn('warn message')
-# logger.error('error message')
-# logger.critical('critical message')
 
 def log(_type: str, msg: str):
     _type = _type.upper()
@@ -99,3 +76,41 @@ def index_marks(nrows, chunk_size):
 def strided_split(df, chunk_size):
     indices = index_marks(df.shape[0], chunk_size)
     return np.split(df, indices)
+
+
+def set_quadrants(center, _min=-1, _max=1):
+    x = center[0]
+    y = center[1]
+    q1 = Polygon([(center), (_min, y), (_min, _min), (x, _min)])
+    q2 = Polygon([(center), (x, _min), (_max, _min), (_max, y)])
+    q3 = Polygon([(center), (x, _max), (_min, _max), (_min, y)])
+    q4 = Polygon([(center), (_max, y), (_max, _max), (x, _max)])
+
+    quadrants = {
+        1: q1,
+        2: q2,
+        3: q3,
+        4: q4
+    }
+    return quadrants
+
+
+def person_identification_grid_rescaling(identification_grid, roi_grid, a: int = -1, b: int = 1):
+    subject_identification_grid = dict()
+    for camera, grid in identification_grid.items():
+        x_min, x_max = roi_grid[camera]['xmin'], roi_grid[camera]['xmax']
+        y_min, y_max = roi_grid[camera]['ymin'], roi_grid[camera]['ymax']
+        x_max_min = x_max - x_min
+        y_max_min = y_max - y_min
+        x_grid = grid['vertical']['x']
+        y_grid = grid['horizontal']['y']
+
+        x_rescaled = a + (((x_grid - x_min)*(b-a)) / x_max_min)
+        y_rescaled = a + (((y_grid - y_min)*(b-a)) / y_max_min)
+
+        print(camera, (x_grid, y_grid), (x_rescaled, y_rescaled))
+
+        center = (x_rescaled, y_rescaled)
+        subject_identification_grid[camera] = set_quadrants(center)
+
+    return subject_identification_grid

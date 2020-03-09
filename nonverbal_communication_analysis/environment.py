@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
-
-from shapely.geometry.polygon import Polygon
-from shapely.geometry import Point
+from nonverbal_communication_analysis.utils import person_identification_grid_rescaling
 
 ###########
 # GENERAL #
@@ -23,17 +21,17 @@ FOURCC = 'X264'
 FRAME_SKIP = 100
 
 CAM_ROI = {
-    '1': {'xmin': 130, 'xmax': 520, 'ymin': 150, 'ymax': 400},
-    '2': {'xmin': 80, 'xmax': 510, 'ymin': 110, 'ymax': 420},
-    '3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 460}
+    'pc1': {'xmin': 130, 'xmax': 520, 'ymin': 150, 'ymax': 400},
+    'pc2': {'xmin': 80, 'xmax': 510, 'ymin': 110, 'ymax': 420},
+    'pc3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 460}
 }
 
 # Actually not needed as I could just calculate the center using the ROI info,
 # but I prefered to specify it, because of some cam specific offsets on the axis
 PERSON_IDENTIFICATION_GRID = {
-    '1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 230}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
-    '2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
-    '3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
+    'pc1': {'horizontal': {'x0': 130, 'x1': 520, 'y': 280}, 'vertical': {'x': 315, 'y0': 150, 'y1': 400}},
+    'pc2': {'horizontal': {'x0': 80, 'x1': 510, 'y': 265}, 'vertical': {'x': 295, 'y0': 110, 'y1': 420}},
+    'pc3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
 }
 
 #################
@@ -109,33 +107,31 @@ PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
 RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
 RELEVANT_FACE_KEYPOINTS = range(0, 70)
 
-ROOM_GEOMETRY_REFERENCE = {
-    1: Polygon([(0, 0), (-1, 0), (-1, 1), (0, 1)]),
-    2: Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
-    3: Polygon([(0, 0), (0, -1), (-1, -1), (-1, 0)]),
-    4: Polygon([(0, 0), (1, 0), (1, -1), (0, -1)]),
-}
+
+SUBJECT_IDENTIFICATION_GRID = person_identification_grid_rescaling(
+    PERSON_IDENTIFICATION_GRID, CAM_ROI)
 
 CAMERA_ROOM_GEOMETRY = {
     'pc1': {
-        1: ROOM_GEOMETRY_REFERENCE[2],
-        2: ROOM_GEOMETRY_REFERENCE[4],
-        3: ROOM_GEOMETRY_REFERENCE[1],
-        4: ROOM_GEOMETRY_REFERENCE[3]
+        1: SUBJECT_IDENTIFICATION_GRID['pc1'][2],
+        2: SUBJECT_IDENTIFICATION_GRID['pc1'][4],
+        3: SUBJECT_IDENTIFICATION_GRID['pc1'][1],
+        4: SUBJECT_IDENTIFICATION_GRID['pc1'][3]
     },
     'pc2': {
-        1: ROOM_GEOMETRY_REFERENCE[4],
-        2: ROOM_GEOMETRY_REFERENCE[3],
-        3: ROOM_GEOMETRY_REFERENCE[2],
-        4: ROOM_GEOMETRY_REFERENCE[1]
+        1: SUBJECT_IDENTIFICATION_GRID['pc2'][4],
+        2: SUBJECT_IDENTIFICATION_GRID['pc2'][3],
+        3: SUBJECT_IDENTIFICATION_GRID['pc2'][2],
+        4: SUBJECT_IDENTIFICATION_GRID['pc2'][1]
     },
     'pc3': {
-        1: ROOM_GEOMETRY_REFERENCE[1],
-        2: ROOM_GEOMETRY_REFERENCE[2],
-        3: ROOM_GEOMETRY_REFERENCE[3],
-        4: ROOM_GEOMETRY_REFERENCE[4]
+        1: SUBJECT_IDENTIFICATION_GRID['pc3'][1],
+        2: SUBJECT_IDENTIFICATION_GRID['pc3'][2],
+        3: SUBJECT_IDENTIFICATION_GRID['pc3'][3],
+        4: SUBJECT_IDENTIFICATION_GRID['pc3'][4]
     }
 }
+
 
 ##############
 # STATISTICS #
