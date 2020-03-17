@@ -19,19 +19,46 @@ from nonverbal_communication_analysis.utils import log
 
 
 def is_relevant_pose_keypoint(entry):
+    """Check if pose keypoint is valid
+
+    Args:
+        entry (enumerate): keypoints enumerate
+
+    Returns:
+        bool: True if keypoint is valid. False otherwise
+    """
     if entry[0] in RELEVANT_POSE_KEYPOINTS:
         return True
     return False
 
 
 def is_relevant_face_keypoint(entry):
+    """Check if face keypoint is valid
+
+    Args:
+        entry (enumerate): keypoints enumerate
+
+    Returns:
+        bool: True if keypoint is valid. False otherwise
+    """
     if entry[0] in RELEVANT_FACE_KEYPOINTS:
         return True
     return False
 
 
-def parse_keypoints(_type: str, keypoints: list):
-    # [x, y, c]
+def parse_keypoints(_type: str, keypoints: enumerate):
+    """Parsing keypoints.
+    Keypoints are composed of 3 value list [x, y, c]
+    x, y coordinates and confidence coefficient
+
+    Args:
+        _type (str): keypoint type (POSE or FACE)
+        keypoints (enumerate): keypoints enumerate
+
+    Returns:
+        list: List of filtered keypoints
+    """
+
     keypoints = [keypoints[x:x+3] for x in range(0, len(keypoints), 3)]
     if _type.upper() == 'POSE':
         keypoints_filtered = dict(
@@ -42,11 +69,14 @@ def parse_keypoints(_type: str, keypoints: list):
     else:
         log("ERROR", "Invalid keypoint type")
         return
-    # keypoints_filtered = [keypoint for keypoint in enumerate(keypoints) if keypoint[0] in relevant_keypoints]
     return keypoints_filtered
 
 
 class Subject(object):
+    """Subject class.
+    Subject is a person after pose data parsing/processing
+    From now on, every person in the experiment is called a Subject
+    """
 
     def __init__(self, camera: str, face_features: list, pose_features: list, verbose: bool = False):
         self.camera = camera
@@ -75,6 +105,19 @@ class Subject(object):
         self.__quadrant = value
 
     def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: Visualizer = None):
+        """Allocate subject to quadrant
+
+        Args:
+            allocated_subjects (dict): Already allocated subjects
+            frame (int): Frame number
+            vis (Visualizer, optional): Visualizer instance. Defaults to None. If None, visualization will not be available
+
+        Returns:
+            dict: Allocated Subjects in quadrants
+
+        See also:
+            80963_18032020_WEEKLY_REPORT - Report containing flowchart of subject allocation process
+        """
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
@@ -134,8 +177,12 @@ class Subject(object):
         return allocated_subjects
 
     def assign_quadrant(self):
-        # TODO: possibly need to complement this method
-        # with densepose and openface data
+        """Assign subject to quadrant based on its keypoints position
+
+        Returns:
+            dict: Quadrant identification and associated confidence
+        """
+        # TODO: possibly need to complement this method with densepose and openface data
         id_weighing = dict().fromkeys(
             SUBJECT_IDENTIFICATION_GRID[self.camera].keys(), 0)
         openpose_pose_features = self.pose['openpose']
@@ -156,9 +203,26 @@ class Subject(object):
         return identification_confidence
 
     def is_valid_keypoint(self, keypoint: list):
+        """Check if keypoint is valid
+
+        Args:
+            keypoint (list): Keypoint list
+
+        Returns:
+            bool: True if keypoint is valid. False otherwise
+        """
         return keypoint != [-1, -1, 0]
 
     def is_person(self, key='openpose'):
+        """Check if subject is a person. If it's not, might be a loose part.
+        Person is considered a subject with upper trunk keypoints
+
+        Args:
+            key (str, optional): Defaults to 'openpose'.
+
+        Returns:
+            bool: True if subject is a person. False otherwise
+        """
         subject_keypoints = self.pose[key]
         for keypoint in VALID_SUBJECT_POSE_KEYPOINTS:
             if not self.is_valid_keypoint(subject_keypoints[keypoint]):
@@ -167,6 +231,14 @@ class Subject(object):
         return True
 
     def get_valid_keypoints(self, key: str = 'openpose'):
+        """Get valid keypoints
+
+        Args:
+            key (str, optional): Defaults to 'openpose'.
+
+        Returns:
+            dict: Valid index and keypoints's value
+        """
         valid_keypoints = dict()
         for keypoint_index, keypoint_value in self.pose[key].items():
             if self.is_valid_keypoint(keypoint_value):
@@ -175,6 +247,15 @@ class Subject(object):
         return valid_keypoints
 
     def has_keypoints(self, keypoints: list, key: str = 'openpose'):
+        """Check if subject has specific keypoints
+
+        Args:
+            keypoints (list): Keypoints list a subject should contain
+            key (str, optional): Defaults to 'openpose'.
+
+        Returns:
+            bool: True if Subject contains keypoints. False otherwise
+        """
         has_keypoints = False
         pose = self.pose[key]
 
@@ -186,21 +267,51 @@ class Subject(object):
         return has_keypoints
 
     def attach_keypoints(self, features: list, key: str = 'openpose'):
+        """Attach Subject keypoints.
+        This might happen when subject instance is not a person, but instead is a loose part.
+
+        Args:
+            features (list): Subject pose features
+            key (str, optional): Defaults to 'openpose'.
+
+        Returns:
+            bool: True for attachment confirmation
+        """
         merged_keypoints = {**self.pose[key], **features}
         self.pose[key] = merged_keypoints
         return True
 
-    def parse_face_features(self, face_features):
+    def parse_face_features(self, face_features: list):
+        """Parse Openpose face features
+
+        Args:
+            face_features (list): Openpose face features list
+
+        Returns:
+            dict: Parsed face keypoints
+        """
         keypoints = parse_keypoints('FACE', face_features)
         return keypoints
 
     def parse_pose_features(self, pose_features):
+        """Parse Openpose pose features
+
+        Args:
+            face_features (list): Openpose pose features list
+
+        Returns:
+            dict: Parsed pose keypoints
+        """
         # TODO: Integrate densepose features too
         keypoints = parse_keypoints('POSE', pose_features)
         return keypoints
 
     def to_json(self):
+        """Transform Subject object to JSON format
 
+        Returns:
+            str: JSON formatted Subject object
+        """
         obj = {
             "id": self.quadrant,
             "pose": self.pose,
@@ -210,6 +321,12 @@ class Subject(object):
         return obj
 
     def from_json(self):
+        """Create Subject object from JSON string
+
+        Returns:
+            Subject: Subject object
+        """
+
         return None
 
     def __str__(self):

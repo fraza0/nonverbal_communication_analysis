@@ -16,10 +16,14 @@ import pandas as pd
 from matplotlib import cm
 
 from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
-# matplotlib.use('QT5Agg')
 
 
 class ExperimentCameraFrame(object):
+    """ExperimentCameraFrame class
+
+    Experiment frame. Analyze frame from a specific camera.
+    Identify users based on their position in the experiment room.
+    """
 
     def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False):
         self.is_valid = False
@@ -47,6 +51,14 @@ class ExperimentCameraFrame(object):
                 This frame will be discarded" % (len(value), self.frame, self.camera))
 
     def parse_subjects_data(self, people_data: pd.Series):
+        """Parse subjects data
+
+        Args:
+            people_data (pd.Series): Openpose people's data
+
+        Returns:
+            list: List of identified experiment Subjects
+        """
         allocated_subjects = dict()
 
         if self.verbose:
@@ -68,6 +80,11 @@ class ExperimentCameraFrame(object):
         return list(dict(sorted(allocated_subjects.items())).values())
 
     def to_json(self):
+        """Transform ExperimentCameraFrame object to JSON format
+
+        Returns:
+            str: JSON formatted ExperimentCameraFrame object
+        """
 
         obj = {
             "frame": self.frame,
@@ -77,6 +94,11 @@ class ExperimentCameraFrame(object):
         return obj
 
     def from_json(self):
+        """Create ExperimentCameraFrame object from JSON string
+
+        Returns:
+            Experiment: ExperimentCameraFrame object
+        """
         return None
 
     def __str__(self):
