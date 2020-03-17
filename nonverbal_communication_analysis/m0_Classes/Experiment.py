@@ -2,6 +2,7 @@ import pandas as pd
 import json 
 
 from nonverbal_communication_analysis.environment import DATASET_SYNC
+from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
 
 
 class Experiment(object):
@@ -13,6 +14,7 @@ class Experiment(object):
         self._id = _id
         self.type = self.match_id_type(_id)
         self.people = dict()  # {camera_id:x ,people:[]}
+        self._vis = Visualizer(_id)
 
     def match_id_type(self, _id: str):
         df = pd.read_csv(DATASET_SYNC + 'groups_info.csv')

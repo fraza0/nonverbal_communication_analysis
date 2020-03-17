@@ -1,74 +1,66 @@
 import json
 import cv2
 
+import operator
 import pandas as pd
 
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID)
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
+from nonverbal_communication_analysis.utils import log
 
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import cm
 
+from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
 matplotlib.use('QT5Agg')
 
 
 class ExperimentCameraFrame(object):
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame):
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None):
+        print("FRAME ", frame, "CAMERA", camera)
+        self.is_valid = False
+        self._vis = vis
         self.camera = camera
         self.frame = frame
         self.subjects = self.parse_subjects_data(people_data)
 
+    @property
+    def subjects(self):
+        return self.__subjects
+
+    @subjects.setter
+    def subjects(self, value):
+        self.__subjects = value
+        # try:
+        #     assert len(value) == 4
+        #     self.__subjects = value
+        #     self.is_valid = True
+        # except AssertionError:
+        #     log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s.\n \
+        #         This frame will be discarded" % (len(value), self.frame, self.camera))
+
     def parse_subjects_data(self, people_data: pd.Series):
-        subject_assignment = dict()
+        allocated_subjects = dict()
 
         # First try on subject ID assingment
         for _, person in people_data[PEOPLE_FIELDS].iterrows():
-            unidentified_subject = Subject(
+            unconfirmed_identity_subject = Subject(
                 self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'])
-            subject_identification_list = unidentified_subject.identify_subject()
-            _id = subject_identification_list[0]
+            # quadrants_confidence = unconfirmed_identity_subject.assign_quadrant()
+            # assigned_quadrant = unconfirmed_identity_subject._id
+            unconfirmed_identity_subject.assign_quadrant()
 
-            # Validate Assignments. No repeated IDs.
-            # Check function documentation for separated keypoints attachment criteria
-            if _id not in subject_assignment:
-                subject_assignment[_id] = unidentified_subject
-            else:
-                unidentified_subject_valid_keypoints = unidentified_subject.get_valid_keypoints(
-                    'openpose')
-                if not subject_assignment[_id].has_keypoints(unidentified_subject_valid_keypoints):
-                    subject_assignment[_id].attach_keypoints(
-                        unidentified_subject_valid_keypoints)
+            allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
+                allocated_subjects, self.frame, self._vis)
 
-                    print("NEW ME")
-                else:
-                    print("What should i do now? Possible intruder")
+        print("SUBJECTS IN FRAME IDENTIFICATION:", len(allocated_subjects))
 
-            if True:
-                subject_pose = subject_assignment[_id].pose['openpose']
-                pose_keypoints_df = pd.DataFrame(
-                    subject_pose.values(), columns=['x', 'y', 'c'])
-                _, ax = plt.subplots()
-                image = cv2.imread(
-                    '/home/fraza0/Desktop/MEI/TESE/nonverbal_communication_analysis/DATASET_DEP/SYNC/3CLC9VWR/last_frame_vid%s.png' % self.camera)
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                ax.set_xlim(-1, 1)
-                ax.set_ylim(1, -1)
-                ax.imshow(image, aspect='auto',
-                          extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
-                ax.set_title('Subjects Keypoints Position')
-                for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
-                    pol_x, pol_y = polygon.exterior.xy
-                    plt.plot(pol_x, pol_y)
-                ax.scatter(
-                    x=pose_keypoints_df['x'], y=pose_keypoints_df['y'], c=pose_keypoints_df['c'], cmap=cm.rainbow)
-                plt.show()
-
-        return list()
+        return list(dict(sorted(allocated_subjects.items())).values())
 
     def to_json(self):
 

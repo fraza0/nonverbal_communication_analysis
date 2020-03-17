@@ -21,6 +21,8 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
     output_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean"
     experiment = Experiment(group_id)
 
+    to_discard = list()
+
     for directory in input_directories:
         if verbose:
             print("Directory:", directory)
@@ -43,7 +45,13 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
         # frame_counter is equal to frame number written on file name as we sort the files.
         frame_counter = 0
         last_checkpoint = 0
-        for file in input_files[-1:]:
+
+        specific_frame = None
+        if specific_frame is not None:
+            input_files = [input_files[specific_frame]]
+            frame_counter = specific_frame
+
+        for file in input_files[95:98]:
             if verbose:
                 progress = round(frame_counter / total_files * 100)
                 if progress % 10 == 0:
@@ -56,7 +64,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
                 data = json.load(json_data)
                 file_people_df = json_normalize(data['people'])
                 frame = ExperimentCameraFrame(
-                    camera, frame_counter, file_people_df)
+                    camera, frame_counter, file_people_df, experiment._vis)
                 frames_list.append(frame)
             json_data.close()
 

@@ -1,4 +1,5 @@
 import json
+import operator
 
 import cv2
 import matplotlib
@@ -10,7 +11,10 @@ from shapely.geometry.polygon import Polygon
 
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
-    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID)
+    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
+    VALID_SUBJECT_POSE_KEYPOINTS)
+from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import \
+    Visualizer
 from nonverbal_communication_analysis.utils import log
 
 matplotlib.use('QT5Agg')
@@ -56,12 +60,68 @@ class Subject(object):
             "openpose": self.parse_face_features(face_features),
             "openface": list()
         }
-        self._id = -1
+        self.quadrant = -1
+        self.confidence = 0
+        self.identification_confidence = dict()
 
-    def set_id(self, _id):
-        self._id = _id
+    @property
+    def quadrant(self):
+        return self.__quadrant
 
-    def identify_subject(self):
+    @quadrant.setter
+    def quadrant(self, value):
+        assert value < 5, "Invalid quadrant property value"
+        self.__quadrant = value
+
+    def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: Visualizer = None):
+        unallocated_subject = self
+        quadrant = unallocated_subject.quadrant
+
+        # if vis is not None:
+        #     vis.show(self.camera, frame, unallocated_subject)
+
+        if quadrant not in allocated_subjects:
+            print("Assign Subject to Quadrant")
+            allocated_subjects[quadrant] = unallocated_subject
+            return allocated_subjects
+        elif unallocated_subject.is_person():
+            print("Is Person!")
+            print("Allocated Sub confidence:",
+                  allocated_subjects[quadrant].confidence, "Unallocated Sub confidence:", unallocated_subject.confidence)
+            if unallocated_subject.confidence > allocated_subjects[quadrant].confidence:
+                print("Need to replace unidentified subject with subject in quadrant")
+                allocated_subjects[quadrant] = self
+                return self.allocate_subjects(allocated_subjects, frame)
+            else:
+                print("Next quadrant with most confidence value")
+                quadrant_confidence = unallocated_subject.identification_confidence
+                quadrant_confidence[quadrant] = 0
+
+                unallocated_subject.identification_confidence = dict(
+                    sorted(quadrant_confidence.items(), key=operator.itemgetter(1), reverse=True))
+                unallocated_subject.quadrant = list(
+                    unallocated_subject.identification_confidence.keys())[0]
+                unallocated_subject.confidence = unallocated_subject.identification_confidence[
+                    unallocated_subject.quadrant]
+
+                if unallocated_subject.confidence == 0:
+                    print("No confidence, discard this mf")
+                    return allocated_subjects
+
+                return self.allocate_subjects(allocated_subjects, frame)
+        else:
+            print("Not Person. Is body part")
+            if unallocated_subject.confidence > 0:
+                print("Join part to subject in quadrant")
+                # unidentified_subject_valid_keypoints = unallocated_subject.get_valid_keypoints()
+                return allocated_subjects
+            else:
+                print("Discard loose part or unwanted person in background")
+                return allocated_subjects
+
+        return allocated_subjects
+
+    def assign_quadrant(self):
         # TODO: possibly need to complement this method
         # with densepose and openface data
         id_weighing = dict().fromkeys(
@@ -80,29 +140,24 @@ class Subject(object):
 
         # print((id_weighing, max(id_weighing, key=id_weighing.get)))
 
-        if False:
-            pose_keypoints_df = pd.DataFrame(
-                openpose_pose_features.values(), columns=['x', 'y', 'c'])
-            _, ax = plt.subplots()
-            image = cv2.imread(
-                '/home/fraza0/Desktop/MEI/TESE/nonverbal_communication_analysis/DATASET_DEP/SYNC/3CLC9VWR/last_frame_vid%s.png' % self.camera)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            ax.set_xlim(-1, 1)
-            ax.set_ylim(1, -1)
-            ax.imshow(image, aspect='auto',
-                      extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
-            ax.set_title('Subjects Keypoints Position')
-            for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
-                pol_x, pol_y = polygon.exterior.xy
-                plt.plot(pol_x, pol_y)
-            ax.scatter(
-                x=pose_keypoints_df['x'], y=pose_keypoints_df['y'], c=pose_keypoints_df['c'], cmap=cm.rainbow)
-            plt.show()
+        identification_confidence = dict(
+            sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
+        self.identification_confidence = identification_confidence
+        self.quadrant = list(identification_confidence.keys())[0]
+        self.confidence = identification_confidence[self.quadrant]
 
-        return sorted(id_weighing, key=id_weighing.get, reverse=True)
+        return identification_confidence
 
     def is_valid_keypoint(self, keypoint: list):
         return keypoint != [-1, -1, 0]
+
+    def is_person(self, key='openpose'):
+        subject_keypoints = self.pose[key]
+        for keypoint in VALID_SUBJECT_POSE_KEYPOINTS:
+            if not self.is_valid_keypoint(subject_keypoints[keypoint]):
+                return False
+
+        return True
 
     def get_valid_keypoints(self, key: str = 'openpose'):
         valid_keypoints = dict()
@@ -140,7 +195,7 @@ class Subject(object):
     def to_json(self):
 
         obj = {
-            "id": self._id,
+            "id": self.quadrant,
             "pose": self.pose,
             "face": self.face
         }
@@ -151,4 +206,4 @@ class Subject(object):
         return None
 
     def __str__(self):
-        return "Subject { id: %s, pose: %s }" % (self._id, "(...)")
+        return "Subject { id: %s, pose: %s }" % (self.quadrant, "(...)")
