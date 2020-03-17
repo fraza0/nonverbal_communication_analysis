@@ -24,7 +24,7 @@ class ExperimentCameraFrame(object):
     def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None):
         print("FRAME ", frame, "CAMERA", camera)
         self.is_valid = False
-        self._vis = vis
+        self.vis = vis
         self.camera = camera
         self.frame = frame
         self.subjects = self.parse_subjects_data(people_data)
@@ -36,13 +36,13 @@ class ExperimentCameraFrame(object):
     @subjects.setter
     def subjects(self, value):
         self.__subjects = value
-        # try:
-        #     assert len(value) == 4
-        #     self.__subjects = value
-        #     self.is_valid = True
-        # except AssertionError:
-        #     log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s.\n \
-        #         This frame will be discarded" % (len(value), self.frame, self.camera))
+        try:
+            assert len(value) == 4
+            self.__subjects = value
+            self.is_valid = True
+        except AssertionError:
+            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s.\n \
+                This frame will be discarded" % (len(value), self.frame, self.camera))
 
     def parse_subjects_data(self, people_data: pd.Series):
         allocated_subjects = dict()
@@ -56,9 +56,11 @@ class ExperimentCameraFrame(object):
             unconfirmed_identity_subject.assign_quadrant()
 
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
-                allocated_subjects, self.frame, self._vis)
+                allocated_subjects, self.frame, self.vis)
 
-        print("SUBJECTS IN FRAME IDENTIFICATION:", len(allocated_subjects))
+        if self.vis is not None:
+            self.vis.show(self.camera, self.frame,
+                          assigned_subjects=allocated_subjects)
 
         return list(dict(sorted(allocated_subjects.items())).values())
 

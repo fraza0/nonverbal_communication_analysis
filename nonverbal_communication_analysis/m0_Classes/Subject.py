@@ -77,15 +77,15 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
-        # if vis is not None:
-        #     vis.show(self.camera, frame, unallocated_subject)
+        if vis is not None:
+            vis.show(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
             print("Assign Subject to Quadrant")
             allocated_subjects[quadrant] = unallocated_subject
             return allocated_subjects
         elif unallocated_subject.is_person():
-            print("Is Person!")
+            print("Is a person!")
             print("Allocated Sub confidence:",
                   allocated_subjects[quadrant].confidence, "Unallocated Sub confidence:", unallocated_subject.confidence)
             if unallocated_subject.confidence > allocated_subjects[quadrant].confidence:
@@ -110,13 +110,15 @@ class Subject(object):
 
                 return self.allocate_subjects(allocated_subjects, frame)
         else:
-            print("Not Person. Is body part")
+            print("Not a person. Might be body part or misidentified subject")
             if unallocated_subject.confidence > 0:
                 print("Join part to subject in quadrant")
-                # unidentified_subject_valid_keypoints = unallocated_subject.get_valid_keypoints()
+                allocated_subjects[quadrant].attach_keypoints(
+                    unallocated_subject.get_valid_keypoints())
                 return allocated_subjects
             else:
                 print("Discard loose part or unwanted person in background")
+                vis.show(self.camera, frame, unallocated_subject)
                 return allocated_subjects
 
         return allocated_subjects

@@ -17,7 +17,7 @@ class Visualizer(object):
         _, frame = cap.read()
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    def show(self, camera: str, frame: int, highlighted_subject, assigned_subjects: dict = None, key: str = 'openpose'):
+    def show(self, camera: str, frame: int, highlighted_subject=None, assigned_subjects: dict = None, key: str = 'openpose'):
         _, ax = plt.subplots()
         ax.set_xlim(-1, 1)
         ax.set_ylim(1, -1)
@@ -32,12 +32,13 @@ class Visualizer(object):
         ax.imshow(display_frame, aspect='auto',
                   extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
 
-        highlighted_subject_pose = highlighted_subject.pose[key]
-        highlighted_subject_pose_keypoints_df = pd.DataFrame(
-            highlighted_subject_pose.values(), columns=['x', 'y', 'c'])
+        if highlighted_subject is not None:
+            highlighted_subject_pose = highlighted_subject.pose[key]
+            highlighted_subject_pose_keypoints_df = pd.DataFrame(
+                highlighted_subject_pose.values(), columns=['x', 'y', 'c'])
 
-        ax.scatter(x=highlighted_subject_pose_keypoints_df['x'], y=highlighted_subject_pose_keypoints_df['y'],
-                   c='red')
+            ax.scatter(x=highlighted_subject_pose_keypoints_df['x'], y=highlighted_subject_pose_keypoints_df['y'],
+                       c='red')
 
         if assigned_subjects is not None:
             for _, assigned_subject in assigned_subjects.items():
