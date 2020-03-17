@@ -50,7 +50,7 @@ def parse_keypoints(_type: str, keypoints: list):
 
 class Subject(object):
 
-    def __init__(self, camera: str, face_features: list, pose_features: list):
+    def __init__(self, camera: str, face_features: list, pose_features: list, verbose: bool = False):
         self.camera = camera
         self.pose = {
             "openpose": self.parse_pose_features(pose_features),
@@ -63,6 +63,7 @@ class Subject(object):
         self.quadrant = -1
         self.confidence = 0
         self.identification_confidence = dict()
+        self.verbose = verbose
 
     @property
     def quadrant(self):
@@ -77,23 +78,28 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
-        if vis is not None:
+        if self.verbose and vis is not None:
             vis.show(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
-            print("Assign Subject to Quadrant")
+            if self.verbose:
+                print("Assign Subject to Quadrant")
             allocated_subjects[quadrant] = unallocated_subject
             return allocated_subjects
         elif unallocated_subject.is_person():
-            print("Is a person!")
-            print("Allocated Sub confidence:",
-                  allocated_subjects[quadrant].confidence, "Unallocated Sub confidence:", unallocated_subject.confidence)
+            if self.verbose:
+                print("Is a person!")
+                print("Allocated Sub confidence:",
+                      allocated_subjects[quadrant].confidence, "Unallocated Sub confidence:", unallocated_subject.confidence)
             if unallocated_subject.confidence > allocated_subjects[quadrant].confidence:
-                print("Need to replace unidentified subject with subject in quadrant")
+                if self.verbose:
+                    print(
+                        "Need to replace unidentified subject with subject in quadrant")
                 allocated_subjects[quadrant] = self
                 return self.allocate_subjects(allocated_subjects, frame)
             else:
-                print("Next quadrant with most confidence value")
+                if self.verbose:
+                    print("Next quadrant with most confidence value")
                 quadrant_confidence = unallocated_subject.identification_confidence
                 quadrant_confidence[quadrant] = 0
 
@@ -105,19 +111,23 @@ class Subject(object):
                     unallocated_subject.quadrant]
 
                 if unallocated_subject.confidence == 0:
-                    print("No confidence, discard this mf")
+                    if self.verbose:
+                        print("No confidence, discard this mf")
                     return allocated_subjects
 
                 return self.allocate_subjects(allocated_subjects, frame)
         else:
-            print("Not a person. Might be body part or misidentified subject")
+            if self.verbose:
+                print("Not a person. Might be body part or misidentified subject")
             if unallocated_subject.confidence > 0:
-                print("Join part to subject in quadrant")
+                if self.verbose:
+                    print("Join part to subject in quadrant")
                 allocated_subjects[quadrant].attach_keypoints(
                     unallocated_subject.get_valid_keypoints())
                 return allocated_subjects
             else:
-                print("Discard loose part or unwanted person in background")
+                if self.verbose:
+                    print("Discard loose part or unwanted person in background")
                 vis.show(self.camera, frame, unallocated_subject)
                 return allocated_subjects
 
@@ -132,16 +142,11 @@ class Subject(object):
         # openpose_face_features = self.face['openpose']
 
         for keypoint in openpose_pose_features.values():
-            # print(keypoint)
             keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
             point = Point(keypoint_x, keypoint_y)
             for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
-                # print(quadrant, polygon)
                 if point.intersects(polygon):
                     id_weighing[quadrant] += keypoint_confidence
-
-        # print((id_weighing, max(id_weighing, key=id_weighing.get)))
-
         identification_confidence = dict(
             sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
         self.identification_confidence = identification_confidence

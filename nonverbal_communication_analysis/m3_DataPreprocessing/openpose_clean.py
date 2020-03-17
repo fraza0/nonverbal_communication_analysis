@@ -64,7 +64,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
                 data = json.load(json_data)
                 file_people_df = json_normalize(data['people'])
                 frame = ExperimentCameraFrame(
-                    camera, frame_counter, file_people_df, experiment._vis)
+                    camera, frame_counter, file_people_df, experiment._vis, verbose=verbose)
                 frames_list.append(frame)
             json_data.close()
 

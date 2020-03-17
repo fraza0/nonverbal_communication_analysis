@@ -21,9 +21,9 @@ matplotlib.use('QT5Agg')
 
 class ExperimentCameraFrame(object):
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None):
-        print("FRAME ", frame, "CAMERA", camera)
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False):
         self.is_valid = False
+        self.verbose = verbose
         self.vis = vis
         self.camera = camera
         self.frame = frame
@@ -47,18 +47,19 @@ class ExperimentCameraFrame(object):
     def parse_subjects_data(self, people_data: pd.Series):
         allocated_subjects = dict()
 
+        if self.verbose:
+            print("Camera", self.camera, "Frame", self.frame)
+
         # First try on subject ID assingment
         for _, person in people_data[PEOPLE_FIELDS].iterrows():
             unconfirmed_identity_subject = Subject(
-                self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'])
-            # quadrants_confidence = unconfirmed_identity_subject.assign_quadrant()
-            # assigned_quadrant = unconfirmed_identity_subject._id
+                self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'], verbose=self.verbose)
             unconfirmed_identity_subject.assign_quadrant()
 
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
 
-        if self.vis is not None:
+        if self.verbose and vis is not None:
             self.vis.show(self.camera, self.frame,
                           assigned_subjects=allocated_subjects)
 
