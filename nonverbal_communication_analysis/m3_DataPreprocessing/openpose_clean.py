@@ -5,7 +5,6 @@ import re
 
 import pandas as pd
 import yaml
-from pandas.io.json import json_normalize
 
 from nonverbal_communication_analysis.environment import (
     CONFIDENCE_THRESHOLD, DATASET_SYNC, PEOPLE_FIELDS, VALID_OUTPUT_FILE_TYPES, CONFIG_FILE, OPENPOSE_OUTPUT_DIR)
@@ -62,7 +61,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
             frame_counter += 1
             with open(file) as json_data:
                 data = json.load(json_data)
-                file_people_df = json_normalize(data['people'])
+                file_people_df = pd.json_normalize(data['people'])
                 frame = ExperimentCameraFrame(
                     camera, frame_counter, file_people_df, experiment._vis, verbose=verbose)
                 frames_list.append(frame)

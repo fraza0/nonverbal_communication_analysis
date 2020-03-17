@@ -3,3 +3,4 @@ pandas
 opencv-python
 pandas-profiling
 shapely
+PyQt5
