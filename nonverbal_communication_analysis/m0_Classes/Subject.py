@@ -17,8 +17,6 @@ from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualiza
     Visualizer
 from nonverbal_communication_analysis.utils import log
 
-matplotlib.use('QT5Agg')
-
 
 def is_relevant_pose_keypoint(entry):
     if entry[0] in RELEVANT_POSE_KEYPOINTS:
@@ -64,6 +62,8 @@ class Subject(object):
         self.confidence = 0
         self.identification_confidence = dict()
         self.verbose = verbose
+        if verbose:
+            matplotlib.use('QT5Agg')
 
     @property
     def quadrant(self):

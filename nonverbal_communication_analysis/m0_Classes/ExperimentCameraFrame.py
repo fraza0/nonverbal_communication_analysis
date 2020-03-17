@@ -16,7 +16,7 @@ import pandas as pd
 from matplotlib import cm
 
 from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
-matplotlib.use('QT5Agg')
+# matplotlib.use('QT5Agg')
 
 
 class ExperimentCameraFrame(object):
@@ -28,6 +28,8 @@ class ExperimentCameraFrame(object):
         self.camera = camera
         self.frame = frame
         self.subjects = self.parse_subjects_data(people_data)
+        if verbose:
+            matplotlib.use('QT5Agg')
 
     @property
     def subjects(self):
