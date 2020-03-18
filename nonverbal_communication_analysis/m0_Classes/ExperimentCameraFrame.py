@@ -72,7 +72,6 @@ class ExperimentCameraFrame(object):
 
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
-            print("EXP_FRAME", allocated_subjects)
 
         if self.verbose and self.vis is not None:
             self.vis.show(self.camera, self.frame,
