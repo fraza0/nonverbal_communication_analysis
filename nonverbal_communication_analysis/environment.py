@@ -107,7 +107,7 @@ PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
 RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
 RELEVANT_FACE_KEYPOINTS = range(0, 70)
 
-VALID_SUBJECT_POSE_KEYPOINTS = [0, 1, 2, 5]
+VALID_SUBJECT_POSE_KEYPOINTS = [2, 5]
 
 
 SUBJECT_IDENTIFICATION_GRID = person_identification_grid_rescaling(
@@ -115,10 +115,10 @@ SUBJECT_IDENTIFICATION_GRID = person_identification_grid_rescaling(
 
 CAMERA_ROOM_GEOMETRY = {
     'pc1': {
-        1: SUBJECT_IDENTIFICATION_GRID['pc1'][2],
-        2: SUBJECT_IDENTIFICATION_GRID['pc1'][4],
-        3: SUBJECT_IDENTIFICATION_GRID['pc1'][1],
-        4: SUBJECT_IDENTIFICATION_GRID['pc1'][3]
+        1: SUBJECT_IDENTIFICATION_GRID['pc1'][3],
+        2: SUBJECT_IDENTIFICATION_GRID['pc1'][1],
+        3: SUBJECT_IDENTIFICATION_GRID['pc1'][4],
+        4: SUBJECT_IDENTIFICATION_GRID['pc1'][2]
     },
     'pc2': {
         1: SUBJECT_IDENTIFICATION_GRID['pc2'][4],
@@ -133,6 +133,10 @@ CAMERA_ROOM_GEOMETRY = {
         4: SUBJECT_IDENTIFICATION_GRID['pc3'][4]
     }
 }
+
+# QUADRANT_ENCODING = {
+#     'pc1'
+# }
 
 
 ##############

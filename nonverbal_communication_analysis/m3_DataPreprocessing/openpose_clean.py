@@ -50,7 +50,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
             input_files = [input_files[specific_frame]]
             frame_counter = specific_frame
 
-        for file in input_files[:]:
+        for file in input_files[:10000]:
             if verbose:
                 progress = round(frame_counter / total_files * 100)
                 if progress % 10 == 0:

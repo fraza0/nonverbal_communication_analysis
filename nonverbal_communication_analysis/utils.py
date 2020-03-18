@@ -108,8 +108,6 @@ def person_identification_grid_rescaling(identification_grid, roi_grid, a: int =
         x_rescaled = a + (((x_grid - x_min)*(b-a)) / x_max_min)
         y_rescaled = a + (((y_grid - y_min)*(b-a)) / y_max_min)
 
-        print(camera, (x_grid, y_grid), (x_rescaled, y_rescaled))
-
         center = (x_rescaled, y_rescaled)
         subject_identification_grid[camera] = set_quadrants(center)
 

@@ -122,10 +122,15 @@ class Subject(object):
         quadrant = unallocated_subject.quadrant
 
         if self.verbose and vis is not None:
+            print("\n\n\nIN:", unallocated_subject.quadrant,
+                  unallocated_subject.confidence, unallocated_subject)
+            print("Quadrant", unallocated_subject.quadrant)
+            print(unallocated_subject.identification_confidence)
             vis.show(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
             if self.verbose:
+                print("Previous", unallocated_subject.quadrant)
                 print("Assign Subject to Quadrant")
             allocated_subjects[quadrant] = unallocated_subject
             return allocated_subjects
@@ -138,11 +143,14 @@ class Subject(object):
                 if self.verbose:
                     print(
                         "Need to replace unidentified subject with subject in quadrant")
-                allocated_subjects[quadrant] = self
-                return self.allocate_subjects(allocated_subjects, frame)
+
+                replace_subject = allocated_subjects[quadrant]
+                allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
+                return replace_subject.allocate_subjects(allocated_subjects, frame)
             else:
                 if self.verbose:
                     print("Next quadrant with most confidence value")
+
                 quadrant_confidence = unallocated_subject.identification_confidence
                 quadrant_confidence[quadrant] = 0
 
@@ -153,15 +161,20 @@ class Subject(object):
                 unallocated_subject.confidence = unallocated_subject.identification_confidence[
                     unallocated_subject.quadrant]
 
+                print("UPDATING SUBJECT", unallocated_subject.to_json())
+
                 if unallocated_subject.confidence == 0:
                     if self.verbose:
                         print("No confidence, discard this mf")
                     return allocated_subjects
 
-                return self.allocate_subjects(allocated_subjects, frame)
+                allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
+
+                return allocated_subjects
         else:
             if self.verbose:
                 print("Not a person. Might be body part or misidentified subject")
+                print(unallocated_subject.pose['openpose'])
             if unallocated_subject.confidence > 0:
                 if self.verbose:
                     print("Join part to subject in quadrant")
@@ -191,7 +204,7 @@ class Subject(object):
         for keypoint in openpose_pose_features.values():
             keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
             point = Point(keypoint_x, keypoint_y)
-            for quadrant, polygon in SUBJECT_IDENTIFICATION_GRID[self.camera].items():
+            for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
                 if point.intersects(polygon):
                     id_weighing[quadrant] += keypoint_confidence
         identification_confidence = dict(
