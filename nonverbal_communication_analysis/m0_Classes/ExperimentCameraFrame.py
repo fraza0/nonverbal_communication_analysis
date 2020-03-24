@@ -25,9 +25,10 @@ class ExperimentCameraFrame(object):
     Identify users based on their position in the experiment room.
     """
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False):
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False, display:bool = False):
         self.is_valid = False
         self.verbose = verbose
+        self.display = display
         self.vis = vis
         self.camera = camera
         self.frame = frame
@@ -67,13 +68,13 @@ class ExperimentCameraFrame(object):
         # First try on subject ID assingment
         for _, person in people_data[PEOPLE_FIELDS].iterrows():
             unconfirmed_identity_subject = Subject(
-                self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'], verbose=self.verbose)
+                self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'], verbose=self.verbose, display=self.display)
             unconfirmed_identity_subject.assign_quadrant()
 
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
 
-        if self.verbose and self.vis is not None:
+        if self.display and self.vis is not None:
             self.vis.show(self.camera, self.frame,
                           assigned_subjects=allocated_subjects)
 

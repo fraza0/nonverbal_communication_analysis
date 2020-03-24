@@ -15,12 +15,10 @@ from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
 from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import ExperimentCameraFrame
 
 
-def main(input_directories: list, single_step: bool, prettify: bool, verbose: bool = False):
+def main(input_directories: list, single_step: bool, prettify: bool, frame_idx: int = None, verbose: bool = False, display: bool = False):
     group_id = re.match('Openpose/(.*)/output', input_directories[0]).group(1)
     output_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean"
     experiment = Experiment(group_id)
-
-    to_discard = list()
 
     for directory in input_directories:
         if verbose:
@@ -45,12 +43,12 @@ def main(input_directories: list, single_step: bool, prettify: bool, verbose: bo
         frame_counter = 0
         last_checkpoint = 0
 
-        specific_frame = None
+        specific_frame = frame_idx
         if specific_frame is not None:
-            input_files = [input_files[specific_frame]]
             frame_counter = specific_frame
+            input_files = [input_files[frame_counter]]
 
-        for file in input_files[:]:
+        for file in input_files[:10]:
             if verbose:
                 progress = round(frame_counter / total_files * 100)
                 if progress % 10 == 0:
@@ -94,9 +92,13 @@ if __name__ == "__main__":
                         help='Output file path and filename')
     parser.add_argument('-ss', '--single-step', dest="single_step", action='store_true',
                         help='Number of processing steps. Single or Multiple')
+    parser.add_argument('-f', '--frame', dest="frame", type=int,
+                        help='Process Specific frame')
     parser.add_argument('-p', '--prettify', dest="prettify", action='store_true',
                         help='Output pretty printed JSON')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
+                        action='store_true')
+    parser.add_argument('-d', '--display', help='Whether or not image output should be displayed',
                         action='store_true')
 
     args = vars(parser.parse_args())
@@ -104,6 +106,8 @@ if __name__ == "__main__":
     input_directory = args['openpose_data_dir']
     single_step = args['single_step']
     prettify = args['prettify']
+    frame = args['frame']
     verbose = args['verbose']
+    display = args['display']
 
-    main(input_directory, single_step, prettify, verbose)
+    main(input_directory, single_step, prettify, frame, verbose, display)

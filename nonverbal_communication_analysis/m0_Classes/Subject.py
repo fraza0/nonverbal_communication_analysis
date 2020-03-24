@@ -78,7 +78,7 @@ class Subject(object):
     From now on, every person in the experiment is called a Subject
     """
 
-    def __init__(self, camera: str, face_features: list, pose_features: list, verbose: bool = False):
+    def __init__(self, camera: str, face_features: list, pose_features: list, verbose: bool = False, display: bool = False):
         self.camera = camera
         self.pose = {
             "openpose": self.parse_pose_features(pose_features),
@@ -92,6 +92,7 @@ class Subject(object):
         self.confidence = 0
         self.identification_confidence = dict()
         self.verbose = verbose
+        self.display = display
         if verbose:
             matplotlib.use('QT5Agg')
 
@@ -121,7 +122,7 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
-        if self.verbose and vis is not None:
+        if self.display and vis is not None:
             vis.show(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
@@ -178,6 +179,7 @@ class Subject(object):
             else:
                 if self.verbose:
                     print("Discard loose part or unwanted person in background")
+                if self.display:
                     vis.show(self.camera, frame, unallocated_subject)
                 return allocated_subjects
 

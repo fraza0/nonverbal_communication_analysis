@@ -10,11 +10,14 @@ from shapely.geometry import Point
 def log(_type: str, msg: str):
     _type = _type.upper()
     if _type == 'INFO':
-        logging.info(msg)
+        # logging.info(msg)
+        pass
     elif _type == 'WARN' or _type == 'WARNING':
-        logging.warn(msg)
+        # logging.warn(msg)
+        pass
     elif _type == 'ERROR':
-        logging.error(msg)
+        # logging.error(msg)
+        pass
 
 
 def print_assertion_error(_obj, _type):
