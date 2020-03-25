@@ -1,4 +1,4 @@
-from os import listdir
+from os import listdir, walk
 from os.path import isfile, join, splitext
 from math import ceil
 import numpy as np
@@ -18,6 +18,9 @@ def log(_type: str, msg: str):
     elif _type == 'ERROR':
         # logging.error(msg)
         pass
+
+def list_dirs(_dir):
+    return next(walk(_dir))[1]
 
 
 def print_assertion_error(_obj, _type):

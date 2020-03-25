@@ -123,7 +123,7 @@ class Subject(object):
         quadrant = unallocated_subject.quadrant
 
         if self.display and vis is not None:
-            vis.show(self.camera, frame, unallocated_subject)
+            vis.show_subjects_frame(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
             if self.verbose:
@@ -180,7 +180,7 @@ class Subject(object):
                 if self.verbose:
                     print("Discard loose part or unwanted person in background")
                 if self.display:
-                    vis.show(self.camera, frame, unallocated_subject)
+                    vis.show_subjects_frame(self.camera, frame, unallocated_subject)
                 return allocated_subjects
 
         return allocated_subjects

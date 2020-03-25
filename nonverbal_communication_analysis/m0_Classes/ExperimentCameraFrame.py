@@ -75,7 +75,7 @@ class ExperimentCameraFrame(object):
                 allocated_subjects, self.frame, self.vis)
 
         if self.display and self.vis is not None:
-            self.vis.show(self.camera, self.frame,
+            self.vis.show_subjects_frame(self.camera, self.frame,
                           assigned_subjects=allocated_subjects)
 
         return list(dict(sorted(allocated_subjects.items())).values())
