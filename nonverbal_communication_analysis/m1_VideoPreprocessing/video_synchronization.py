@@ -13,6 +13,7 @@ from nonverbal_communication_analysis.environment import (VALID_VIDEO_TYPES, VAL
                                                           FRAME_SKIP, CAM_ROI, PERSON_IDENTIFICATION_GRID)
 
 from nonverbal_communication_analysis.utils import log, fetch_files_from_directory, filter_files
+from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
 
 '''
 Video synchronization and cut for DEP experiment Dataset.
@@ -29,11 +30,10 @@ Use 'q' key to quit without saving.
 
 Example command:
 $ python 1_Preprocessing/video_synchronization.py -f DATASET_DEP/Videos_LAB_PC1/Videopc118102019021136.avi
-                                                -t DATASET_DEP/Videos_LAB_PC1/Timestamppc118102019021136.txt
                                                 -f DATASET_DEP/Videos_LAB_PC2/Videopc218102019021117.avi
-                                                -t DATASET_DEP/Videos_LAB_PC2/Timestamppc218102019021117.txt
                                                 -f DATASET_DEP/Videos_LAB_PC3/Videopc318102019021104.avi
-                                                -t DATASET_DEP/Videos_LAB_PC3/Timestamppc318102019021104.txt
+OR
+$ python 1_Preprocessing/video_synchronization.py -d DATASET_DEP/CC/3CLC9VWR/
 '''
 
 
@@ -47,7 +47,7 @@ class CameraVideo:
     output_path: output path
     """
 
-    def __init__(self, title: str, video_path: str, roi: dict, grid: dict, timestamp_path: str, output_path: str):
+    def __init__(self, title: str, video_path: str, roi: dict, grid: dict, timestamp_path: str, output_paths: str, filename: str):
         self.title = title
         self.cap = cv2.VideoCapture(video_path)
         self.timestamps = open(timestamp_path, 'r')
@@ -63,8 +63,11 @@ class CameraVideo:
         frame_height = int(roi['ymax']-roi['ymin'])
         size = (frame_width, frame_height)
         fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-        self.writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(
+        self.writer_task1 = cv2.VideoWriter(output_paths[0]+filename, cv2.VideoWriter_fourcc(
             *FOURCC), fps, size)
+        self.writer_task2 = cv2.VideoWriter(output_paths[1]+filename, cv2.VideoWriter_fourcc(
+            *FOURCC), fps, size)
+        self.task_separator = 0
 
     def __str__(self):
         print("%s: %s" % (self.title, self.current_timestamp))
@@ -89,7 +92,6 @@ def timestamp_align(cap_list: list):
     is_synced = max([abs(ts1-ts2)for ts1, ts2 in combs]) <= TIMESTAMP_THRESHOLD
 
     if is_synced == True:
-        # print([(v.current_timestamp, v.current_frame_idx) for v in cap_list])
         if align_by.current_timestamp == 0:
             return True, None
         return True, True
@@ -117,79 +119,52 @@ def cut_from_until(vid, _from: int, _until: int):
     vid.cap.set(cv2.CAP_PROP_POS_FRAMES, _from)
 
     roi = vid.roi
-    for _ in range(_from, _until):
+    for frame_idx in range(_from, _until):
         vid.ret, vid.frame = vid.cap.read()
         vid.frame = vid.frame[roi['ymin']:roi['ymax'], roi['xmin']:roi['xmax']]
-        vid.writer.write(vid.frame)
+        if frame_idx < vid.task_separator:
+            vid.writer_task1.write(vid.frame)
+        else:
+            vid.writer_task2.write(vid.frame)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Syncronize Videos')
-    parser.add_argument('-f', '--file', type=str, dest='video_files',
-                        action='append', help='Video file path')
-    parser.add_argument('-d', '--directory', type=str,
-                        dest='group_files', help='Group Video files path')
-    parser.add_argument('-t' '--timestamp', type=str, nargs=1,
-                        dest='timestamp_files', action='append', help='Media files')
-    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
-                        action='store_true')
-    args = vars(parser.parse_args())
+def main(video_files: list, verbose: bool = False):
+    group_id = list(filter(None, video_files[0].split('/')))[-1]
+    experiment = Experiment(group_id)
 
-    video_files = args['video_files']
-    directory = args['group_files']
-    if not video_files and not directory:
-        log('ERROR', 'No camera video files passed')
-        exit()
+    video_files = [directory + filename for filename in filter_files(fetch_files_from_directory(
+        [directory]), valid_types=VALID_VIDEO_TYPES)]
 
-    if not args['video_files'] and args['group_files']:
-        args['video_files'] = [directory + filename for filename in filter_files(fetch_files_from_directory(
-            [directory]), valid_types=VALID_VIDEO_TYPES)]
-
-    video_files = [vf for vf in args['video_files']]
     video_files.sort()
-    timestamp_files = [tf for tf in args['timestamp_files']] if args['timestamp_files'] is not None else [
-        splitext(f)[0][::-1].replace('Video'[::-1], 'Timestamp'[::-1], 1)[::-1] + ".txt" for f in video_files]
-    verbose = args['verbose']
-
-    for file in video_files:
-        _, file_extension = splitext(file)
-        if file_extension not in VALID_VIDEO_TYPES:
-            log('ERROR', 'Not supported or invalid video file type (%s). File must be {%s}' % (
-                file, VALID_VIDEO_TYPES))
-            exit()
-
-    for file in timestamp_files:
-        _, file_extension = splitext(file)
-        if file_extension not in VALID_TIMESTAMP_FILES:
-            log('ERROR', 'Not supported or invalid timestamp file type (%s). Check input files' %
-                VALID_TIMESTAMP_FILES)
-            exit()
+    timestamp_files = [splitext(f)[0][::-1].replace('Video'[::-1],
+                                                    'Timestamp'[::-1], 1)[::-1] + ".txt" for f in video_files]
 
     if len(video_files) != 3 and len(timestamp_files) != 3:
         log('ERROR', 'Specify only 3 video files (and corresponding timestamps - Optional: Default is searching for same file name)')
         exit()
 
-    cap_list = list()
-    if not directory:
-        out_dir = DATASET_SYNC+"%s/" % video_files[0][-18:-8]
-    else:
-        out_dir = DATASET_SYNC + \
-            "%s" % str(Path(video_files[0]).parent).split('/')[-1]+"/"
+    out_dir_base = '%s%s' % (DATASET_SYNC, str(
+        Path(video_files[0]).parent).split('/')[-1])
+    out_dirs = list()
+
+    for n in range(experiment._n_tasks):
+        out_dirs.append('%s/%s_%s/' % (out_dir_base, 'task', n+1))
 
     if verbose:
-        print("Saving to: ", out_dir)
+        print('Saving to: ', out_dirs)
 
     try:
-        os.makedirs(out_dir)
+        for _dir in out_dirs:
+            os.makedirs(_dir)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
 
+    cap_list = list()
     for i in range(len(video_files)):
         _id = str(i+1)
-        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI['pc'+_id], PERSON_IDENTIFICATION_GRID['pc'+_id], timestamp_files[i], out_dir +
-                          "sync_"+splitext(video_files[i])[0].split('/')[-1]+".avi")
+        vid = CameraVideo("VID"+_id, video_files[i], CAM_ROI['pc'+_id], PERSON_IDENTIFICATION_GRID['pc'+_id],
+                          timestamp_files[i], out_dirs, splitext(video_files[i])[0].split('/')[-1]+"_sync.avi")
         cap_list.append(vid)
 
     if not all(vid.cap.isOpened() for vid in cap_list):
@@ -208,7 +183,6 @@ if __name__ == "__main__":
             # Read frame
             vid.ret, vid.frame = vid.cap.read()
             vid.current_frame_idx += 1
-            # print(vid.current_frame_idx, vid.cap.get(cv2.CAP_PROP_POS_MSEC))
             # Update current_timestamp
             file_ts = vid.timestamps.readline()
             vid.current_timestamp = int(file_ts) if file_ts is not '' else -1
@@ -239,6 +213,11 @@ if __name__ == "__main__":
             for vid in cap_list:
                 vid.markers[key] = vid.current_frame_idx
 
+        if key == ord('t'):
+            print("Task Separator %s set")
+            for vid in cap_list:
+                vid.task_separator = vid.current_frame_idx
+
         if all([vid.ret for vid in cap_list]):
             if alignment == True and align_by is not None:  # Videos are in sync
                 for vid in cap_list:
@@ -262,12 +241,10 @@ if __name__ == "__main__":
                     print("Start writting phase")
 
                 for vid in cap_list:
-
                     valid_markers = [
                         marker for marker in marker_validator.items() if marker[1] == True]
                     if len(valid_markers) % 2 != 0:
                         log('ERROR', 'Odd number of markers. Number of markers should be an even number.')
-                        # exit()
                         break
 
                     first_experience_markers = list(
@@ -297,6 +274,32 @@ if __name__ == "__main__":
 
     for vid in cap_list:
         vid.cap.release()
-        vid.writer.release()
+        vid.writer_task1.release()
+        vid.writer_task2.release()
 
     cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Syncronize Videos')
+    # parser.add_argument('-f', '--file', type=str, dest='video_files',
+    #                     action='append', help='Video file path')
+    # parser.add_argument('-t' '--timestamp', type=str, nargs=1,
+    #                     dest='timestamp_files', action='append', help='Media files')
+    parser.add_argument('-d', '--directory', type=str, required=True,
+                        dest='group_files', help='Group Video files path')
+    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
+                        action='store_true')
+    args = vars(parser.parse_args())
+
+    directory = args['group_files']
+    verbose = args['verbose']
+    # video_files_path = args['video_files']
+    # if not (video_files_path or directory):
+    #     log('ERROR', 'No camera video files passed')
+    #     exit()
+    # video_files = [directory if video_files_path is None else directory]
+    video_files = [directory]
+
+    main(video_files, verbose)

@@ -11,13 +11,14 @@ def log(_type: str, msg: str):
     _type = _type.upper()
     if _type == 'INFO':
         # logging.info(msg)
-        pass
+        print('%s: %s' % (_type, msg))
     elif _type == 'WARN' or _type == 'WARNING':
         # logging.warn(msg)
-        pass
+        print('%s: %s' % (_type, msg))
     elif _type == 'ERROR':
         # logging.error(msg)
-        pass
+        print('%s: %s' % (_type, msg))
+
 
 def list_dirs(_dir):
     return next(walk(_dir))[1]
