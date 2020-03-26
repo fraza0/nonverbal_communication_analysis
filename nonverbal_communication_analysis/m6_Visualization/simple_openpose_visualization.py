@@ -125,9 +125,26 @@ class Visualizer(object):
         plt.show()
 
     def play_vid(self, video_directory: str, verbose: bool = False):
-        # assigned_subjects[frame] = dict()
-        # data_frame = subjects_data['frame']
-        pass
+        group_id = video_directory.split(
+            DATASET_SYNC.split('/')[-2])[1].replace('/', '')
+        clean_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean/"
+        clean_camera_dirs = list_dirs(clean_dir)
+        video_captures = dict()
+        color_map = {1: 'blue',
+                     2: 'red',
+                     3: 'green',
+                     4: 'yellow'}
+
+        # load video files
+        video_files = filter_files(fetch_files_from_directory(
+            [video_directory]), valid_types=VALID_VIDEO_TYPES)
+
+        for video_file in video_files:
+            video_camera = 'pc'+video_file.split('pc')[1][0]
+            video_captures[video_camera] = cv2.VideoCapture(video_directory+video_file)
+
+        
+        plt.show()
 
 
 def main(video_directory: str, openpose: bool = True, frame: int = None, verbose: bool = False):
