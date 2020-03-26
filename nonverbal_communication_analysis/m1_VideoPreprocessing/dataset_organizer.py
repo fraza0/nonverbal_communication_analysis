@@ -4,6 +4,11 @@ import re
 from nonverbal_communication_analysis.utils import fetch_files_from_directory, filter_files
 from nonverbal_communication_analysis.environment import VALID_VIDEO_TYPES, DATASET_DIR
 
+WARN = '''
+INCOMPLETE SCRIPT DUE TO MISMATCH IN TIMESTAMPS FROM GROUPS_DATA FILE AND VIDEO TIMESTAMPS.
+GROUPS_DATA USE TIMEZONE AND VIDEO USES TIMESTAMP
+'''
+
 
 def timestamp_from_filename(name: str):
     full_timestamp = re.compile('Videopc.(.*?).avi').split(name)
@@ -11,6 +16,9 @@ def timestamp_from_filename(name: str):
 
 
 if __name__ == "__main__":
+
+    print(WARN)
+
     parser = argparse.ArgumentParser(
         description='Match Videos from different cameras of the experiment based on timestamp values')
     parser.add_argument('labels_file', type=str,
@@ -28,21 +36,21 @@ if __name__ == "__main__":
 
     labels = pd.read_csv(labels_file)
 
-    for index, row in labels.iterrows():
-        path = DATASET_DIR + row['Group ID'] + "_" + row['Conflict Type']
-        date_split = row['Date'].split()
-        date_list = ''.join(date_split[0].split('/'))
-        time_list = ''.join(date_split[1].split(':'))
-        full_group_timestamp = date_list + time_list
-        group_timestamp = full_group_timestamp[:8]
-        files = list()
-        print(full_group_timestamp)
+    # for index, row in labels.iterrows():
+    #     path = DATASET_DIR + row['Group ID'] + "_" + row['Conflict Type']
+    #     date_split = row['Date'].split()
+    #     date_list = ''.join(date_split[0].split('/'))
+    #     time_list = ''.join(date_split[1].split(':'))
+    #     full_group_timestamp = date_list + time_list
+    #     group_timestamp = full_group_timestamp[:8]
+    #     files = list()
+    #     print(full_group_timestamp)
 
-        for pc in pc_dir:
-            files = filter_files(fetch_files_from_directory(
-                [pc]), valid_types=VALID_VIDEO_TYPES, include=group_timestamp)
-            print(files)
-            # candidates = min(files, key=lambda x:abs(int(group_timestamp)-int(timestamp_from_filename(x))))
+    #     for pc in pc_dir:
+    #         files = filter_files(fetch_files_from_directory(
+    #             [pc]), valid_types=VALID_VIDEO_TYPES, include=group_timestamp)
+    #         print(files)
+    #         # candidates = min(files, key=lambda x:abs(int(group_timestamp)-int(timestamp_from_filename(x))))
 
-        if index == 2:
-            exit()
+    #     if index == 2:
+    #         exit()
