@@ -16,7 +16,7 @@ from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import Ex
 
 
 def main(input_directories: list, single_step: bool, prettify: bool, specific_frame: int = None, verbose: bool = False, display: bool = False):
-    group_id = re.match('Openpose/(.*)/output', input_directories[0]).group(1)
+    group_id = re.match('OPENPOSE/(.*)/task', input_directories[0]).group(1)
     output_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean/"
     experiment = Experiment(group_id)
 

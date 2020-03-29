@@ -16,7 +16,7 @@ from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import Ex
 
 
 def main(input_directories: list, single_step: bool, prettify: bool, frame_idx: int = None, verbose: bool = False, display: bool = False):
-    group_id = re.match('Openpose/(.*)/output', input_directories[0]).group(1)
+    group_id = re.match('OPENPOSE/(.*)/task', input_directories[0]).group(1)
     output_dir = OPENPOSE_OUTPUT_DIR+group_id+"/"+group_id+"_clean"
     experiment = Experiment(group_id)
 
@@ -36,7 +36,7 @@ def main(input_directories: list, single_step: bool, prettify: bool, frame_idx: 
             output_file = output_dir + "/" + group_id + "_clean.json"
         else:
             output_file = output_dir + "/" + \
-                re.match('Openpose/(.*)/output_(.*)/',
+                re.match('OPENPOSE/(.*)/task_(.*)/',
                          directory).group(2) + "_clean.json"
 
         # frame_counter is equal to frame number written on file name as we sort the files.

@@ -40,12 +40,12 @@ OpenFace Output Commands:
 """
 
 
-def format_output_string(file_path: str, directory: bool = False):
+def format_output_string(file_path: str, group_id:str = None, directory: bool = False):
 
-    output_string = ""
+    output_string = group_id+'/' if group_id is not None else ''
 
     if directory:
-        output_string = str(Path(file_path).parent).split('/')[-1]
+        output_string += str(Path(file_path).parent).split('/')[-1]
     else:
         if "Videopc" not in file_path:
             output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
@@ -162,7 +162,9 @@ if __name__ == "__main__":
     verbose = args['verbose']
     write = args['write']
 
+    group_id = None
     if directory:
+        group_id = re.compile('SYNC/(.*)/(.*)/').split(media_files[0])[-3]
         media_files = [media_files[0] +
                        file for file in fetch_files_from_directory(media_files)]
 
@@ -175,7 +177,7 @@ if __name__ == "__main__":
         print("Error: No media files passed or no valid media files in directory")
         exit()
 
-    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0], directory)
+    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0], group_id, directory)
 
     if media_type == MEDIA_TYPE_IMAGE:
         media_files = filter_files(media_files, VALID_VIDEO_TYPES)
