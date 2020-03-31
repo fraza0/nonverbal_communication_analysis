@@ -1,8 +1,30 @@
 import pandas as pd
 import json
+from pathlib import Path
 
-from nonverbal_communication_analysis.environment import DATASET_SYNC
+from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SYNC, GROUPS_INFO_FILE
 from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
+
+def get_id_from_file_path(group_directory_path: str):
+    sample_indicator = 'SAMPLE'
+    df = pd.read_csv(GROUPS_INFO_FILE)
+    is_sample = sample_indicator in group_directory_path
+
+    id_match = None
+    for group_id in list(df['Group ID']):
+        match = group_id in group_directory_path
+        if is_sample:
+            match = (match and sample_indicator in group_id)
+        
+        if match:
+            id_match = group_id
+            break
+        
+        
+    if match and id_match is not None:
+        return id_match
+    
+    return False
 
 
 class Experiment(object):
@@ -12,6 +34,7 @@ class Experiment(object):
     a group of 4 elements performing 2 different tasks
 
     """
+
     _n_subjects = 4
     _n_tasks = 2
     _n_cameras = 3
@@ -21,6 +44,7 @@ class Experiment(object):
         self.type = self.match_id_type(_id)
         self.people = dict()
         self._vis = Visualizer(_id)
+
 
     def match_id_type(self, _id: str):
         """Get Group Conflict Type from GroupInfo data

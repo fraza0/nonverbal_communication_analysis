@@ -1,13 +1,28 @@
 import os
 from datetime import datetime
+from pathlib import Path
 from nonverbal_communication_analysis.utils import person_identification_grid_rescaling
 
 ###########
 # GENERAL #
 ###########
 
-TESE_HOME = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
-CONFIG_FILE = TESE_HOME + 'config.yaml'
+TESE_HOME = Path(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
+CONFIG_FILE = TESE_HOME / 'config.yaml'
+
+
+#################
+# DATASET PATHS #
+#################
+
+DATASET_DIR = TESE_HOME / "DATASET_DEP/"
+DATASET_SYNC = DATASET_DIR / "SYNC/"
+GROUPS_INFO_FILE = DATASET_DIR / 'groups_info.csv'
+
+OPENPOSE_OUTPUT_DIR = DATASET_DIR / "OPENPOSE/"
+OPENFACE_OUTPUT_DIR = DATASET_DIR / "OPENFACE/"
+DENSEPOSE_OUTPUT_DIR = DATASET_DIR / "DENSEPOSE/"
+
 
 #########################
 # VIDEO SYNCHRONIZATION #
@@ -17,7 +32,7 @@ CONFIG_FILE = TESE_HOME + 'config.yaml'
 VALID_VIDEO_TYPES = ['.avi']
 VALID_TIMESTAMP_FILES = ['.txt']
 TIMESTAMP_THRESHOLD = 100  # ms
-FOURCC = 'X264' # CODEC
+FOURCC = 'X264'  # CODEC
 FRAME_SKIP = 100
 
 CAM_ROI = {
@@ -34,14 +49,6 @@ PERSON_IDENTIFICATION_GRID = {
     'pc3': {'horizontal': {'x0': 120, 'x1': 620, 'y': 255}, 'vertical': {'x': 370, 'y0': 110, 'y1': 460}}
 }
 
-#################
-# DATASET PATHS #
-#################
-
-DATASET_DIR = TESE_HOME + "/DATASET_DEP/"
-DATASET_SYNC = DATASET_DIR + "SYNC/"
-
-
 ####################
 # OPENFACE_EXTRACT #
 ####################
@@ -55,13 +62,13 @@ VALID_VIDEO_TYPES = ['.avi']
 # FaceLandmarkImg executable is for individual image analysis (can either contain one or more faces)
 # FaceLandmarkVidMulti is intended for sequence analysis that contain multiple faces
 # FeatureExtraction executable is used for sequence analysis that contain a single face
-OPENFACE_HOME = TESE_HOME + "/packages/openface"
-OPENFACE_BUILD = OPENFACE_HOME + "/build/bin/"
-OPENFACE_FACE_LANDMARK_IMG = OPENFACE_BUILD + "FaceLandmarkImg"
-OPENFACE_FACE_LANDMARK_VID = OPENFACE_BUILD + "FaceLandmarkVid"
-OPENFACE_FACE_LANDMARK_VID_MULTI = OPENFACE_BUILD + "FaceLandmarkVidMulti"
-OPENFACE_FEATURE_EXTRACTION = OPENFACE_BUILD + "FeatureExtraction"
-OPENFACE_OUTPUT_DIR = DATASET_DIR + "OPENFACE/"
+OPENFACE_HOME = TESE_HOME / "packages/openface"
+OPENFACE_BUILD = OPENFACE_HOME / "build/bin/"
+OPENFACE_FACE_LANDMARK_IMG = OPENFACE_BUILD / "FaceLandmarkImg"
+OPENFACE_FACE_LANDMARK_VID = OPENFACE_BUILD / "FaceLandmarkVid"
+OPENFACE_FACE_LANDMARK_VID_MULTI = OPENFACE_BUILD / "FaceLandmarkVidMulti"
+OPENFACE_FEATURE_EXTRACTION = OPENFACE_BUILD / "FeatureExtraction"
+
 
 NUM_EYE_LANDMARKS = 56
 NUM_FACE_LANDMARKS = 68
@@ -91,12 +98,6 @@ EMOTIONS_ENCONDING = {
 
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
-
-####################
-# OPENPOSE RELATED #
-####################
-
-OPENPOSE_OUTPUT_DIR = DATASET_DIR + "OPENPOSE/"
 
 ######################
 # OPENPOSE FILTERING #
@@ -134,13 +135,7 @@ CAMERA_ROOM_GEOMETRY = {
     }
 }
 
-# QUADRANT_ENCODING = {
-#     'pc1'
-# }
-
-
 ##############
 # STATISTICS #
 ##############
-
-STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/'
+# STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/'

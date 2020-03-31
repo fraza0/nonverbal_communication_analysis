@@ -160,7 +160,7 @@ class Subject(object):
 
                 if unallocated_subject.confidence == 0:
                     if self.verbose:
-                        print("No confidence, discard this mf")
+                        print("No confidence, discard")
                     return allocated_subjects
 
                 allocated_subjects[unallocated_subject.quadrant] = unallocated_subject

@@ -65,14 +65,16 @@ class ExperimentCameraFrame(object):
         if self.verbose:
             print("Camera", self.camera, "Frame", self.frame)
 
-        # First try on subject ID assingment
+        # First try on subject ID assignment
         for _, person in people_data[PEOPLE_FIELDS].iterrows():
             unconfirmed_identity_subject = Subject(
                 self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'], verbose=self.verbose, display=self.display)
             unconfirmed_identity_subject.assign_quadrant()
 
+            print(unconfirmed_identity_subject)
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
+
 
         if self.display and self.vis is not None:
             self.vis.show_subjects_frame(self.camera, self.frame,
