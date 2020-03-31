@@ -9,7 +9,7 @@ import yaml
 
 from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES
 from nonverbal_communication_analysis.utils import filter_files, fetch_files_from_directory
-from nonverbal_communication_analysis.m3_DataPreprocessing.openpose_clean_frame_oriented import OpenposeClean
+from nonverbal_communication_analysis.m3_DataPreprocessing.openpose_clean import OpenposeClean
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
 from pathlib import Path
 

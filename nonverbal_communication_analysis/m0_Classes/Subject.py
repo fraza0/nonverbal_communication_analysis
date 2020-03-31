@@ -122,8 +122,8 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
-        if self.display and vis is not None:
-            vis.show_subjects_frame(self.camera, frame, unallocated_subject)
+        # if self.display and vis is not None:
+        #     vis.show_subjects_frame(self.camera, frame, unallocated_subject)
 
         if quadrant not in allocated_subjects:
             if self.verbose:
