@@ -5,7 +5,8 @@ from pathlib import Path
 from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SYNC, GROUPS_INFO_FILE
 from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
 
-def get_id_from_file_path(group_directory_path: str):
+def get_group_from_file_path(group_directory_path: {str, Path}):
+    group_directory_path = str(group_directory_path)
     sample_indicator = 'SAMPLE'
     df = pd.read_csv(GROUPS_INFO_FILE)
     is_sample = sample_indicator in group_directory_path
@@ -55,7 +56,7 @@ class Experiment(object):
         Returns:
             str: Group Conflict Type 
         """
-        df = pd.read_csv(DATASET_SYNC + 'groups_info.csv')
+        df = pd.read_csv(DATASET_DIR / 'groups_info.csv')
         return df[df['Group ID'] == _id]['Conflict Type'].tolist()[0]
 
     def to_json(self):

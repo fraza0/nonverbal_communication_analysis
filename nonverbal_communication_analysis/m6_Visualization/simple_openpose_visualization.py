@@ -22,15 +22,17 @@ class Visualizer(object):
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     def show_subjects_frame(self, camera: str, frame: int, highlighted_subject=None, assigned_subjects: dict = None, key: str = 'openpose'):
+        # TODO: REPLACE WITH show_frame()
         _, ax = plt.subplots()
         ax.set_xlim(-1, 1)
         ax.set_ylim(1, -1)
         ax.set_title('Subjects Keypoints Position')
 
-        file_path = DATASET_SYNC+self.experiment_id+"/"
+        file_path = DATASET_SYNC / self.experiment_id / 'task_2'
         video_file = filter_files(fetch_files_from_directory(
-            [file_path]), VALID_VIDEO_TYPES, include=camera)
-        cap = cv2.VideoCapture(file_path+video_file[0])
+            [file_path]), VALID_VIDEO_TYPES, include=camera)[0]
+        path = file_path / video_file
+        cap = cv2.VideoCapture(str(path))
 
         display_frame = self.get_frame(cap, frame)
         ax.imshow(display_frame, aspect='auto',
