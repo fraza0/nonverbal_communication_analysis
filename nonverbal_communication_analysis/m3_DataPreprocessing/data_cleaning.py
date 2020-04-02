@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--frame', dest="specific_frame", type=int,
                         help='Process Specific frame')
     parser.add_argument('-t', '--task', dest="task", type=int, choices=[1, 2],
-                        help='Soecify Task frame')
+                        help='Specify Task frame')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
     parser.add_argument('-d', '--display', help='Whether or not image output should be displayed',
