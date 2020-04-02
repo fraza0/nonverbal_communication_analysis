@@ -25,7 +25,7 @@ class ExperimentCameraFrame(object):
     Identify users based on their position in the experiment room.
     """
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False, display:bool = False):
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False, display: bool = False):
         self.is_valid = False
         self.verbose = verbose
         self.display = display
@@ -68,17 +68,19 @@ class ExperimentCameraFrame(object):
         # First try on subject ID assignment
         for _, person in people_data[PEOPLE_FIELDS].iterrows():
             unconfirmed_identity_subject = Subject(
-                self.camera, person['face_keypoints_2d'], person['pose_keypoints_2d'], verbose=self.verbose, display=self.display)
+                self.camera, openpose_pose_features=person['pose_keypoints_2d'],
+                openpose_face_features=person['face_keypoints_2d'],
+                verbose=self.verbose, display=self.display)
             unconfirmed_identity_subject.assign_quadrant()
 
-            print(unconfirmed_identity_subject)
+            if self.verbose:
+                print(unconfirmed_identity_subject)
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
 
-
         if self.display and self.vis is not None:
             self.vis.show_subjects_frame(self.camera, self.frame,
-                          assigned_subjects=allocated_subjects)
+                                         assigned_subjects=allocated_subjects)
 
         return list(dict(sorted(allocated_subjects.items())).values())
 

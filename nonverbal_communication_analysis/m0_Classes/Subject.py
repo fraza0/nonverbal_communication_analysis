@@ -46,47 +46,21 @@ def is_relevant_face_keypoint(entry):
     return False
 
 
-def parse_keypoints(_type: str, keypoints: enumerate):
-    """Parsing keypoints.
-    Keypoints are composed of 3 value list [x, y, c]
-    x, y coordinates and confidence coefficient
-
-    Args:
-        _type (str): keypoint type (POSE or FACE)
-        keypoints (enumerate): keypoints enumerate
-
-    Returns:
-        list: List of filtered keypoints
-    """
-
-    keypoints = [keypoints[x:x+3] for x in range(0, len(keypoints), 3)]
-    if _type.upper() == 'POSE':
-        keypoints_filtered = dict(
-            filter(is_relevant_pose_keypoint, enumerate(keypoints)))
-    elif _type.upper() == 'FACE':
-        keypoints_filtered = dict(
-            filter(is_relevant_face_keypoint, enumerate(keypoints)))
-    else:
-        log("ERROR", "Invalid keypoint type")
-        return
-    return keypoints_filtered
-
-
 class Subject(object):
     """Subject class.
     Subject is a person after pose data parsing/processing
     From now on, every person in the experiment is called a Subject
     """
 
-    def __init__(self, camera: str, face_features: list, pose_features: list, verbose: bool = False, display: bool = False):
+    def __init__(self, camera: str, openpose_pose_features: list = None, openpose_face_features: list = None, openface_face_features: list = None, densepose_pose_features: list = None, verbose: bool = False, display: bool = False):
         self.camera = camera
         self.pose = {
-            "openpose": self.parse_pose_features(pose_features),
-            "densepose": list()
+            "openpose": self.parse_features(openpose_pose_features, key='OPENPOSE'),
+            "densepose": self.parse_features(densepose_pose_features, key='DENSEPOSE'),
         }
         self.face = {
-            "openpose": self.parse_face_features(face_features),
-            "openface": list()
+            "openpose": self.parse_features(openpose_face_features, key='OPENPOSE'),
+            "openface": self.parse_features(openface_face_features, key='OPENFACE'),
         }
         self.quadrant = -1
         self.confidence = 0
@@ -180,7 +154,8 @@ class Subject(object):
                 if self.verbose:
                     print("Discard loose part or unwanted person in background")
                 if self.display:
-                    vis.show_subjects_frame(self.camera, frame, unallocated_subject)
+                    vis.show_subjects_frame(
+                        self.camera, frame, unallocated_subject)
                 return allocated_subjects
 
         return allocated_subjects
@@ -290,29 +265,38 @@ class Subject(object):
         self.pose[key] = merged_keypoints
         return True
 
-    def parse_face_features(self, face_features: list):
-        """Parse Openpose face features
+    def parse_features(self, features_list, key: str):
+        """Parse features
 
         Args:
-            face_features (list): Openpose face features list
+            features_list (list): Openpose pose features list
+            key (str) : {'OPENPOSE', 'DENSEPOSE', 'OPENFACE'}
 
         Returns:
-            dict: Parsed face keypoints
+            dict: Parsed feature data
         """
-        keypoints = parse_keypoints('FACE', face_features)
-        return keypoints
+        keypoints = list()
 
-    def parse_pose_features(self, pose_features):
-        """Parse Openpose pose features
+        if features_list is None:
+            return list()
 
-        Args:
-            face_features (list): Openpose pose features list
+        if key == 'OPENPOSE':
+            keypoints = [features_list[x:x+3]
+                         for x in range(0, len(features_list), 3)]
+            keypoints_filtered = dict(filter(is_relevant_pose_keypoint,
+                                             enumerate(keypoints)))
+            return keypoints_filtered
+        elif key == 'OPENFACE':
+            keypoints = [features_list[x:x+3]
+                         for x in range(0, len(features_list), 3)]
+            keypoints_filtered = dict(filter(is_relevant_face_keypoint,
+                                             enumerate(keypoints)))
+            return keypoints_filtered
+        elif key == 'DENSEPOSE':
+            pass
+        else:
+            return None
 
-        Returns:
-            dict: Parsed pose keypoints
-        """
-        # TODO: Integrate densepose features too
-        keypoints = parse_keypoints('POSE', pose_features)
         return keypoints
 
     def to_json(self):
@@ -321,10 +305,22 @@ class Subject(object):
         Returns:
             str: JSON formatted Subject object
         """
+
+        out_pose = dict()
+
+        for key in self.pose:
+            if self.pose[key]:
+                out_pose[key] = self.pose[key]
+
+        out_face = dict()
+        for key in self.face:
+            if self.face[key]:
+                out_face[key] = self.face[key]
+
         obj = {
             "id": self.quadrant,
-            "pose": self.pose,
-            "face": self.face
+            "pose": out_pose,
+            "face": out_face
         }
 
         return obj
