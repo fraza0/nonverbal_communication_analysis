@@ -167,9 +167,7 @@ class Visualizer(object):
                     r'(?<=Video)(pc\d{1})(?=\d{14})', video_file.name).group(0)
                 video_captures[camera_id] = cv2.VideoCapture(str(video_file))
 
-            frame_dim = None
             while(all(video_capture.isOpened() for video_capture in video_captures.values())):
-                cameras_frames = dict()
                 for camera in video_captures:
                     video_capture = video_captures[camera]
                     ret, frame = video_capture.read()
