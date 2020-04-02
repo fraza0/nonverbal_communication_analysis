@@ -13,7 +13,7 @@ from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
     VALID_SUBJECT_POSE_KEYPOINTS)
-from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import \
+from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     Visualizer
 from nonverbal_communication_analysis.utils import log
 

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import cm
 
-from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
+from nonverbal_communication_analysis.m6_Visualization.simple_visualization import Visualizer
 
 
 class ExperimentCameraFrame(object):

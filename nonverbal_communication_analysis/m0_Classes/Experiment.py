@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SYNC, GROUPS_INFO_FILE
-# from nonverbal_communication_analysis.m6_Visualization.simple_openpose_visualization import Visualizer
+# from nonverbal_communication_analysis.m6_Visualization.simple_visualization import Visualizer
 
 def get_group_from_file_path(group_directory_path: {str, Path}):
     group_directory_path = str(group_directory_path)
