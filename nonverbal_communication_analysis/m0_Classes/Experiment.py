@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SYNC, GROUPS_INFO_FILE
-# from nonverbal_communication_analysis.m6_Visualization.simple_visualization import Visualizer
 
 def get_group_from_file_path(group_directory_path: {str, Path}):
     group_directory_path = str(group_directory_path)
@@ -16,15 +15,14 @@ def get_group_from_file_path(group_directory_path: {str, Path}):
         match = group_id in group_directory_path
         if is_sample:
             match = (match and sample_indicator in group_id)
-        
+
         if match:
             id_match = group_id
             break
-        
-        
+
     if match and id_match is not None:
         return id_match
-    
+
     return False
 
 
@@ -36,16 +34,15 @@ class Experiment(object):
 
     """
 
+    _n_cameras = 3
     _n_subjects = 4
     _n_tasks = 2
-    _n_cameras = 3
 
     def __init__(self, _id: str):
         self._id = _id
         self.type = self.match_id_type(_id)
         self.people = dict()
-        self._vis = None # Visualizer(_id)
-
+        self._vis = None  # Visualizer(_id)
 
     def match_id_type(self, _id: str):
         """Get Group Conflict Type from GroupInfo data

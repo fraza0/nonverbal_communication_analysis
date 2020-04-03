@@ -1,3 +1,7 @@
+from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
+from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
+                                                    filter_files,
+                                                    print_assertion_error)
 import argparse
 import re
 import subprocess
@@ -6,13 +10,11 @@ from os import listdir
 from os.path import isfile, join, splitext
 from pathlib import Path
 
-from nonverbal_communication_analysis.environment import (
-    OPENFACE_FACE_LANDMARK_IMG, OPENFACE_FACE_LANDMARK_VID_MULTI,
-    OPENFACE_FEATURE_EXTRACTION, OPENFACE_OUTPUT_DIR, OPENFACE_OUTPUT_FLAGS,
-    VALID_IMAGE_TYPES, VALID_VIDEO_TYPES)
-from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
-                                                    filter_files,
-                                                    print_assertion_error)
+from nonverbal_communication_analysis.environment import (DATASET_SYNC, VALID_VIDEO_TYPES,
+                                                          OPENFACE_OUTPUT_DIR,
+                                                          OPENFACE_FACE_LANDMARK_IMG,
+                                                          OPENFACE_OUTPUT_FLAGS,
+                                                          OPENFACE_FACE_LANDMARK_VID_MULTI)
 
 
 """
@@ -39,8 +41,11 @@ OpenFace Output Commands:
 -tracked      : output video with detected landmarks
 """
 
+# def min_max_scaling():
+#     normalized_df=(df-df.min())/(df.max()-df.min())
 
-def format_output_string(file_path: str, group_id:str = None, directory: bool = False):
+
+def format_output_string(file_path: str, group_id: str = None, directory: bool = False):
 
     output_string = group_id+'/' if group_id is not None else ''
 
@@ -50,14 +55,14 @@ def format_output_string(file_path: str, group_id:str = None, directory: bool = 
         if "Videopc" not in file_path:
             output_string = datetime.now().strftime("%d_%b_%Y_%H_%M_%S")
             print("INFO: Media files do not follow naming of experiment videos. Writting Output to: %s " % (
-                OPENFACE_OUTPUT_DIR + output_string))
+                OPENFACE_OUTPUT_DIR / output_string))
         else:
             file_timestamp = re.compile(
                 "(?<=Videopc.{1})(.*)(?=.avi)").split(file_path.split("/")[-1])[1][:-4]
             output_string = "%s_%s_%s_%s" % (
                 file_timestamp[:2], file_timestamp[2:4], file_timestamp[4:8], file_timestamp[8:10])
             print("INFO: Output directory: %s" %
-                  (OPENFACE_OUTPUT_DIR + output_string))
+                  (OPENFACE_OUTPUT_DIR / output_string))
 
     return output_string
 
@@ -81,9 +86,9 @@ def openface_img(img_files: list, write: bool, verbose: bool = False):
     subprocess.call(cmd_list)
 
 
-def openface_vid(vid_files: list, multi: bool, write: bool, verbose: bool = False):
+def openface_vid(video_file: str, output_path: str, write: bool = False, verbose: bool = False):
     '''
-    Process video input with single of multiple faces.
+    Process video input with multiple faces.
 
     In this case, OPENFACE_FEATURE_EXTRACTION will be used instead of OPENFACE_FACE_LANDMARK_VID
     as they both serve the same purpose of single face tracking, but only OPENFACE_FEATURE_EXTRACTION
@@ -91,21 +96,12 @@ def openface_vid(vid_files: list, multi: bool, write: bool, verbose: bool = Fals
     each frame as it was a random image. (Unsure what is the difference, but such inference is
     described in documentation - https://github.com/TadasBaltrusaitis/OpenFace/wiki/Command-line-arguments#example-uses)
     '''
-    assert isinstance(vid_files, list), print_assertion_error(
-        "vid_files", "list")
-    assert isinstance(multi, bool), print_assertion_error(
-        "multi", "bool")
 
-    if not multi:
-        cmd_list = [OPENFACE_FEATURE_EXTRACTION]
-    else:
-        cmd_list = [OPENFACE_FACE_LANDMARK_VID_MULTI]
-
-    for file_path in vid_files:
-        cmd_list += ['-f', file_path]
+    cmd_list = [OPENFACE_FACE_LANDMARK_VID_MULTI]
+    cmd_list += ['-f', video_file]
 
     cmd_list += OPENFACE_OUTPUT_FLAGS
-    cmd_list += ['-out_dir', OPENFACE_OUTPUT_DIR]
+    cmd_list += ['-out_dir', output_path]
     if write:
         cmd_list += ['-tracked']
     if verbose:
@@ -113,76 +109,40 @@ def openface_vid(vid_files: list, multi: bool, write: bool, verbose: bool = Fals
     subprocess.call(cmd_list)
 
 
-def openface_cam(device: int, write: bool, verbose: bool = False):
-    '''
-    Process data directly from device (webcam = 0) input
-    '''
-    assert isinstance(device, int), print_assertion_error(
-        "device", "int")
+def main(group_directory: str, write: bool = False, verbose: bool = False):
+    group_directory = Path(group_directory)
+    group_id = get_group_from_file_path(group_directory)
+    tasks_directories = [x for x in group_directory.iterdir()
+                         if x.is_dir() and 'task' in str(x)]
 
-    cmd_list = [OPENFACE_FEATURE_EXTRACTION]
-    cmd_list += OPENFACE_OUTPUT_FLAGS
-    cmd_list += ['-device', '0']
-    cmd_list += ['-out_dir', OPENFACE_OUTPUT_DIR]
-    if verbose:
-        print(cmd_list)
-    if write:
-        cmd_list += ['-tracked']
-    subprocess.call(cmd_list)
+    for task in tasks_directories:
+        camera_files = dict()
+        task_directory = DATASET_SYNC / group_id / task.name
+        video_files = [x for x in task.iterdir()
+                       if x.suffix in VALID_VIDEO_TYPES]
+        for video in video_files:
+            camera_id = re.search(r'(?<=Video)(pc\d{1})(?=\d{14})',
+                                      video.name).group(0)
+
+            output_path = OPENFACE_OUTPUT_DIR / group_id / task.name / camera_id
+            openface_vid(video, output_path, write)
+
 
 
 if __name__ == "__main__":
-
-    MEDIA_TYPE_IMAGE = 'img'
-    MEDIA_TYPE_VIDEO = 'vid'
-    MEDIA_TYPE_CAM = 'cam'
-
     parser = argparse.ArgumentParser(
         description='Extract facial data using OpenFace')
-    parser.add_argument('media_type', type=str, choices=[
-                        MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO, MEDIA_TYPE_CAM], help='Media type')
-    parser.add_argument('media_files', type=str, nargs='*', help='Media files')
-    parser.add_argument('-dir', '--directory', action="store_true",
-                        help='Media files path')
-    parser.add_argument('--multi', action="store_true",
-                        help='Multiple individuals')
-    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
-                        action='store_true')
+    parser.add_argument('group_directory', type=str,
+                        help='Group data Directory')
     parser.add_argument('-w', '--write', help="Write video with facial features",
+                        action='store_true')
+    parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
                         action='store_true')
 
     args = vars(parser.parse_args())
 
-    media_type = args['media_type']
-    valid_types = (VALID_IMAGE_TYPES if media_type ==
-                   MEDIA_TYPE_IMAGE else VALID_VIDEO_TYPES)
-    media_files = (args['media_files'] if 'media_files' in args else None)
-    directory = args['directory']
-    multi = args['multi']
-    verbose = args['verbose']
+    group_directory = args['group_directory']
     write = args['write']
+    verbose = args['verbose']
 
-    group_id = None
-    if directory:
-        group_id = re.compile('SYNC/(.*)/(.*)/').split(media_files[0])[-3]
-        media_files = [media_files[0] +
-                       file for file in fetch_files_from_directory(media_files)]
-
-    if media_type == MEDIA_TYPE_IMAGE:
-        media_files = filter_files(media_files, VALID_IMAGE_TYPES)
-    elif media_type == MEDIA_TYPE_VIDEO:
-        media_files = filter_files(media_files, VALID_VIDEO_TYPES)
-
-    if not media_files and media_type != MEDIA_TYPE_CAM:
-        print("Error: No media files passed or no valid media files in directory")
-        exit()
-
-    OPENFACE_OUTPUT_DIR += format_output_string(media_files[0], group_id, directory)
-
-    if media_type == MEDIA_TYPE_IMAGE:
-        media_files = filter_files(media_files, VALID_VIDEO_TYPES)
-        openface_img(media_files, write)
-    elif media_type == MEDIA_TYPE_VIDEO:
-        openface_vid(media_files, multi, write)
-    elif media_type == MEDIA_TYPE_CAM:
-        openface_cam(0, write)
+    main(group_directory, write=write, verbose=verbose)
