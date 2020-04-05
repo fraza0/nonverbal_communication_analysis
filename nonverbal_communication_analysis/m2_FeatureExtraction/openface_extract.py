@@ -116,17 +116,14 @@ def main(group_directory: str, write: bool = False, verbose: bool = False):
                          if x.is_dir() and 'task' in str(x)]
 
     for task in tasks_directories:
-        camera_files = dict()
-        task_directory = DATASET_SYNC / group_id / task.name
         video_files = [x for x in task.iterdir()
                        if x.suffix in VALID_VIDEO_TYPES]
         for video in video_files:
             camera_id = re.search(r'(?<=Video)(pc\d{1})(?=\d{14})',
-                                      video.name).group(0)
+                                  video.name).group(0)
 
             output_path = OPENFACE_OUTPUT_DIR / group_id / task.name / camera_id
             openface_vid(video, output_path, write)
-
 
 
 if __name__ == "__main__":
