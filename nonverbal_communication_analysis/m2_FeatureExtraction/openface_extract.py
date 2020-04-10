@@ -9,6 +9,7 @@ from datetime import datetime
 from os import listdir
 from os.path import isfile, join, splitext
 from pathlib import Path
+import pandas as pd
 
 from nonverbal_communication_analysis.environment import (DATASET_SYNC, VALID_VIDEO_TYPES,
                                                           OPENFACE_OUTPUT_DIR,
@@ -107,6 +108,11 @@ def openface_vid(video_file: str, output_path: str, write: bool = False, verbose
     if verbose:
         print(cmd_list)
     subprocess.call(cmd_list)
+
+    df_path = output_path / (video_file.name.split('.avi')[0]+'.csv')
+    df = pd.read_csv(df_path)
+    df.rename(columns=lambda x: x.strip(), inplace=True)
+    df.to_csv(df_path, index=False)
 
 
 def main(group_directory: str, write: bool = False, verbose: bool = False):
