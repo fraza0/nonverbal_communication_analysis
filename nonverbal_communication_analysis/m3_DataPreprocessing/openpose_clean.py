@@ -9,7 +9,7 @@ import pandas as pd
 import yaml
 
 from nonverbal_communication_analysis.environment import (
-    VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR)
+    VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR, OPENPOSE_KEY)
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
 
@@ -40,7 +40,7 @@ class OpenposeClean(object):
                     data = json.load(json_data)
                     file_people_df = pd.json_normalize(data['people'])
                     experiment_frame = ExperimentCameraFrame(
-                        camera, int(frame_idx), file_people_df, self.experiment._vis, verbose=verbose, display=display)
+                        camera, int(frame_idx), file_people_df, OPENPOSE_KEY, verbose=verbose, display=display)
                 json_data.close()
 
                 if prettify:

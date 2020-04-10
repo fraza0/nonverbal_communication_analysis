@@ -42,7 +42,6 @@ class Experiment(object):
         self._id = _id
         self.type = self.match_id_type(_id)
         self.people = dict()
-        self._vis = None  # Visualizer(_id)
 
     def match_id_type(self, _id: str):
         """Get Group Conflict Type from GroupInfo data

@@ -10,6 +10,7 @@ import yaml
 from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES
 from nonverbal_communication_analysis.utils import filter_files, fetch_files_from_directory
 from nonverbal_communication_analysis.m3_DataPreprocessing.openpose_clean import OpenposeClean
+from nonverbal_communication_analysis.m3_DataPreprocessing.openface_clean import OpenfaceClean
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
 from pathlib import Path
 
@@ -34,6 +35,9 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, ope
     if openface:
         if verbose:
             print("Cleaning Openface data")
+        ofc = OpenfaceClean(group_id)
+        ofc.clean(tasks_directories, specific_frame=specific_frame,
+                  prettify=prettify, verbose=verbose, display=display)
 
     if densepose:
         if verbose:

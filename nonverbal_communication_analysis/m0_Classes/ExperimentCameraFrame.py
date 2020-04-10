@@ -5,8 +5,8 @@ import operator
 import pandas as pd
 
 from nonverbal_communication_analysis.environment import (
-    CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
-    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID)
+    CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS, NUM_EYE_LANDMARKS,
+    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
 from nonverbal_communication_analysis.utils import log
 
@@ -25,15 +25,23 @@ class ExperimentCameraFrame(object):
     Identify users based on their position in the experiment room.
     """
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, vis: Visualizer = None, verbose: bool = False, display: bool = False):
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, library: str, verbose: bool = False, display: bool = False):
         self.is_valid = False
         self.verbose = verbose
         self.display = display
-        self.vis = vis
+        self.vis = Visualizer('3CLC9VWRSAMPLE')
         self.camera = camera
         self.frame = frame
-        self.subjects = self.parse_subjects_data(people_data)
-        if verbose:
+        if library == OPENPOSE_KEY:
+            self.subjects = self.parse_subjects_data(
+                people_data, key=OPENPOSE_KEY)
+        elif library == OPENFACE_KEY:
+            self.subjects = self.parse_subjects_data(
+                people_data, key=OPENFACE_KEY)
+        elif library == DENSEPOSE_KEY:
+            self.subjects = self.parse_subjects_data(
+                people_data, key=DENSEPOSE_KEY)
+        if display:
             matplotlib.use('QT5Agg')
 
     @property
@@ -48,11 +56,11 @@ class ExperimentCameraFrame(object):
             self.__subjects = value
             self.is_valid = True
         except AssertionError:
-            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s.\n \
-                This frame will be discarded" % (len(value), self.frame, self.camera))
+            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s." % (
+                len(value), self.frame, self.camera))
 
-    def parse_subjects_data(self, people_data: pd.Series):
-        """Parse subjects data
+    def parse_subjects_data(self, people_data: pd.Series, key: str):
+        """Parse subjects openpose data
 
         Args:
             people_data (pd.Series): Openpose people's data
@@ -65,22 +73,38 @@ class ExperimentCameraFrame(object):
         if self.verbose:
             print("Camera", self.camera, "Frame", self.frame)
 
-        # First try on subject ID assignment
-        for _, person in people_data[PEOPLE_FIELDS].iterrows():
-            unconfirmed_identity_subject = Subject(
-                self.camera, openpose_pose_features=person['pose_keypoints_2d'],
-                openpose_face_features=person['face_keypoints_2d'],
-                verbose=self.verbose, display=self.display)
-            unconfirmed_identity_subject.assign_quadrant()
+        if key == OPENPOSE_KEY:
+            for _, person in people_data[PEOPLE_FIELDS].iterrows():
+                unconfirmed_identity_subject = Subject(
+                    self.camera, openpose_pose_features=person['pose_keypoints_2d'],
+                    openpose_face_features=person['face_keypoints_2d'],
+                    verbose=self.verbose, display=self.display)
+                unconfirmed_identity_subject.assign_quadrant(key=OPENPOSE_KEY)
 
-            if self.verbose:
-                print(unconfirmed_identity_subject)
+                if self.verbose:
+                    print(unconfirmed_identity_subject)
+                allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
+                    allocated_subjects, self.frame, self.vis)
+        elif key == OPENFACE_KEY:
+            for _, person in people_data.iterrows():
+                unconfirmed_identity_subject = Subject(
+                    self.camera, openface_face_features=person,
+                    verbose=self.verbose, display=self.display)
+
+                unconfirmed_identity_subject.assign_quadrant(key=OPENFACE_KEY)
+                if self.verbose:
+                    print(unconfirmed_identity_subject)
+
             allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                 allocated_subjects, self.frame, self.vis)
+        elif key == DENSEPOSE_KEY:
+            print("DP")
 
         if self.display and self.vis is not None:
+            print(self.camera, self.frame, allocated_subjects)
+            
             self.vis.show_subjects_frame(self.camera, self.frame,
-                                         assigned_subjects=allocated_subjects)
+                                         assigned_subjects=allocated_subjects, key=OPENFACE_KEY)
 
         return list(dict(sorted(allocated_subjects.items())).values())
 

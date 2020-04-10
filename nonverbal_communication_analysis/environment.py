@@ -41,6 +41,12 @@ CAM_ROI = {
     'pc3': {'xmin': 120, 'xmax': 620, 'ymin': 110, 'ymax': 460}
 }
 
+VIDEO_RESOLUTION = {
+    'pc1': {'x': CAM_ROI['pc1']['xmax'] - CAM_ROI['pc1']['xmin'], 'y': CAM_ROI['pc1']['ymax'] - CAM_ROI['pc1']['ymin']},
+    'pc2': {'x': CAM_ROI['pc2']['xmax'] - CAM_ROI['pc2']['xmin'], 'y': CAM_ROI['pc2']['ymax'] - CAM_ROI['pc2']['ymin']},
+    'pc3': {'x': CAM_ROI['pc3']['xmax'] - CAM_ROI['pc3']['xmin'], 'y': CAM_ROI['pc3']['ymax'] - CAM_ROI['pc3']['ymin']}
+}
+
 # Actually not needed as I could just calculate the center using the ROI info,
 # but I prefered to specify it, because of some cam specific offsets on the axis
 PERSON_IDENTIFICATION_GRID = {
@@ -74,8 +80,7 @@ NUM_EYE_LANDMARKS = 56
 NUM_FACE_LANDMARKS = 68
 NUM_NON_RIGID = 34
 
-OPENFACE_OUTPUT_FLAGS = ['-3Dfp', '-pdmparams',
-                         '-pose', '-aus', '-gaze']
+OPENFACE_OUTPUT_FLAGS = ['-pose', '-2Dfp', '-aus', '-gaze']
 
 ####################
 # OPENFACE_PROCESS #
@@ -100,8 +105,10 @@ FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
 
 ######################
-# OPENPOSE FILTERING #
+# DATA FILTERING #
 ######################
+
+OPENPOSE_KEY = 'OPENPOSE'
 
 CONFIDENCE_THRESHOLD = 0.55
 PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
@@ -134,6 +141,10 @@ CAMERA_ROOM_GEOMETRY = {
         4: SUBJECT_IDENTIFICATION_GRID['pc3'][4]
     }
 }
+
+OPENFACE_KEY = 'OPENFACE'
+DENSEPOSE_KEY = 'DENSEPOSE'
+
 
 ##############
 # STATISTICS #

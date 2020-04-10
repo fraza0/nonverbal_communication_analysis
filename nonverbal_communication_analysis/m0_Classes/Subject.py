@@ -1,5 +1,6 @@
 import json
 import operator
+import re
 
 import cv2
 import matplotlib
@@ -12,7 +13,7 @@ from shapely.geometry.polygon import Polygon
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
-    VALID_SUBJECT_POSE_KEYPOINTS)
+    VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     Visualizer
 from nonverbal_communication_analysis.utils import log
@@ -55,12 +56,12 @@ class Subject(object):
     def __init__(self, camera: str, openpose_pose_features: list = None, openpose_face_features: list = None, openface_face_features: list = None, densepose_pose_features: list = None, verbose: bool = False, display: bool = False):
         self.camera = camera
         self.pose = {
-            "openpose": self.parse_features(openpose_pose_features, key='OPENPOSE'),
-            "densepose": self.parse_features(densepose_pose_features, key='DENSEPOSE'),
+            "openpose": self.parse_features(openpose_pose_features, key=OPENPOSE_KEY, sub_key='POSE'),
+            "densepose": self.parse_features(densepose_pose_features, key=DENSEPOSE_KEY),
         }
         self.face = {
-            "openpose": self.parse_features(openpose_face_features, key='OPENPOSE'),
-            "openface": self.parse_features(openface_face_features, key='OPENFACE'),
+            "openpose": self.parse_features(openpose_face_features, key=OPENPOSE_KEY, sub_key='FACE'),
+            "openface": self.parse_features(openface_face_features, key=OPENFACE_KEY),
         }
         self.quadrant = -1
         self.confidence = 0
@@ -153,38 +154,57 @@ class Subject(object):
             else:
                 if self.verbose:
                     print("Discard loose part or unwanted person in background")
-                if self.display:
-                    vis.show_subjects_frame(
-                        self.camera, frame, unallocated_subject)
+                # if self.display:
+                    # vis.show_subjects_frame(
+                    #     self.camera, frame, unallocated_subject)
                 return allocated_subjects
 
         return allocated_subjects
 
-    def assign_quadrant(self):
+    def assign_quadrant(self, key: str):
         """Assign subject to quadrant based on its keypoints position
 
         Returns:
             dict: Quadrant identification and associated confidence
         """
-        # TODO: possibly need to complement this method with densepose and openface data
         id_weighing = dict().fromkeys(
             SUBJECT_IDENTIFICATION_GRID[self.camera].keys(), 0)
-        openpose_pose_features = self.pose['openpose']
-        # openpose_face_features = self.face['openpose']
 
-        for keypoint in openpose_pose_features.values():
-            keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
-            point = Point(keypoint_x, keypoint_y)
-            for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
-                if point.intersects(polygon):
-                    id_weighing[quadrant] += keypoint_confidence
-        identification_confidence = dict(
-            sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
-        self.identification_confidence = identification_confidence
-        self.quadrant = list(identification_confidence.keys())[0]
-        self.confidence = identification_confidence[self.quadrant]
+        if key == OPENPOSE_KEY:
+            openpose_pose_features = self.pose['openpose']
 
-        return identification_confidence
+            for keypoint in openpose_pose_features.values():
+                keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
+                point = Point(keypoint_x, keypoint_y)
+                for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
+                    if point.intersects(polygon):
+                        id_weighing[quadrant] += keypoint_confidence
+            identification_confidence = dict(
+                sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
+            self.identification_confidence = identification_confidence
+            self.quadrant = list(identification_confidence.keys())[0]
+            self.confidence = identification_confidence[self.quadrant]
+            return identification_confidence
+        if key == OPENFACE_KEY:
+            openface_face_features = self.face['openface']['face']
+
+            for keypoint in openface_face_features.values():
+                keypoint_x, keypoint_y = keypoint['x'], keypoint['y']
+                point = Point(keypoint_x, keypoint_y)
+                for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
+                    if point.intersects(polygon):
+                        id_weighing[quadrant] += 1
+            identification_confidence = dict(
+                sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
+            self.identification_confidence = identification_confidence
+            self.quadrant = list(identification_confidence.keys())[0]
+
+            return identification_confidence
+
+        elif key == DENSEPOSE_KEY:
+            print("DP")
+        else:
+            return None
 
     def is_valid_keypoint(self, keypoint: list):
         """Check if keypoint is valid
@@ -265,7 +285,7 @@ class Subject(object):
         self.pose[key] = merged_keypoints
         return True
 
-    def parse_features(self, features_list, key: str):
+    def parse_features(self, features_list, key: str, sub_key: str = None):
         """Parse features
 
         Args:
@@ -280,19 +300,60 @@ class Subject(object):
         if features_list is None:
             return list()
 
-        if key == 'OPENPOSE':
+        if key == OPENPOSE_KEY:
             keypoints = [features_list[x:x+3]
                          for x in range(0, len(features_list), 3)]
-            keypoints_filtered = dict(filter(is_relevant_pose_keypoint,
-                                             enumerate(keypoints)))
+            if sub_key == 'POSE':
+                keypoints_filtered = dict(filter(is_relevant_pose_keypoint,
+                                                 enumerate(keypoints)))
+            elif sub_key == 'FACE':
+                keypoints_filtered = dict(filter(is_relevant_face_keypoint,
+                                                 enumerate(keypoints)))
+            else:
+                keypoints_filtered = None
             return keypoints_filtered
-        elif key == 'OPENFACE':
-            keypoints = [features_list[x:x+3]
-                         for x in range(0, len(features_list), 3)]
-            keypoints_filtered = dict(filter(is_relevant_face_keypoint,
-                                             enumerate(keypoints)))
-            return keypoints_filtered
-        elif key == 'DENSEPOSE':
+
+        elif key == OPENFACE_KEY:
+            eye_cols = [
+                col for col in features_list.index if col.startswith('eye')]
+            eye_features = features_list[eye_cols]
+            openface_data = dict()
+
+            eye_field_prefix = 'eye_lmk_'
+            openface_data['eye'] = dict()
+            for eye_col in eye_cols:
+                eye_col = re.search(
+                    r'(?<=eye_lmk_)(x|y)_(\d{1,2})(?=)', eye_col).group(0).split('_')
+                coord = eye_col[0]
+                idx = eye_col[1]
+
+                if idx not in openface_data['eye']:
+                    openface_data['eye'][idx] = dict()
+
+                if coord not in openface_data['eye'][idx]:
+                    openface_data['eye'][idx][coord] = dict()
+
+                openface_data['eye'][idx][coord] = eye_features[eye_field_prefix+coord+'_'+idx]
+
+            self.confidence = features_list['confidence']
+            face_features = features_list.drop(eye_cols + ['confidence'])
+            openface_data['face'] = dict()
+            for face_col, value in face_features.iteritems():
+                face_col = face_col.split('_')
+                coord = face_col[0]
+                idx = face_col[1]
+
+                if idx not in openface_data['face']:
+                    openface_data['face'][idx] = dict()
+
+                if coord not in openface_data['face']:
+                    openface_data['face'][idx][coord] = dict()
+
+                openface_data['face'][idx][coord] = value
+
+            return openface_data
+
+        elif key == DENSEPOSE_KEY:
             pass
         else:
             return None

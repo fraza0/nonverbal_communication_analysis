@@ -7,8 +7,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-from nonverbal_communication_analysis.environment import (
-    DATASET_SYNC, SUBJECT_IDENTIFICATION_GRID, VALID_VIDEO_TYPES, VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR, DATASET_SYNC)
+from nonverbal_communication_analysis.environment import (OPENPOSE_KEY, OPENFACE_KEY,
+                                                          DATASET_SYNC, SUBJECT_IDENTIFICATION_GRID, VALID_VIDEO_TYPES, VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR, DATASET_SYNC)
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, list_dirs)
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
@@ -29,13 +29,13 @@ class Visualizer(object):
         _, frame = cap.read()
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    def show_subjects_frame(self, camera: str, frame: int, highlighted_subject=None, assigned_subjects: dict = None, key: str = 'openpose'):
+    def show_subjects_frame(self, camera: str, frame: int, highlighted_subject=None, assigned_subjects: dict = None, key: str = OPENPOSE_KEY):
         _, ax = plt.subplots()
         ax.set_xlim(-1, 1)
         ax.set_ylim(1, -1)
         ax.set_title('Subjects Keypoints Position')
 
-        file_path = DATASET_SYNC / self.experiment_id / 'task_2'
+        file_path = DATASET_SYNC / self.experiment_id / 'task_1'
         video_file = filter_files(fetch_files_from_directory(
             [file_path]), VALID_VIDEO_TYPES, include=camera)[0]
         path = file_path / video_file
@@ -45,21 +45,33 @@ class Visualizer(object):
         ax.imshow(display_frame, aspect='auto',
                   extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
 
-        if highlighted_subject is not None:
-            highlighted_subject_pose = highlighted_subject.pose[key]
-            highlighted_subject_pose_keypoints_df = pd.DataFrame(
-                highlighted_subject_pose.values(), columns=['x', 'y', 'c'])
+        if key == OPENPOSE_KEY:
+            if highlighted_subject is not None:
+                highlighted_subject_pose = highlighted_subject.pose[key]
+                highlighted_subject_pose_keypoints_df = pd.DataFrame(
+                    highlighted_subject_pose.values(), columns=['x', 'y', 'c'])
 
-            ax.scatter(x=highlighted_subject_pose_keypoints_df['x'], y=highlighted_subject_pose_keypoints_df['y'],
-                       c='red')
+                ax.scatter(x=highlighted_subject_pose_keypoints_df['x'], y=highlighted_subject_pose_keypoints_df['y'],
+                           c='red')
 
-        if assigned_subjects is not None:
-            for _, assigned_subject in assigned_subjects.items():
-                subject_pose = assigned_subject.pose[key]
-                pose_keypoints_df = pd.DataFrame(
-                    subject_pose.values(), columns=['x', 'y', 'c'])
-                ax.scatter(x=pose_keypoints_df['x'],
-                           y=pose_keypoints_df['y'], c='blue')
+            if assigned_subjects is not None:
+                for _, assigned_subject in assigned_subjects.items():
+                    subject_pose = assigned_subject.pose[key]
+                    pose_keypoints_df = pd.DataFrame(
+                        subject_pose.values(), columns=['x', 'y', 'c'])
+                    ax.scatter(x=pose_keypoints_df['x'],
+                               y=pose_keypoints_df['y'], c='blue')
+
+        elif key == OPENFACE_KEY:
+            if assigned_subjects is not None:
+                for _, assigned_subject in assigned_subjects.items():
+                    subject_pose = assigned_subject.face['openface']['face']
+                    keypoints_df = pd.DataFrame(
+                        subject_pose.values())
+                    for _, keypoint in keypoints_df.iterrows():
+                        ax.scatter(x=keypoint['x'],
+                                   y=keypoint['y'], c='blue')
+                        pass
 
         for _, polygon in SUBJECT_IDENTIFICATION_GRID[camera].items():
             pol_x, pol_y = polygon.exterior.xy
