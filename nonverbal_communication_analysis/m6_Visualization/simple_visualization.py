@@ -8,7 +8,7 @@ import numpy as np
 from pathlib import Path
 
 from nonverbal_communication_analysis.environment import (OPENPOSE_KEY, OPENFACE_KEY,
-                                                          DATASET_SYNC, SUBJECT_IDENTIFICATION_GRID, VALID_VIDEO_TYPES, VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR, DATASET_SYNC)
+                                                          DATASET_SYNC, SUBJECT_IDENTIFICATION_GRID, VALID_VIDEO_TYPES, VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DATASET_SYNC)
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, list_dirs)
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
@@ -113,11 +113,73 @@ class Visualizer(object):
                         subject_pose.values(), columns=['x', 'y', 'c'])
                     ax[idx].scatter(x=pose_keypoints_df['x'],
                                     y=pose_keypoints_df['y'],
-                                    c=self.COLOR_MAP[subject_id], marker='.')
+                                    c=self.COLOR_MAP[subject_id], marker='o')
 
                 for _, polygon in SUBJECT_IDENTIFICATION_GRID[camera].items():
                     pol_x, pol_y = polygon.exterior.xy
                     ax[idx].plot(pol_x, pol_y)
+
+    def openface_overlay(self, group_id: str, ax, specific_frame: int = None, specific_task: int = None, verbose: bool = False):
+        """Overlay Openface data on a frame
+
+        This method needs to have a camera_files dict instead of a list as openface does
+        not output an empty file for unsuccessful facial keypoints detection in a frame,
+        unlike openpose.
+
+        Args:
+            group_id (str): Experiment Group ID
+            ax (plt.Axes): matplotlib plot axes
+            specific_frame (int, optional): Specific frame. Defaults to None.
+            specific_task (int, optional): Specific task. Defaults to None.
+            verbose (bool, optional): Verbose. Defaults to False.
+        """
+        openface_group_data = [x for x in (OPENFACE_OUTPUT_DIR / group_id).iterdir()
+                               if '_clean' in x.name][0]
+
+        if (specific_frame and specific_task) is not None:
+            openface_task_directory = [x for x in openface_group_data.iterdir()
+                                       if x.is_dir() and str(specific_task) in str(x)][0]
+            openface_task_cameras_directories = [
+                x for x in openface_task_directory.iterdir()]
+            openface_task_cameras_directories.sort()
+
+            assigned_subjects = dict()
+            for camera_directory in openface_task_cameras_directories:
+                camera = camera_directory.name
+                openface_files = {int(re.search(r'(?<=_)(\d{12})(?=_)',
+                                                x.name).group(0)): x for x in camera_directory.iterdir(
+                ) if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
+
+                if specific_frame in openface_files:
+                    subjects_data = json.load(
+                        open(openface_files[specific_frame], 'r'))
+                    assigned_subjects[camera] = subjects_data['subjects']
+
+            for camera, assigned_subjects in assigned_subjects.items():
+                idx = int(camera[2])-1
+                ax[idx].set_xlim(-1, 1)
+                ax[idx].set_ylim(1, -1)
+
+                for assigned_subject in assigned_subjects:
+                    subject_id = assigned_subject['id']
+                    subject_eyes = assigned_subject['face']['openface']['eye']
+                    subject_face = assigned_subject['face']['openface']['face']
+
+                    face_keypoints_df = pd.DataFrame(
+                        subject_face.values())
+                    eyes_keypoints_df = pd.DataFrame(subject_eyes.values())
+
+                    ax[idx].scatter(x=face_keypoints_df['x'],
+                                    y=face_keypoints_df['y'],
+                                    c=self.COLOR_MAP[subject_id], marker='.')
+
+                    ax[idx].scatter(x=eyes_keypoints_df['x'],
+                                    y=eyes_keypoints_df['y'],
+                                    c=self.COLOR_MAP[subject_id], marker='.')
+
+                # for _, polygon in SUBJECT_IDENTIFICATION_GRID[camera].items():
+                #     pol_x, pol_y = polygon.exterior.xy
+                #     ax[idx].plot(pol_x, pol_y)
 
     def show_frame(self, group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, verbose: bool = False):
         group_directory = Path(group_directory)
@@ -149,12 +211,19 @@ class Visualizer(object):
                            extent=(-1, 1, 1, -1), alpha=1, zorder=-1)
 
         if openpose:
+            print("Overlay Openpose")
             self.openpose_overlay(group_id, ax=ax, specific_frame=specific_frame,
                                   specific_task=specific_task, verbose=verbose)
+
         if openface:
-            pass
+            print("Overlay Openface")
+            self.openface_overlay(group_id, ax=ax, specific_frame=specific_frame,
+                                  specific_task=specific_task, verbose=verbose)
+
         if densepose:
-            pass
+            print("Overlay Densepose")
+            # self.densepose_overlay(group_id, ax=ax, specific_frame=specific_frame,
+            #                       specific_task=specific_task, verbose=verbose)
 
         plt.show()
 

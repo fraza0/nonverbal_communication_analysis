@@ -4,6 +4,7 @@ from pathlib import Path
 
 from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SYNC, GROUPS_INFO_FILE
 
+
 def get_group_from_file_path(group_directory_path: {str, Path}):
     group_directory_path = str(group_directory_path)
     sample_indicator = 'SAMPLE'
@@ -72,11 +73,11 @@ class Experiment(object):
             "experiment": {
                 "id": self._id,
                 "type": self.type,
-                "people": people_data,
+                # "people": people_data,
             }
         }
 
-        return json.dumps(obj)
+        return obj
 
     def from_json(self):
         """Create Experiment object from JSON string

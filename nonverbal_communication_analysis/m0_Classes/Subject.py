@@ -367,22 +367,29 @@ class Subject(object):
             str: JSON formatted Subject object
         """
 
+        has_pose = False
         out_pose = dict()
-
         for key in self.pose:
             if self.pose[key]:
                 out_pose[key] = self.pose[key]
+                has_pose = True
 
+        has_face = False
         out_face = dict()
         for key in self.face:
             if self.face[key]:
                 out_face[key] = self.face[key]
+                has_face = True
 
         obj = {
             "id": self.quadrant,
-            "pose": out_pose,
-            "face": out_face
         }
+
+        if has_pose:
+            obj["pose"] = out_pose
+
+        if has_face:
+            obj["face"] = out_face
 
         return obj
 
