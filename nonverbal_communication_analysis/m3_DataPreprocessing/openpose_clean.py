@@ -25,6 +25,9 @@ class OpenposeClean(object):
         self.base_output_dir = OPENPOSE_OUTPUT_DIR / \
             group_id / (group_id + '_clean')
         os.makedirs(self.base_output_dir, exist_ok=True)
+        json.dump(self.experiment.to_json(),
+                  open(self.base_output_dir / (self.group_id + '.json'), 'w'))
+        exit()
 
     def process_frames(self, camera_frame_files: dict, output_directory: str, prettify: bool = False, verbose: bool = False, display: bool = False):
         for camera in camera_frame_files:

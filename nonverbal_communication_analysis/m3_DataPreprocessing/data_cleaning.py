@@ -15,7 +15,7 @@ from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_fro
 from pathlib import Path
 
 
-def main(group_directory: str, task: int = None, specific_frame: int = None, openpose: bool = True, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
+def main(group_directory: str, task: int = None, specific_frame: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
     group_directory = Path(group_directory)
     group_id = get_group_from_file_path(group_directory)
     tasks_directories = [x for x in group_directory.iterdir()

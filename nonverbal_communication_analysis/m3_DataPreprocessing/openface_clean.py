@@ -112,6 +112,8 @@ class OpenfaceClean(object):
         self.base_output_dir = OPENFACE_OUTPUT_DIR / \
             group_id / (group_id + '_clean')
         os.makedirs(self.base_output_dir, exist_ok=True)
+        json.dump(self.experiment.to_json(),
+                  open(self.base_output_dir/(self.group_id + '.json'), 'w'))
 
     def scaling_min_max(self, df_entry: pd.DataFrame, axis: str, camera: str, a: int = -1, b: int = 1):
         resolution_min, resolution_max = 0, VIDEO_RESOLUTION[camera][axis]
