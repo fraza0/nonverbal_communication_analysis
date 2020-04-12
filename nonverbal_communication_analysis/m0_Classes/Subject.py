@@ -97,9 +97,6 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
-        # if self.display and vis is not None:
-        #     vis.show_subjects_frame(self.camera, frame, unallocated_subject)
-
         if quadrant not in allocated_subjects:
             if self.verbose:
                 print("Previous", unallocated_subject.quadrant)
@@ -163,6 +160,9 @@ class Subject(object):
 
     def assign_quadrant(self, key: str):
         """Assign subject to quadrant based on its keypoints position
+
+        Args:
+            key (str): framework key
 
         Returns:
             dict: Quadrant identification and associated confidence
@@ -361,7 +361,8 @@ class Subject(object):
         return keypoints
 
     def to_json(self):
-        """Transform Subject object to JSON format
+        """Transform Subject object to JSON format.
+        If attribute is empty it is not printed
 
         Returns:
             str: JSON formatted Subject object

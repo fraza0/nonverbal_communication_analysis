@@ -6,6 +6,18 @@ from nonverbal_communication_analysis.environment import DATASET_DIR, DATASET_SY
 
 
 def get_group_from_file_path(group_directory_path: {str, Path}):
+    """Get group ID from file path
+
+    Args:
+        group_directory_path (str or pathlib.Path): Group Videos Directory
+
+    See Also:
+        Group Info File: DATASET_DEP/groups_info.csv
+
+    Returns:
+        str, bool: If ID match ID in experiment's groups 
+            info file, return ID; False otherwise
+    """
     group_directory_path = str(group_directory_path)
     sample_indicator = 'SAMPLE'
     df = pd.read_csv(GROUPS_INFO_FILE)

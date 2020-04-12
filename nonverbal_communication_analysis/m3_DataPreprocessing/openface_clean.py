@@ -116,6 +116,18 @@ class OpenfaceClean(object):
                   open(self.base_output_dir/(self.group_id + '.json'), 'w'))
 
     def scaling_min_max(self, df_entry: pd.DataFrame, axis: str, camera: str, a: int = -1, b: int = 1):
+        """Min-Max Scaling step. Needed in openface, as openface does not normalize output data
+
+        Args:
+            df_entry (pd.DataFrame):  Dataframe to normalize
+            axis (str): Axis (X or Y)
+            camera (str): Which camera
+            a (int, optional): Minimum value. Defaults to -1.
+            b (int, optional): Maximum value. Defaults to 1.
+
+        Returns:
+            [type]: [description]
+        """
         resolution_min, resolution_max = 0, VIDEO_RESOLUTION[camera][axis]
         normalized_entry = a + (df_entry - resolution_min) * (b-a) \
             / (resolution_max-resolution_min)
@@ -123,6 +135,16 @@ class OpenfaceClean(object):
         return normalized_entry
 
     def process_frames(self, task_frame_df: pd.DataFrame, output_directory: str, prettify: bool = False, verbose: bool = False, display: bool = False):
+        """Process each frame. Filter Skeleton parts detected and parse Subjects
+
+        Args:
+            camera_frame_files (dict): Camera frame files
+            output_directory (str): Output directory path
+            prettify (bool, optional): Pretty JSON print. Defaults to False.
+            verbose (bool, optional): Verbose. Defaults to False.
+            display (bool, optional): Display visualization. Defaults to False.
+        """
+
         frames = list(task_frame_df['frame'].unique())
         for frame in frames:
             df = task_frame_df.loc[task_frame_df.frame == frame]
@@ -153,6 +175,16 @@ class OpenfaceClean(object):
                         output_frame_file, 'w'))
 
     def clean(self, tasks_directories: dict, specific_frame: int = None, prettify: bool = False, verbose: bool = False, display: bool = False):
+        """Openface feature data cleansing and filtering
+
+        Args:
+            tasks_directories (dict): Experiment Group Tasks directory
+            specific_frame (int, optional): Specify frame. Defaults to None.
+            prettify (bool, optional): Pretty JSON print. Defaults to False.
+            verbose (bool, optional): Verbose. Defaults to False.
+            display (bool, optional): Enable visualization. Defaults to False.
+        """
+
         for task in tasks_directories:
             camera_files = dict()
             task_directory = OPENFACE_OUTPUT_DIR / self.group_id / task.name

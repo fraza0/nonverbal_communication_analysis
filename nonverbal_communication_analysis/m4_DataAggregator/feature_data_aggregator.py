@@ -52,6 +52,14 @@ class SubjectDataAggregator:
             json.dump(experiment_data, open(experiment_data_output, 'w'))
 
     def get_experiment_data(self, group_directory):
+        """Get experiment information
+
+        Args:
+            group_directory (str): Dataset Group directory path
+
+        Returns:
+            dict: Group basic information: ID and TYPE
+        """
         clean_dir = [x for x in group_directory.iterdir()
                      if x.is_dir() and 'clean' in x.name][0]
 
@@ -65,6 +73,14 @@ class SubjectDataAggregator:
         return experiment.to_json()
 
     def get_data(self, group_directory):
+        """Get framework clean data
+
+        Args:
+            group_directory ([type]): Framework output group directory path
+
+        Returns:
+            dict: Framework output files paths
+        """
         clean_dir = [x for x in group_directory.iterdir()
                      if x.is_dir() and 'clean' in x.name][0]
 
@@ -96,7 +112,16 @@ class SubjectDataAggregator:
         print("Densepose Directory: ", densepose_group_directory)
         return dict()
 
-    def merge_subject_dicts(self, subject_list1: list, subject_list2: dict):
+    def merge_subject_dicts(self, subject_list1: list, subject_list2: list):
+        """Merge subjects data from different frameworks
+
+        Args:
+            subject_list1 (list): Subject data
+            subject_list2 (list): Subject data
+
+        Returns:
+            list: Merged subjects attributes
+        """
         pose_key = 'pose'
         face_key = 'face'
         subjects_list = dict()
@@ -112,7 +137,12 @@ class SubjectDataAggregator:
         return list(subjects_list.values())
 
     def aggregate(self, prettify: bool = False):
-        # Follow openpose frame list as openpose always outputs a file per frame
+        """Aggregate framework clean output data
+        Follow openpose frame list as openpose always outputs a file per frame
+
+        Args:
+            prettify (bool, optional): Pretty JSON print. Defaults to False.
+        """
         openpose_data = self.openpose_data
         openface_data = self.openface_data
         densepose_data = self.densepose_data

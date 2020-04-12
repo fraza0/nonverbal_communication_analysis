@@ -47,7 +47,16 @@ OpenFace Output Commands:
 
 
 def format_output_string(file_path: str, group_id: str = None, directory: bool = False):
+    """Format output string given file path and group id. Auxiliary Method
 
+    Args:
+        file_path (str): Output base directory path
+        group_id (str, optional): Experiment group ID. Defaults to None.
+        directory (bool, optional): If is directory. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
     output_string = group_id+'/' if group_id is not None else ''
 
     if directory:
@@ -69,9 +78,13 @@ def format_output_string(file_path: str, group_id: str = None, directory: bool =
 
 
 def openface_img(img_files: list, write: bool, verbose: bool = False):
-    '''
-    Process single image input. Only supports single face processing.
-    '''
+    """Process single image input. Only supports single face processing.
+
+    Args:
+        img_files (list): Files paths list
+        write (bool): Whether to write video or not 
+        verbose (bool, optional): Verbose. Defaults to False.
+    """
     assert isinstance(img_files, list), print_assertion_error(
         "img_files", "list")
     cmd_list = [OPENFACE_FACE_LANDMARK_IMG]

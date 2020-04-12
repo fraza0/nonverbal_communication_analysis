@@ -30,6 +30,16 @@ class OpenposeClean(object):
         exit()
 
     def process_frames(self, camera_frame_files: dict, output_directory: str, prettify: bool = False, verbose: bool = False, display: bool = False):
+        """Process each frame. Filter Skeleton parts detected and parse Subjects
+
+        Args:
+            camera_frame_files (dict): Camera frame files
+            output_directory (str): Output directory path
+            prettify (bool, optional): Pretty JSON print. Defaults to False.
+            verbose (bool, optional): Verbose. Defaults to False.
+            display (bool, optional): Display visualization. Defaults to False.
+        """
+
         for camera in camera_frame_files:
             for frame_file in camera_frame_files[camera]:
                 frame_idx = re.search(r'(?<=_)(\d{12})(?=_)',
@@ -54,6 +64,16 @@ class OpenposeClean(object):
                         output_frame_file, 'w'))
 
     def clean(self, tasks_directories: dict, specific_frame: int = None, prettify: bool = False, verbose: bool = False, display: bool = False):
+        """Openpose feature data cleansing and filtering
+
+        Args:
+            tasks_directories (dict): Experiment Group Tasks directory
+            specific_frame (int, optional): Specify frame. Defaults to None.
+            prettify (bool, optional): Pretty JSON print. Defaults to False.
+            verbose (bool, optional): Verbose. Defaults to False.
+            display (bool, optional): Enable visualization. Defaults to False.
+        """
+
         for task in tasks_directories:
             camera_files = dict()
             task_directory = OPENPOSE_OUTPUT_DIR / self.group_id / task.name
