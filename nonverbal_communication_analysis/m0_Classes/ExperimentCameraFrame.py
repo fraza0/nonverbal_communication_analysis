@@ -6,7 +6,7 @@ import pandas as pd
 
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS, NUM_EYE_LANDMARKS,
-    RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
+    SUBJECT_IDENTIFICATION_GRID, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
 from nonverbal_communication_analysis.utils import log
 

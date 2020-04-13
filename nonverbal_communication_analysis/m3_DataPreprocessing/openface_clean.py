@@ -9,7 +9,7 @@ import pandas as pd
 import yaml
 
 from nonverbal_communication_analysis.environment import (
-    VALID_OUTPUT_FILE_TYPES, OPENFACE_OUTPUT_DIR, NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, OPENFACE_KEY, VIDEO_RESOLUTION)
+    VALID_OUTPUT_FILE_TYPES, OPENFACE_OUTPUT_DIR, NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, OPENFACE_KEY, VIDEO_RESOLUTION, QUADRANT_MIN, QUADRANT_MAX)
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
 
@@ -115,7 +115,7 @@ class OpenfaceClean(object):
         json.dump(self.experiment.to_json(),
                   open(self.base_output_dir/(self.group_id + '.json'), 'w'))
 
-    def scaling_min_max(self, df_entry: pd.DataFrame, axis: str, camera: str, a: int = -1, b: int = 1):
+    def scaling_min_max(self, df_entry: pd.DataFrame, axis: str, camera: str, a: int = QUADRANT_MIN, b: int = QUADRANT_MAX):
         """Min-Max Scaling step. Needed in openface, as openface does not normalize output data
 
         Args:

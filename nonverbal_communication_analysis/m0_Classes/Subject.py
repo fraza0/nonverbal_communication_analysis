@@ -13,7 +13,7 @@ from shapely.geometry.polygon import Polygon
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
-    VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
+    VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, CONFIDENCE_THRESHOLD)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     Visualizer
 from nonverbal_communication_analysis.utils import log
@@ -28,7 +28,9 @@ def is_relevant_pose_keypoint(entry):
     Returns:
         bool: True if keypoint is valid. False otherwise
     """
-    if entry[0] in RELEVANT_POSE_KEYPOINTS:
+    keypoint_idx = entry[0]
+    keypoint = entry[1]
+    if keypoint_idx in RELEVANT_POSE_KEYPOINTS and keypoint[2] >= CONFIDENCE_THRESHOLD:
         return True
     return False
 
@@ -229,9 +231,8 @@ class Subject(object):
         """
         subject_keypoints = self.pose[key]
         for keypoint in VALID_SUBJECT_POSE_KEYPOINTS:
-            if not self.is_valid_keypoint(subject_keypoints[keypoint]):
+            if not (keypoint in subject_keypoints and self.is_valid_keypoint(subject_keypoints[keypoint])):
                 return False
-
         return True
 
     def get_valid_keypoints(self, key: str = 'openpose'):
@@ -350,7 +351,6 @@ class Subject(object):
                     openface_data['face'][idx][coord] = dict()
 
                 openface_data['face'][idx][coord] = value
-
             return openface_data
 
         elif key == DENSEPOSE_KEY:

@@ -85,7 +85,7 @@ def strided_split(df, chunk_size):
     return np.split(df, indices)
 
 
-def set_quadrants(center, _min=-1, _max=1):
+def set_quadrants(center, _min, _max):
     x = center[0]
     y = center[1]
     q1 = Polygon([(center), (_min, y), (_min, _min), (x, _min)])
@@ -102,7 +102,7 @@ def set_quadrants(center, _min=-1, _max=1):
     return quadrants
 
 
-def person_identification_grid_rescaling(identification_grid, roi_grid, a: int = -1, b: int = 1):
+def person_identification_grid_rescaling(identification_grid, roi_grid, a, b):
     subject_identification_grid = dict()
     for camera, grid in identification_grid.items():
         x_min, x_max = roi_grid[camera]['xmin'], roi_grid[camera]['xmax']
@@ -116,6 +116,6 @@ def person_identification_grid_rescaling(identification_grid, roi_grid, a: int =
         y_rescaled = a + (((y_grid - y_min)*(b-a)) / y_max_min)
 
         center = (x_rescaled, y_rescaled)
-        subject_identification_grid[camera] = set_quadrants(center)
+        subject_identification_grid[camera] = set_quadrants(center, a, b)
 
     return subject_identification_grid

@@ -27,7 +27,6 @@ class OpenposeClean(object):
         os.makedirs(self.base_output_dir, exist_ok=True)
         json.dump(self.experiment.to_json(),
                   open(self.base_output_dir / (self.group_id + '.json'), 'w'))
-        exit()
 
     def process_frames(self, camera_frame_files: dict, output_directory: str, prettify: bool = False, verbose: bool = False, display: bool = False):
         """Process each frame. Filter Skeleton parts detected and parse Subjects
