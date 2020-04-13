@@ -4,7 +4,7 @@ import re
 from os import makedirs
 from pathlib import Path
 
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, FEATURE_AGGREGATE_DIR
 from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, get_group_from_file_path
 from nonverbal_communication_analysis.utils import log
 
@@ -176,7 +176,7 @@ class SubjectDataAggregator:
                                 frame_file['subjects'], densepose_subjects['subjects'])
 
                     output_frame_directory = self.group_directory / \
-                        'FEATURE_DATA' / task / camera
+                        FEATURE_AGGREGATE_DIR / task / camera
                     makedirs(output_frame_directory, exist_ok=True)
                     output_frame_file = output_frame_directory / \
                         ("%.12d" % frame + '.json')

@@ -108,18 +108,20 @@ HEAD_MOV_VARIANCE_THRESHOLD = .3
 # DATA FILTERING #
 ######################
 
+QUADRANT_MIN = 0
+QUADRANT_MAX = 1
+
 OPENPOSE_KEY = 'OPENPOSE'
 
-CONFIDENCE_THRESHOLD = 0.55
+CONFIDENCE_THRESHOLD = 0.10
 PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
 RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
 RELEVANT_FACE_KEYPOINTS = range(0, 70)
 
 VALID_SUBJECT_POSE_KEYPOINTS = [2, 5]
 
-
 SUBJECT_IDENTIFICATION_GRID = person_identification_grid_rescaling(
-    PERSON_IDENTIFICATION_GRID, CAM_ROI)
+    PERSON_IDENTIFICATION_GRID, CAM_ROI, QUADRANT_MIN, QUADRANT_MAX)
 
 CAMERA_ROOM_GEOMETRY = {
     'pc1': {
@@ -145,8 +147,14 @@ CAMERA_ROOM_GEOMETRY = {
 OPENFACE_KEY = 'OPENFACE'
 DENSEPOSE_KEY = 'DENSEPOSE'
 
+FEATURE_AGGREGATE_DIR = 'FEATURE_DATA'
 
-##############
-# STATISTICS #
-##############
-# STATISTICS_PATH = TESE_HOME+'/nonverbal_communication_analysis/_StatisticalAnalysis/'
+OPENPOSE_KEYPOINT_LINKS = {
+    0: [1],
+    1: [2, 5, 8],
+    2: [3],
+    3: [4],
+    5: [6],
+    6: [7],
+    8: [9, 12]
+}
