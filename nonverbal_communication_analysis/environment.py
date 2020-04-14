@@ -113,6 +113,36 @@ QUADRANT_MAX = 1
 
 OPENPOSE_KEY = 'OPENPOSE'
 
+# https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/output.md
+OPENPOSE_KEYPOINT_MAP = {
+    'NOSE': 0,
+    'NECK': 1,
+    'R_SHOULDER': 2,
+    'R_ELBOW': 3,
+    'R_WRIST': 4,
+    'L_SHOULDER': 5,
+    'L_ELBOW': 6,
+    'L_WRIST': 7,
+    'M_HIP': 8,
+    'R_HIP': 9,
+    'R_KNEE': 10,
+    'R_ANKLE': 11,
+    'L_HIP': 12,
+    'L_KNEE': 13,
+    'L_ANKLE': 14,
+    'R_EYE': 15,
+    'L_EYE': 16,
+    'R_EAR': 17,
+    'L_EAR': 18,
+    'L_BIGTOE': 19,
+    'L_SMALLTOE': 20,
+    'L_HEEL': 21,
+    'R_BIGTOE': 22,
+    'R_SMALLTOE': 23,
+    'R_HEEL': 24,
+    'BACKGROUND': 25,
+}
+
 CONFIDENCE_THRESHOLD = 0.10
 PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
 RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]

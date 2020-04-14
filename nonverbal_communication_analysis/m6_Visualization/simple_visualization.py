@@ -236,8 +236,8 @@ class Visualizer(object):
     #########
 
     def rescale_frame(self, frame):
-        width = VIDEO_RESOLUTION['pc2']['x']
-        height = VIDEO_RESOLUTION['pc2']['y']
+        width = VIDEO_RESOLUTION['pc3']['x']
+        height = VIDEO_RESOLUTION['pc3']['y']
         dim = (width, height)
         return cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
 
@@ -271,9 +271,6 @@ class Visualizer(object):
 
                                 if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
                                     break
-
-                                print(camera, subject_id,
-                                      (keypoint_idx, (keypoint_x, keypoint_y)), (keypoint_link_idx, (keypoint_link_x, keypoint_link_y)))
 
                                 cv2.line(img_frame, (keypoint_x, keypoint_y),
                                          (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
