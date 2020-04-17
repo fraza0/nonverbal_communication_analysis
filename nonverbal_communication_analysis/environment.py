@@ -188,3 +188,24 @@ OPENPOSE_KEYPOINT_LINKS = {
     6: [7],
     8: [9, 12]
 }
+
+# Camera list by user, ordered by choice preference
+# based on view perspective
+SUBJECT_AXIS = {
+    1: {'x': ['pc2', 'pc3'],
+        'y': ['pc1'],
+        'z': ['pc2', 'pc3'],
+        },
+    2: {'x': ['pc2', 'pc3'],
+        'y': ['pc1'],
+        'z': ['pc2', 'pc3'],
+        },
+    3: {'x': ['pc3', 'pc2'],
+        'y': ['pc1'],
+        'z': ['pc3', 'pc2'],
+        },
+    4: {'x': ['pc3', 'pc2'],
+        'y': ['pc1'],
+        'z': ['pc3', 'pc2'],
+        },
+}

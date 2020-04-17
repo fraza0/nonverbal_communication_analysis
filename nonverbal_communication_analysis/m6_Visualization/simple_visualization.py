@@ -12,7 +12,8 @@ from nonverbal_communication_analysis.environment import (OPENPOSE_KEY, OPENFACE
                                                           VALID_OUTPUT_FILE_TYPES, OPENPOSE_OUTPUT_DIR,
                                                           OPENFACE_OUTPUT_DIR, DATASET_SYNC,
                                                           QUADRANT_MIN, QUADRANT_MAX, VIDEO_RESOLUTION,
-                                                          FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS)
+                                                          FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
+                                                          OPENPOSE_KEYPOINT_MAP)
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, list_dirs)
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
@@ -25,6 +26,12 @@ class Visualizer(object):
                  2: (0, 255, 255),
                  3: (0, 255, 0),
                  4: (0, 0, 255)}
+
+    COLORMAP = {0: 'black',
+                1: 'blue',
+                2: 'yellow',
+                3: 'green',
+                4: 'red'}
 
     def __init__(self, group_id: str):
         self.group_id = group_id
@@ -121,7 +128,7 @@ class Visualizer(object):
                         subject_pose.values(), columns=['x', 'y', 'c'])
                     ax[idx].scatter(x=pose_keypoints_df['x'],
                                     y=pose_keypoints_df['y'],
-                                    c=self.COLOR_MAP[subject_id], marker='o')
+                                    c=self.COLORMAP[subject_id], marker='o')
 
                 for _, polygon in SUBJECT_IDENTIFICATION_GRID[camera].items():
                     pol_x, pol_y = polygon.exterior.xy
@@ -275,6 +282,35 @@ class Visualizer(object):
                                 cv2.line(img_frame, (keypoint_x, keypoint_y),
                                          (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
 
+                                if camera == 'pc1' and int(keypoint_idx) == int(OPENPOSE_KEYPOINT_MAP['NECK']):
+                                    font = cv2.FONT_HERSHEY_SIMPLEX
+                                    if subject_id <= 2:
+                                        cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                                 (keypoint_x-5, keypoint_y+15), (0, 0, 255), 2)
+                                        cv2.putText(
+                                            img_frame, 'x', (keypoint_x, keypoint_y+15), font, 0.5, (50, 50, 255), 1, cv2.LINE_AA)
+                                        cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                                 (keypoint_x+30, keypoint_y), (0, 255, 0), 2)
+                                        cv2.putText(
+                                            img_frame, 'y', (keypoint_x+30, keypoint_y), font, 0.5, (124, 247, 2), 1, cv2.LINE_AA)
+                                        cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                                 (keypoint_x, keypoint_y-30), (255, 0, 0), 2)
+                                        cv2.putText(
+                                            img_frame, 'z', (keypoint_x, keypoint_y-30), font, 0.5, (247, 247, 2), 1, cv2.LINE_AA)
+                                    else:
+                                        cv2.line(img_frame, (keypoint_x-5, keypoint_y-20),
+                                                 (keypoint_x, keypoint_y), (0, 0, 255), 2)
+                                        cv2.putText(
+                                            img_frame, 'x', (keypoint_x-15, keypoint_y-20), font, 0.5, (50, 50, 255), 1, cv2.LINE_AA)
+                                        cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                                 (keypoint_x-30, keypoint_y), (0, 255, 0), 2)
+                                        cv2.putText(
+                                            img_frame, 'y', (keypoint_x-30, keypoint_y+10), font, 0.5, (124, 247, 2), 1, cv2.LINE_AA)
+                                        cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                                 (keypoint_x, keypoint_y-30), (255, 0, 0), 2)
+                                        cv2.putText(
+                                            img_frame, 'z', (keypoint_x+2, keypoint_y-30), font, 0.5, (247, 247, 2), 1, cv2.LINE_AA)
+
     def feature_overlay_video(self, img_frame: np.ndarray, frame_idx: int, camera: str, openpose: bool = False, openface: bool = False, densepose: bool = False, verbose: bool = False):
         frame_data = json.load(
             open(self.frame_feature_files[camera][frame_idx], 'r'))
@@ -349,7 +385,10 @@ class Visualizer(object):
                         frame = self.rescale_frame(frame)
                         cv2.imshow('Task %s - Camera %s' %
                                    (task_directory.name, camera), frame)
+
+                        # cv2.imwrite("%s.jpg" % camera, frame)
                         # cv2.waitKey()
+                        # return
                     else:
                         for camera, video_capture in video_captures.items():
                             video_capture.release()
