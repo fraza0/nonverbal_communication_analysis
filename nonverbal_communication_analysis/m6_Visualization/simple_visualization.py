@@ -119,7 +119,6 @@ class Visualizer(object):
             for idx, (camera, assigned_subjects) in enumerate(assigned_subjects.items()):
                 ax[idx].set_xlim(QUADRANT_MIN, QUADRANT_MAX)
                 ax[idx].set_ylim(QUADRANT_MAX, QUADRANT_MIN)
-
                 for assigned_subject in assigned_subjects:
                     subject_id = assigned_subject['id']
                     subject_pose = assigned_subject['pose']['openpose']
@@ -129,6 +128,9 @@ class Visualizer(object):
                     ax[idx].scatter(x=pose_keypoints_df['x'],
                                     y=pose_keypoints_df['y'],
                                     c=self.COLORMAP[subject_id], marker='o')
+
+                    for i, kp in subject_pose.items():
+                        ax[idx].annotate(str(i), xy=(kp[0], kp[1]))
 
                 for _, polygon in SUBJECT_IDENTIFICATION_GRID[camera].items():
                     pol_x, pol_y = polygon.exterior.xy
@@ -260,8 +262,8 @@ class Visualizer(object):
                     keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
                 keypoint_c = round(keypoint_values[2] * 5)
 
-                cv2.circle(img_frame, (keypoint_x, keypoint_y),
-                           keypoint_c, self.COLOR_MAP[subject_id], -1)
+                # cv2.circle(img_frame, (keypoint_x, keypoint_y),
+                #            keypoint_c, self.COLOR_MAP[subject_id], -1)
 
                 if key == 'pose':
                     keypoint_idx = int(keypoint_idx)
@@ -279,8 +281,8 @@ class Visualizer(object):
                                 if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
                                     break
 
-                                cv2.line(img_frame, (keypoint_x, keypoint_y),
-                                         (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
+                                # cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                #          (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
 
                                 if camera == 'pc1' and int(keypoint_idx) == int(OPENPOSE_KEYPOINT_MAP['NECK']):
                                     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -288,28 +290,28 @@ class Visualizer(object):
                                         cv2.line(img_frame, (keypoint_x, keypoint_y),
                                                  (keypoint_x-5, keypoint_y+15), (0, 0, 255), 2)
                                         cv2.putText(
-                                            img_frame, 'x', (keypoint_x, keypoint_y+15), font, 0.5, (50, 50, 255), 1, cv2.LINE_AA)
+                                            img_frame, 'x', (keypoint_x, keypoint_y+15), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                                         cv2.line(img_frame, (keypoint_x, keypoint_y),
                                                  (keypoint_x+30, keypoint_y), (0, 255, 0), 2)
                                         cv2.putText(
-                                            img_frame, 'y', (keypoint_x+30, keypoint_y), font, 0.5, (124, 247, 2), 1, cv2.LINE_AA)
+                                            img_frame, 'y', (keypoint_x+20, keypoint_y+10), font, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                                         cv2.line(img_frame, (keypoint_x, keypoint_y),
                                                  (keypoint_x, keypoint_y-30), (255, 0, 0), 2)
                                         cv2.putText(
-                                            img_frame, 'z', (keypoint_x, keypoint_y-30), font, 0.5, (247, 247, 2), 1, cv2.LINE_AA)
+                                            img_frame, 'z', (keypoint_x, keypoint_y-30), font, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
                                     else:
                                         cv2.line(img_frame, (keypoint_x-5, keypoint_y-20),
                                                  (keypoint_x, keypoint_y), (0, 0, 255), 2)
                                         cv2.putText(
-                                            img_frame, 'x', (keypoint_x-15, keypoint_y-20), font, 0.5, (50, 50, 255), 1, cv2.LINE_AA)
+                                            img_frame, 'x', (keypoint_x-15, keypoint_y-20), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                                         cv2.line(img_frame, (keypoint_x, keypoint_y),
                                                  (keypoint_x-30, keypoint_y), (0, 255, 0), 2)
                                         cv2.putText(
-                                            img_frame, 'y', (keypoint_x-30, keypoint_y+10), font, 0.5, (124, 247, 2), 1, cv2.LINE_AA)
+                                            img_frame, 'y', (keypoint_x-30, keypoint_y+10), font, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                                         cv2.line(img_frame, (keypoint_x, keypoint_y),
                                                  (keypoint_x, keypoint_y-30), (255, 0, 0), 2)
                                         cv2.putText(
-                                            img_frame, 'z', (keypoint_x+2, keypoint_y-30), font, 0.5, (247, 247, 2), 1, cv2.LINE_AA)
+                                            img_frame, 'z', (keypoint_x+2, keypoint_y-30), font, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
 
     def feature_overlay_video(self, img_frame: np.ndarray, frame_idx: int, camera: str, openpose: bool = False, openface: bool = False, densepose: bool = False, verbose: bool = False):
         frame_data = json.load(

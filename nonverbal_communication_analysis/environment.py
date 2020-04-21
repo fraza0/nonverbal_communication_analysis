@@ -148,7 +148,7 @@ PEOPLE_FIELDS = ['person_id', 'pose_keypoints_2d', 'face_keypoints_2d']
 RELEVANT_POSE_KEYPOINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 17, 18]
 RELEVANT_FACE_KEYPOINTS = range(0, 70)
 
-VALID_SUBJECT_POSE_KEYPOINTS = [2, 5]
+VALID_SUBJECT_POSE_KEYPOINTS = [1, 2, 5]
 
 SUBJECT_IDENTIFICATION_GRID = person_identification_grid_rescaling(
     PERSON_IDENTIFICATION_GRID, CAM_ROI, QUADRANT_MIN, QUADRANT_MAX)
@@ -190,8 +190,9 @@ OPENPOSE_KEYPOINT_LINKS = {
 }
 
 # Camera list by user, ordered by choice preference
-# based on view perspective
-SUBJECT_AXIS = {
+# based on view perspective. If 2nd preference is used,
+# calculations, flip coordinates signals
+SUBJECT_AXES = {
     1: {'x': ['pc2', 'pc3'],
         'y': ['pc1'],
         'z': ['pc2', 'pc3'],

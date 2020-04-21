@@ -18,6 +18,8 @@ def log(_type: str, msg: str):
     elif _type == 'ERROR':
         # logging.error(msg)
         print('%s: %s' % (_type, msg))
+        exit()
+
 
 
 def list_dirs(_dir):
