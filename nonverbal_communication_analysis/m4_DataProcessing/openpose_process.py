@@ -4,12 +4,13 @@ import pandas as pd
 import os
 import re
 from pathlib import Path
-from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
+from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
+from nonverbal_communication_analysis.m0_Classes.Subject import Subject
 from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES
 from nonverbal_communication_analysis.utils import log
 
 
-class OpenposeSubject(object):
+class OpenposeSubject(Subject):
     def __init__(self, _id):
         self.id = _id
         self.previous_pose = dict()
@@ -93,6 +94,14 @@ class OpenposeProcess(object):
             log('ERROR', 'This step requires the output of openpose data cleaning step')
         os.makedirs(self.clean_group_dir, exist_ok=True)
 
+        self.output_group_dir = OPENPOSE_OUTPUT_DIR / \
+            group_id / (group_id + '_processed')
+        os.makedirs(self.output_group_dir, exist_ok=True)
+
+        self.experiment = Experiment(group_id)
+        json.dump(self.experiment.to_json(),
+                  open(self.output_group_dir / (self.group_id + '.json'), 'w'))
+
         self.current_frame = -1
         self.n_subjects = -1
         self.subjects = {subject_id: OpenposeSubject(
@@ -175,7 +184,8 @@ class OpenposeProcess(object):
             for camera, frame_file in frame_camera_dict.items():
                 output_frame_directory = output_directory / camera
                 output_frame_file = output_frame_directory / \
-                    ("processed_%s_%.12d_clean.json" % (camera, frame_idx))
+                    ("%s_%.12d_processed.json" % (camera, frame_idx))
+                os.makedirs(output_frame_directory, exist_ok=True)
                 if not output_frame_directory.is_dir():
                     log('ERROR', 'Directory does not exist')
                 data = json.load(open(frame_file))
@@ -218,6 +228,6 @@ class OpenposeProcess(object):
                     specific_camera_files[specific_frame] = camera_files[specific_frame]
                 camera_files = specific_camera_files
 
-            output_directory = self.clean_group_dir / task.name
+            output_directory = self.output_group_dir / task.name
             self.handle_frames(camera_files, output_directory, prettify=prettify,
                                verbose=verbose, display=display)
