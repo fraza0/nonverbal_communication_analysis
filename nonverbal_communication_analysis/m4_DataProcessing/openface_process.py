@@ -6,10 +6,10 @@ from os.path import isfile, join, splitext
 import numpy as np
 import pandas as pd
 
-from environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
+from nonverbal_communication_analysis.environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
                          OPENFACE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, EMOTIONS_ENCONDING,
                          FRAME_THRESHOLD, HEAD_MOV_VARIANCE_THRESHOLD)
-from utils import fetch_files_from_directory, filter_files, strided_split
+from nonverbal_communication_analysis.utils import fetch_files_from_directory, filter_files, strided_split
 
 '''
 https://www.cs.cmu.edu/~face/facs.htm
