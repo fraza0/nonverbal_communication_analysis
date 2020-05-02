@@ -143,7 +143,7 @@ def main(video_files: list, verbose: bool = False):
         log('ERROR', 'Specify only 3 video files (and corresponding timestamps - Optional: Default is searching for same file name)')
         exit()
 
-    out_dir_base = '%s%s' % (DATASET_SYNC, str(
+    out_dir_base = '%s/%s' % (DATASET_SYNC, str(
         Path(video_files[0]).parent).split('/')[-1])
     out_dirs = list()
 
@@ -214,7 +214,7 @@ def main(video_files: list, verbose: bool = False):
                 vid.markers[key] = vid.current_frame_idx
 
         if key == ord('t'):
-            print("Task Separator %s set")
+            print("Task Separator set")
             for vid in cap_list:
                 vid.task_separator = vid.current_frame_idx
 
