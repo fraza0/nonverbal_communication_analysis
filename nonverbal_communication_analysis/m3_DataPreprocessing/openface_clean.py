@@ -18,6 +18,16 @@ from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import Ex
 
 
 class OpenfaceClean(object):
+    """ 
+        
+
+        WARNING: Might have inaccuracies as this could
+        not be extensively tested due to low
+        data quality
+
+        See Also:
+            TODO: Ref thesis
+    """
 
     columns_basic = ['frame',       # Frame number
                      'face_id',     # Face id - No guarantee this is consistent across frames in case of FaceLandmarkVidMulti
