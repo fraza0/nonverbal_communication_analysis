@@ -56,8 +56,12 @@ class ExperimentCameraFrame(object):
             self.__subjects = value
             self.is_valid = True
         except AssertionError:
-            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s." % (
-                len(value), self.frame, self.camera))
+            total = {1, 2, 3, 4}
+            found = set()
+            for sub in value:
+                found.add(sub.quadrant)
+            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s. Missing: %s" % (
+                len(value), self.frame, self.camera, total.difference(found)))
 
     def parse_subjects_data(self, people_data: pd.Series, key: str):
         """Parse subjects openpose data

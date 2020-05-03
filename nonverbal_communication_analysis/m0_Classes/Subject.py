@@ -13,7 +13,8 @@ from shapely.geometry.polygon import Polygon
 from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
-    VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, CONFIDENCE_THRESHOLD)
+    VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY,
+    QUADRANT_MIN, CONFIDENCE_THRESHOLD)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     Visualizer
 from nonverbal_communication_analysis.utils import log
@@ -217,7 +218,7 @@ class Subject(object):
         Returns:
             bool: True if keypoint is valid. False otherwise
         """
-        return keypoint != [-1, -1, 0]
+        return keypoint != [QUADRANT_MIN, QUADRANT_MIN, 0]
 
     def is_person(self, key='openpose'):
         """Check if subject is a person. If it's not, might be a loose part.
