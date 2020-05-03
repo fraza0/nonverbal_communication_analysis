@@ -149,3 +149,4 @@ dmypy.json
 .pyre/
 openface_metrics_df.csv
 openpose_metrics_df.csv
+shoulder_distance_sample.csv
