@@ -89,6 +89,10 @@ class ExperimentCameraFrame(object):
                     print(unconfirmed_identity_subject)
                 allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                     allocated_subjects, self.frame, self.vis)
+
+            for _, subject in allocated_subjects.copy().items():
+                if not subject.is_person():
+                    del allocated_subjects[subject.quadrant]
         elif key == OPENFACE_KEY:
             for _, person in people_data.iterrows():
                 unconfirmed_identity_subject = Subject(
@@ -106,7 +110,6 @@ class ExperimentCameraFrame(object):
 
         if self.display and self.vis is not None:
             print(self.camera, self.frame, allocated_subjects)
-
             self.vis.show_subjects_frame(self.camera, self.frame,
                                          assigned_subjects=allocated_subjects, key=OPENFACE_KEY)
 
