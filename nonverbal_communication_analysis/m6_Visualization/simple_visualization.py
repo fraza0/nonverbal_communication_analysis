@@ -262,8 +262,8 @@ class Visualizer(object):
                     keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
                 keypoint_c = round(keypoint_values[2] * 5)
 
-                # cv2.circle(img_frame, (keypoint_x, keypoint_y),
-                #            keypoint_c, self.COLOR_MAP[subject_id], -1)
+                cv2.circle(img_frame, (keypoint_x, keypoint_y),
+                           keypoint_c, self.COLOR_MAP[subject_id], -1)
 
                 if key == 'pose':
                     keypoint_idx = int(keypoint_idx)
@@ -281,8 +281,8 @@ class Visualizer(object):
                                 if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
                                     break
 
-                                # cv2.line(img_frame, (keypoint_x, keypoint_y),
-                                #          (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
+                                cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                         (keypoint_link_x, keypoint_link_y), self.COLOR_MAP[subject_id], 2)
 
                                 if camera == 'pc1' and int(keypoint_idx) == int(OPENPOSE_KEYPOINT_MAP['NECK']):
                                     font = cv2.FONT_HERSHEY_SIMPLEX
