@@ -153,10 +153,7 @@ class Subject(object):
                 return allocated_subjects
             else:
                 if self.verbose:
-                    print("Discard loose part or unwanted person in background")
-                # if self.display:
-                    # vis.show_subjects_frame(
-                    #     self.camera, frame, unallocated_subject)
+                    print("Discard loose part or unwanted person in background", frame)
                 return allocated_subjects
 
         return allocated_subjects
