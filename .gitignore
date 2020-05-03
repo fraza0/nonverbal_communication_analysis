@@ -147,3 +147,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+openface_metrics_df.csv
+openpose_metrics_df.csv
