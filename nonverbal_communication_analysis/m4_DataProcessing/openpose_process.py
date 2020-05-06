@@ -3,42 +3,80 @@ import json
 import pandas as pd
 import os
 import re
+import numpy as np
+from statistics import mean
+from math import sqrt
 from pathlib import Path
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY
 from nonverbal_communication_analysis.utils import log
+from sympy import Polygon
+
+
+def distance_between_points(kp1: tuple, kp2: tuple):
+    x1, y1 = kp1
+    x2, y2 = kp2
+    return sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
 class OpenposeSubject(Subject):
-    def __init__(self, _id):
+    # See Also: Between Shoulders Distance Analysis section of Openpose Analysis notebook
+    _distance_threshold = 0.5
+
+    def __init__(self, _id, prettify: bool = False, verbose: bool = False):
         self.id = _id
         self.previous_pose = dict()
         self.current_pose = dict()
+        self.current_face = dict()
         self.expansiveness = dict()
+        self.body_direction = dict()
+        self.center_interaction = False
+        self.verbose = verbose
+        self.prettify = prettify
+        self.subject_shoulder_distances = dict()
 
     def __str__(self):
         return "OpenposeSubject: {id: %s}" % self.id
 
     def _update_pose(self, camera, current_pose, verbose: bool = False):
+        verbose = False
         if verbose:
             print("Subject", self.id,
                   "\nPrev.: ", self.previous_pose.keys())
+
         self.previous_pose = self.current_pose
-        self.current_pose[camera] = current_pose
+
+        shoulder_distance = distance_between_points(current_pose[str(OPENPOSE_KEYPOINT_MAP['R_SHOULDER'])][:2],
+                                                    current_pose[str(OPENPOSE_KEYPOINT_MAP['L_SHOULDER'])][:2])
+
+        if camera not in self.subject_shoulder_distances:
+            self.subject_shoulder_distances[camera] = list()
+            self.subject_shoulder_distances[camera].append(shoulder_distance)
+
+        mean_shoulder_distance = mean(self.subject_shoulder_distances[camera])
+        mean_min = mean_shoulder_distance-mean_shoulder_distance*self._distance_threshold
+        mean_max = mean_shoulder_distance+mean_shoulder_distance*self._distance_threshold
+
+        if mean_min <= shoulder_distance <= mean_max:
+            # this is only updated when valid current pose so it doesn't push the mean value towards a more solid value
+            self.subject_shoulder_distances[camera].append(shoulder_distance)
+            self.current_pose[camera] = current_pose
+
         if verbose:
             print("Current:", self.current_pose.keys())
 
     def metric_expansiveness(self, verbose: bool = False):
         if verbose:
             print("Expansiveness on ", self)
-        # TODO: Change if necessary to use kypoint confidence to get
+        # TODO: Change if necessary to use keypoint confidence to get
         # minimum keypoint value
         horizontal = {'min': None, 'max': None}
         vertical = {'min': None, 'max': None}
 
-        print("=====", self, "=====")
+        expansiveness = dict()
 
+        # print("=====", self, "=====")
         for camera, keypoints in self.current_pose.items():
             for _, keypoint in keypoints.items():
                 if not horizontal['min']:
@@ -61,15 +99,84 @@ class OpenposeSubject(Subject):
                 elif keypoint[1] > vertical['max']:
                     vertical['max'] = keypoint[1]
 
-            if camera not in self.expansiveness:
-                self.expansiveness[camera] = dict()
+            if camera not in expansiveness:
+                expansiveness[camera] = dict()
 
-            self.expansiveness[camera]['x'] = [horizontal['min'],
-                                               horizontal['max']]
-            self.expansiveness[camera]['y'] = [vertical['min'],
-                                               vertical['max']]
+            expansiveness[camera]['x'] = [horizontal['min'],
+                                          horizontal['max']]
+            expansiveness[camera]['y'] = [vertical['min'],
+                                          vertical['max']]
+        return expansiveness
 
-        print(self.expansiveness)
+    def metric_body_direction(self, verbose: bool = False):
+        # print(self)
+        # prefered_camera = True
+
+        # subject_id = self.id
+        # subject_pose = self.current_pose
+
+        # axes = SUBJECT_AXES[self.id]
+
+        # neck_keypoint = list()
+
+        # if subject_id == 1 or subject_id == 2:
+        #     for axis in axes.keys():
+        #         cameras = axes[axis]
+        #         prefered_camera = True
+        #         for camera in cameras:
+        #             print(axis, camera, prefered_camera)
+        #             if camera in subject_pose:
+        #                 neck_keypoint = subject_pose[camera][str(OPENPOSE_KEYPOINT_MAP['NECK'])]
+        #                 print(axis, camera, neck_keypoint)
+        #                 break
+        #             else:
+        #                 prefered_camera = False
+        #                 print("=======",camera, "not in pose!!!")
+        #             # if camera in subject_pose:
+        #         # print(self.current_pose[])
+
+        # elif subject_id == 3 or subject_id == 4:
+        #     print("3 or 4")
+
+        # neck_x = np.array(keypoints[str(OPENPOSE_KEYPOINT_MAP['NECK'])][:2])
+        # l_shoulder = np.array(keypoints[str(OPENPOSE_KEYPOINT_MAP['L_SHOULDER'])][:2])
+        # r_shoulder = np.array(keypoints[str(OPENPOSE_KEYPOINT_MAP['R_SHOULDER'])][:2])
+        # neck_lshoulder_vector = neck-l_shoulder
+        # neck_rshoulder_vector = neck-r_shoulder
+        # print(self.id, camera, np.cross(neck_rshoulder_vector, neck_lshoulder_vector))
+
+        return list()
+
+    def metric_center_interaction(self, group_data):
+
+        print(group_data)
+
+        return list()
+
+    def to_json(self):
+        """Transform Subject object to JSON format.
+        If attribute is empty it is not printed
+
+        Returns:
+            str: JSON formatted Subject object
+        """
+
+        obj = {
+            "id": self.id,
+            "pose": {
+                OPENPOSE_KEY.lower(): self.current_pose,
+                "metrics": {
+                    "expansiveness": self.expansiveness,
+                    "center_interaction": self.center_interaction,
+                    "body_direction": self.body_direction,
+                },
+            },
+            "face": {
+                OPENPOSE_KEY.lower(): self.current_face
+            }
+        }
+
+        return obj
 
 
 class OpenposeProcess(object):
@@ -86,7 +193,7 @@ class OpenposeProcess(object):
         * Group Energy
     """
 
-    def __init__(self, group_id: str, verbose: bool = False):
+    def __init__(self, group_id: str, prettify: bool = False, verbose: bool = False):
         self.group_id = group_id
         self.clean_group_dir = OPENPOSE_OUTPUT_DIR / \
             group_id / (group_id + '_clean')
@@ -105,7 +212,9 @@ class OpenposeProcess(object):
         self.current_frame = -1
         self.n_subjects = -1
         self.subjects = {subject_id: OpenposeSubject(
-            subject_id) for subject_id in range(1, 5)}
+            subject_id, verbose) for subject_id in range(1, 5)}
+        self.intragroup_distance = dict()
+        self.prettify = prettify
         self.verbose = verbose
 
     @property
@@ -118,7 +227,7 @@ class OpenposeProcess(object):
 
     @current_frame.setter
     def current_frame(self, value):
-        if value >= self.current_frame or value == -1:
+        if value >= self.current_frame or value <= 0:
             self.__current_frame = value
         else:
             log('ERROR', 'Analyzing previous frame. Frame processing should be ordered.')
@@ -138,11 +247,18 @@ class OpenposeProcess(object):
         else:
             log('ERROR', 'invalid number of subjects. Keep previous frame\'s subject pose')
 
+    def to_json(self):
+        group_metrics = {
+            "intragroup_distance": self.intragroup_distance,
+        }
+        return group_metrics
+
     def has_required_cameras(self, subject):
         subject_cameras = set(subject.current_pose.keys())
         requirements = {'x': False,
                         'y': False,
                         'z': False}
+
         for subject_axis, required_cameras in SUBJECT_AXES[subject.id].items():
             if set(required_cameras).intersection(subject_cameras):
                 requirements[subject_axis] = True
@@ -152,56 +268,133 @@ class OpenposeProcess(object):
     def frame_data_transform(self, frame_data):
         # transform subjects list to dict
         frame_idx = frame_data['frame']
-        frame_subjects = {subject['id']: subject['pose']['openpose']
-                          for subject in frame_data['subjects']}
+        frame_subjects_pose, frame_subjects_face = dict(), dict()
+        for subject in frame_data['subjects']:
+            subject_id = subject['id']
+            frame_subjects_pose[subject_id] = subject['pose']['openpose']
+            frame_subjects_face[subject_id] = subject['face']['openpose']
 
         data = {'frame': frame_idx,
-                'subjects': frame_subjects}
+                'subjects': {'pose': frame_subjects_pose,
+                             'face': frame_subjects_face}}
 
         return data
 
     def camera_frame_parse_subjects(self, camera, frame_data):
         frame_subjects = frame_data['subjects']
+        frame_subject_pose = frame_subjects['pose']
+        frame_subject_face = frame_subjects['face']
         frame_idx = frame_data['frame']
         self.current_frame = frame_idx
 
         for subject_id, subject in self.subjects.items():
-            if subject_id in frame_subjects:
-                subject._update_pose(camera, frame_subjects[subject_id])
-            elif not subject.previous_pose:
+            if subject_id in frame_subject_pose:
+                subject_data = frame_subject_pose[subject_id]
+                subject._update_pose(
+                    camera, subject_data, self.verbose)
+            elif camera not in subject.previous_pose:
+                # subject has no pose nor previous pose. Must skip frame.
                 if self.verbose:
-                    log('INFO', 'No previous pose. Attention to when using 2nd ' +
+                    log('INFO', 'Subject has no previous pose. Attention when resorting to 2nd ' +
                         'choice camera to calculate metrics ' +
                         '(frame: %s, camera: %s, subject: %s)' %
                         (frame_idx, camera, subject))
+                return False
+            else:
+                if self.verbose:
+                    log('INFO', 'Subject (%s) has no pose in this frame (%s - %s), but previous pose on this camera can be used' %
+                        (subject_id, frame_idx, camera))
+                subject._update_pose(
+                    camera, subject.previous_pose[camera], self.verbose)
 
-    def process_subject(self, subject):
-        subject.metric_expansiveness()
+            if subject_id in frame_subject_face:
+                subject_data = frame_subject_face[subject_id]
+                subject.current_face[camera] = subject_data
+        return True
 
-    def handle_frames(self, camera_frame_files: dict, output_directory: str, prettify: bool = False, verbose: bool = False, display: bool = False):
+    def process_subject_individual_metrics(self, subject):
+        subject.expansiveness = subject.metric_expansiveness()
+        subject.body_direction = subject.metric_body_direction()
+        subject.metric_center_interaction = subject.metric_center_interaction(
+            self.intragroup_distance)
+
+    def metric_intragroup_distance(self, subjects):
+        subjects_distance = dict()
+        for subject_id, subject in subjects.items():
+            subject_pose = subject.current_pose
+            for camera, keypoints in subject_pose.items():
+                if camera not in subjects_distance:
+                    subjects_distance[camera] = dict()
+                neck_keypoint = tuple(
+                    keypoints[str(OPENPOSE_KEYPOINT_MAP['NECK'])])
+                subjects_distance[camera][subject_id] = neck_keypoint[:2]
+
+        intragroup_distance = dict()
+        for camera, subjects in subjects_distance.items():
+            points = list(subjects.values())
+            points.append(points[0])
+            polygon = Polygon(*points)
+            polygon_area = float(abs(polygon.area))
+            centroid = polygon.centroid
+            polygon_center = [float(centroid.x), float(centroid.y)]
+
+            intragroup_distance[camera] = {'polygon': points,
+                                           'area': polygon_area,
+                                           'center': polygon_center}
+        return intragroup_distance
+
+    def save_output(self, output_directory, frame_validity):
+
+        frame = self.current_frame
+        output_frame_file = output_directory / \
+            ("frame_%.12d_processed.json" % (frame))
+        os.makedirs(output_directory, exist_ok=True)
+        if not output_directory.is_dir():
+            log('ERROR', 'Directory does not exist')
+
+        obj = {
+            "frame": self.current_frame,
+            "is_valid": frame_validity,
+            "group": self.to_json(),
+            "subjects": [subject.to_json() for subject_id, subject in self.subjects.items()],
+        }
+
+        if self.prettify:
+            json.dump(obj, open(output_frame_file, 'w'), indent=2)
+        else:
+            json.dump(obj, open(output_frame_file, 'w'))
+
+    def handle_frames(self, camera_frame_files: dict, output_directory: str, display: bool = False):
         for frame_idx in sorted(camera_frame_files):
+            print('=== FRAME %s ===' % frame_idx)
+            self.current_frame = frame_idx
             frame_camera_dict = camera_frame_files[frame_idx]
+            is_valid_frame = True
             for camera, frame_file in frame_camera_dict.items():
-                output_frame_directory = output_directory / camera
-                output_frame_file = output_frame_directory / \
-                    ("%s_%.12d_processed.json" % (camera, frame_idx))
-                os.makedirs(output_frame_directory, exist_ok=True)
-                if not output_frame_directory.is_dir():
-                    log('ERROR', 'Directory does not exist')
                 data = json.load(open(frame_file))
                 data = self.frame_data_transform(data)
-                self.camera_frame_parse_subjects(camera, data)
+                is_valid_frame = self.camera_frame_parse_subjects(camera, data)
+                if not is_valid_frame:
+                    if self.verbose:
+                        log('INFO', 'Not enough poses detected. Skipping frame')
+                    break
 
-            for _, subject in self.subjects.items():
-                if not self.has_required_cameras(subject):
-                    log('ERROR', 'Subject does not have data from required cameras. ' +
-                        'Not enough information to process frame')
-                self.process_subject(subject)
+            if is_valid_frame:
+                self.intragroup_distance = self.metric_intragroup_distance(
+                    self.subjects)
+                for _, subject in self.subjects.items():
+                    if not self.has_required_cameras(subject):
+                        log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
+                            'Not enough information to process frame (%s)' % frame_idx)
+                    self.process_subject_individual_metrics(subject)
 
-            if frame_idx == 0:
+            # writting every frame. Indent if invalid frames should not be saved
+            self.save_output(output_directory, is_valid_frame)
+
+            if frame_idx == 3:
                 exit()
 
-    def process(self, tasks_directories: dict, specific_frame: int = None, prettify: bool = False, verbose: bool = False, display: bool = False):
+    def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
         clean_tasks_directories = list()
         for task in tasks_directories:
@@ -211,6 +404,7 @@ class OpenposeProcess(object):
         for task in clean_tasks_directories:
             clean_camera_directories = [x for x in task.iterdir()
                                         if x.is_dir()]
+            clean_camera_directories.sort()
             camera_files = dict()
             for camera_id in clean_camera_directories:
                 for frame_file in camera_id.iterdir():
@@ -229,5 +423,4 @@ class OpenposeProcess(object):
                 camera_files = specific_camera_files
 
             output_directory = self.output_group_dir / task.name
-            self.handle_frames(camera_files, output_directory, prettify=prettify,
-                               verbose=verbose, display=display)
+            self.handle_frames(camera_files, output_directory, display=display)

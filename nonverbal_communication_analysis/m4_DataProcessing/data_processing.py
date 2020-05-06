@@ -27,9 +27,8 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, ope
     if openpose:
         if verbose:
             print("Processing Openpose data")
-        opp = OpenposeProcess(group_id, verbose=verbose)
-        opp.process(tasks_directories, specific_frame=specific_frame,
-                    prettify=prettify, display=display)
+        opp = OpenposeProcess(group_id, prettify=prettify, verbose=verbose)
+        opp.process(tasks_directories, specific_frame=specific_frame, display=display)
 
     if openface:
         if verbose:
