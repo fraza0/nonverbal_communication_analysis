@@ -85,7 +85,6 @@ class Experiment(object):
             "experiment": {
                 "id": self._id,
                 "type": self.type,
-                # "people": people_data,
             }
         }
 
