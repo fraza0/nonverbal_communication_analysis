@@ -149,7 +149,7 @@ class OpenposeSubject(Subject):
 
     def metric_center_interaction(self, group_data):
 
-        print(group_data)
+        # print(group_data)
 
         return list()
 
@@ -277,7 +277,6 @@ class OpenposeProcess(object):
         data = {'frame': frame_idx,
                 'subjects': {'pose': frame_subjects_pose,
                              'face': frame_subjects_face}}
-
         return data
 
     def camera_frame_parse_subjects(self, camera, frame_data):
@@ -312,11 +311,11 @@ class OpenposeProcess(object):
                 subject.current_face[camera] = subject_data
         return True
 
-    def process_subject_individual_metrics(self, subject):
+    def process_subject_individual_metrics(self, subject, group_data):
         subject.expansiveness = subject.metric_expansiveness()
         subject.body_direction = subject.metric_body_direction()
-        subject.metric_center_interaction = subject.metric_center_interaction(
-            self.intragroup_distance)
+        # subject.metric_center_interaction = subject.metric_center_interaction(
+        #     group_data)
 
     def metric_intragroup_distance(self, subjects):
         subjects_distance = dict()
@@ -366,7 +365,7 @@ class OpenposeProcess(object):
 
     def handle_frames(self, camera_frame_files: dict, output_directory: str, display: bool = False):
         for frame_idx in sorted(camera_frame_files):
-            print('=== FRAME %s ===' % frame_idx)
+            # print('=== FRAME %s ===' % frame_idx)
             self.current_frame = frame_idx
             frame_camera_dict = camera_frame_files[frame_idx]
             is_valid_frame = True
@@ -380,19 +379,21 @@ class OpenposeProcess(object):
                     break
 
             if is_valid_frame:
-                self.intragroup_distance = self.metric_intragroup_distance(
+                group_data = self.metric_intragroup_distance(
                     self.subjects)
+                self.intragroup_distance = group_data
                 for _, subject in self.subjects.items():
                     if not self.has_required_cameras(subject):
                         log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
                             'Not enough information to process frame (%s)' % frame_idx)
-                    self.process_subject_individual_metrics(subject)
+                    self.process_subject_individual_metrics(
+                        subject, group_data)
 
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)
 
-            if frame_idx == 3:
-                exit()
+            # if frame_idx == 3:
+            #     exit()
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
