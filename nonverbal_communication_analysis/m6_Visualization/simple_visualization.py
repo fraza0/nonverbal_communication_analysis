@@ -213,7 +213,7 @@ class Visualizer(object):
             video_captures[camera_id] = cv2.VideoCapture(str(video_file))
 
         fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-        fig.suptitle('Subjects Keypoints Position')
+        fig.suptitle('Subjects Keypoints Position [Frame=%s]' % specific_frame)
 
         for idx, (camera, video_cap) in enumerate(video_captures.items()):
             display_frame = self.get_frame(video_cap, specific_frame)
