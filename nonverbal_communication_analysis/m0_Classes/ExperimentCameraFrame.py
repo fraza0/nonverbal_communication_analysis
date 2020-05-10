@@ -26,7 +26,7 @@ class ExperimentCameraFrame(object):
     """
 
     def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, library: str, verbose: bool = False, display: bool = False):
-        self.is_valid = False
+        self.frame_data_validity = False
         self.verbose = verbose
         self.display = display
         self.vis = Visualizer('3CLC9VWRSAMPLE')
@@ -54,7 +54,7 @@ class ExperimentCameraFrame(object):
         try:
             assert len(value) == 4
             self.__subjects = value
-            self.is_valid = True
+            self.frame_data_validity = True
         except AssertionError:
             total = {1, 2, 3, 4}
             found = set()
@@ -124,6 +124,7 @@ class ExperimentCameraFrame(object):
 
         obj = {
             "frame": self.frame,
+            "is_raw_data_valid": self.frame_data_validity,
             "subjects": [subject.to_json() for subject in self.subjects]
         }
 

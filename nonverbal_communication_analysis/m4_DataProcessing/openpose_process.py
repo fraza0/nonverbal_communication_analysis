@@ -9,14 +9,14 @@ from math import sqrt
 from pathlib import Path
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES
 from nonverbal_communication_analysis.utils import log
 from sympy import Polygon
 
 
-def distance_between_points(kp1: tuple, kp2: tuple):
-    x1, y1 = kp1
-    x2, y2 = kp2
+def distance_between_points(p1: tuple, p2: tuple):
+    x1, y1 = p1
+    x2, y2 = p2
     return sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
@@ -31,7 +31,7 @@ class OpenposeSubject(Subject):
         self.current_face = dict()
         self.expansiveness = dict()
         self.body_direction = dict()
-        self.center_interaction = False
+        self.center_interaction = 0.0
         self.verbose = verbose
         self.prettify = prettify
         self.subject_shoulder_distances = dict()
@@ -67,6 +67,20 @@ class OpenposeSubject(Subject):
             print("Current:", self.current_pose.keys())
 
     def metric_expansiveness(self, verbose: bool = False):
+        """Calculate subject expansiveness in 2D image.
+        Get both maximum and minimum keypoint values from both X and Y coordinates.
+
+        Coordinates X and Y are retrieved and available in every camera view (as it is 2D).
+        If this was a 3D scenario (as it was intented to be by the use of different perspective
+        cameras) X and Y would be X and Z. The Y coordinate would represent the deviation of the 
+        subject's hands related to the body.
+
+        Args:
+            verbose (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
         if verbose:
             print("Expansiveness on ", self)
         # TODO: Change if necessary to use keypoint confidence to get
@@ -109,6 +123,13 @@ class OpenposeSubject(Subject):
         return expansiveness
 
     def metric_body_direction(self, verbose: bool = False):
+        """
+        IMPOSSIBLE TO CREATE 3D Points necessary for the
+        calculation of the direction vector
+
+        See Also:
+            http://chenlab.ece.cornell.edu/people/adarsh/publications/BackProjection.pdf
+        """
         # print(self)
         # prefered_camera = True
 
@@ -145,13 +166,17 @@ class OpenposeSubject(Subject):
         # neck_rshoulder_vector = neck-r_shoulder
         # print(self.id, camera, np.cross(neck_rshoulder_vector, neck_lshoulder_vector))
 
-        return list()
+    def metric_center_interaction(self, group_data, subject_expansiveness):
+        sideview_camera = 'pc1'
+        camera_relative_coordinates = CAMERAS_3D_AXES[sideview_camera]
+        hands_body_deviation_coordinate = list(camera_relative_coordinates.keys())[
+            list(camera_relative_coordinates.values()).index('y')]
+        table_center = group_data[sideview_camera]['center']
+        hands_body_deviation = subject_expansiveness[sideview_camera][hands_body_deviation_coordinate]
+        center_proximity = distance_between_points(
+            table_center, hands_body_deviation)
 
-    def metric_center_interaction(self, group_data):
-
-        # print(group_data)
-
-        return list()
+        return center_proximity
 
     def to_json(self):
         """Transform Subject object to JSON format.
@@ -168,7 +193,7 @@ class OpenposeSubject(Subject):
                 "metrics": {
                     "expansiveness": self.expansiveness,
                     "center_interaction": self.center_interaction,
-                    "body_direction": self.body_direction,
+                    # "body_direction": self.body_direction, # Impossible to measure without 3D data
                 },
             },
             "face": {
@@ -313,9 +338,9 @@ class OpenposeProcess(object):
 
     def process_subject_individual_metrics(self, subject, group_data):
         subject.expansiveness = subject.metric_expansiveness()
-        subject.body_direction = subject.metric_body_direction()
-        # subject.metric_center_interaction = subject.metric_center_interaction(
-        #     group_data)
+        # subject.body_direction = subject.metric_body_direction() # SEE COMMENTS ON METHOD ABOVE
+        subject.center_interaction = subject.metric_center_interaction(
+            group_data, subject.expansiveness)
 
     def metric_intragroup_distance(self, subjects):
         subjects_distance = dict()
@@ -353,7 +378,7 @@ class OpenposeProcess(object):
 
         obj = {
             "frame": self.current_frame,
-            "is_valid": frame_validity,
+            "is_processed_data_valid": frame_validity,
             "group": self.to_json(),
             "subjects": [subject.to_json() for subject_id, subject in self.subjects.items()],
         }
@@ -392,8 +417,8 @@ class OpenposeProcess(object):
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)
 
-            # if frame_idx == 3:
-            #     exit()
+            if frame_idx == 3:
+                exit()
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
