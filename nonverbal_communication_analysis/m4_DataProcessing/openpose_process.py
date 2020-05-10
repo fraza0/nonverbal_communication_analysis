@@ -417,8 +417,8 @@ class OpenposeProcess(object):
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)
 
-            if frame_idx == 3:
-                exit()
+            # if frame_idx == 3:
+            #     exit()
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
