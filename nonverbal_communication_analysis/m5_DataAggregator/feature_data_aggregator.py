@@ -13,8 +13,14 @@ class AggregateSubject(object):
     def __init__(self, subject_id):
         self.id = subject_id
         self.clean_data = {
-            'pose': dict(),
-            'face': dict()
+            'pose': {
+                'openpose': dict(),
+                'densepose': dict()
+            },
+            'face': {
+                'openpose': dict(),
+                'openface': dict()
+            }
         }
         self.processed_data = {
             'pose': dict(),
@@ -192,7 +198,7 @@ class SubjectDataAggregator:
 
         return files
 
-    def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, key: str, camera: str = None):
+    def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, key: str, framework: str = None, camera: str = None):
         frame_data_type = None
 
         agg_frame_subjetcs = agg_frame.subjects
@@ -206,7 +212,7 @@ class SubjectDataAggregator:
             frame_data_type = 'processed'
 
         if 'group' in frame_data:
-            self.group = frame_data['group']
+            agg_frame.group = frame_data['group']
 
         if 'subjects' in frame_data:
             frame_subjects = frame_data['subjects']
@@ -217,18 +223,18 @@ class SubjectDataAggregator:
                     else AggregateSubject(subject_id)
 
                 if camera is not None and camera not in agg_subject.clean_data['pose']:
-                    agg_subject.clean_data['pose'][camera] = dict()
+                    agg_subject.clean_data['pose'][framework][camera] = dict()
 
                 if camera is not None and camera not in agg_subject.clean_data['face']:
-                    agg_subject.clean_data['face'][camera] = dict()
+                    agg_subject.clean_data['face'][framework][camera] = dict()
 
                 if frame_data_type == 'raw':
                     if 'pose' in subject:
-                        agg_subject.clean_data['pose'][camera].update(
-                            subject['pose'])
+                        agg_subject.clean_data['pose'][framework][camera].update(
+                            subject['pose'][framework])
                     if 'face' in subject:
-                        agg_subject.clean_data['face'][camera].update(
-                            subject['face'])
+                        agg_subject.clean_data['face'][framework][camera].update(
+                            subject['face'][framework])
                 elif frame_data_type == 'processed':
                     if 'pose' in subject:
                         agg_subject.processed_data['pose'].update(
@@ -310,7 +316,7 @@ class SubjectDataAggregator:
                     openpose_clean_frame_data = json.load(
                         open(cleaned_openpose_files[frame], 'r'))
                     frame_file = self.read_frame_data(
-                        frame_file, openpose_clean_frame_data, 'pose', camera)
+                        frame_file, openpose_clean_frame_data, 'pose', framework='openpose', camera=camera)
 
                     if self.verbose:
                         print(frame, frame_file)
