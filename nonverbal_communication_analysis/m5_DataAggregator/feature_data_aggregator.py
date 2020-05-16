@@ -9,37 +9,91 @@ from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, g
 from nonverbal_communication_analysis.utils import log
 
 
+class AggregateSubject(object):
+    def __init__(self, subject_id):
+        self.id = subject_id
+        self.clean_data = {
+            'pose': dict(),
+            'face': dict()
+        }
+        self.processed_data = {
+            'pose': dict(),
+            'face': dict()
+        }
+
+    def to_json(self):
+        obj = {
+            "id": self.id,
+            "raw": self.clean_data,
+            "custom": self.processed_data
+        }
+
+        return obj
+
+    def __str__(self):
+        return "AggregateSubject: {id: %s; clean_data: %s; processed_data: %s}" % (self.id, self.clean_data, self.processed_data)
+
+
+class AggregateFrame(object):
+
+    def __init__(self, frame_idx):
+        self.frame = frame_idx
+        self.is_raw_data_valid = None
+        self.is_processed_data_valid = None
+        self.group = dict()
+        self.subjects = dict()
+
+    def to_json(self):
+        obj = {
+            "frame": self.frame,
+            "is_raw_data_valid": self.is_raw_data_valid,
+            "is_custom_data_valid": self.is_processed_data_valid,
+            "group": self.group,
+            "subjects": [subject.to_json() for _, subject in self.subjects.items()]
+        }
+
+        return obj
+
+    def __str__(self):
+        return "AggregateFrame {index: %s; is_raw_data_valid: %s; is_processed_data_valid: %s; subjects: %s}" % (self.frame, self.is_raw_data_valid, self.is_processed_data_valid, self.subjects)
+
+
 class SubjectDataAggregator:
+
     def __init__(self, group_directory: str, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
         self.group_directory = Path(group_directory)
         self.group_id = get_group_from_file_path(group_directory)
         self.prettify = prettify
         self.verbose = verbose
+
         self.openpose_data = dict()
         self.openface_data = dict()
         self.densepose_data = dict()
+
         experiment_data = dict()
 
         if openpose:
             openpose_group_directory = OPENPOSE_OUTPUT_DIR / self.group_id
             experiment_data[OPENPOSE_KEY] = self.get_experiment_data(
                 openpose_group_directory)
-            self.openpose_data = self.get_data(
+            self.openpose_data['cleaned'] = self.get_clean_data(
+                openpose_group_directory)
+            self.openpose_data['processed'] = self.get_processed_data(
                 openpose_group_directory)
 
-        if openface:
-            openface_group_directory = OPENFACE_OUTPUT_DIR / self.group_id
-            experiment_data[OPENFACE_KEY] = self.get_experiment_data(
-                openface_group_directory)
-            self.openface_data = self.get_data(
-                openface_group_directory)
+        # if openface:
+        #     openface_group_directory = OPENFACE_OUTPUT_DIR / self.group_id
+        #     experiment_data[OPENFACE_KEY] = self.get_experiment_data(
+        #         openface_group_directory)
+        #     self.openface_data['cleaned'] = self.get_clean_data(
+        #         openface_group_directory)
 
-        if densepose:
-            densepose_group_directory = DENSEPOSE_OUTPUT_DIR / self.group_id
-            experiment_data[DENSEPOSE_KEY] = self.get_experiment_data(
-                densepose_group_directory)
-            self.densepose_data = self.get_densepose_data(
-                densepose_group_directory)
+        # if densepose:
+        #     densepose_group_directory = DENSEPOSE_OUTPUT_DIR / self.group_id
+        #     experiment_data[DENSEPOSE_KEY] = self.get_experiment_data(
+        #         densepose_group_directory)
+        #     self.densepose_data = self.get_densepose_data(
+        #         densepose_group_directory)
 
         experiment_data_output = self.group_directory / \
             (self.group_id + '.json')
@@ -52,6 +106,8 @@ class SubjectDataAggregator:
             json.dump(experiment_data, open(experiment_data_output, 'w'))
 
     def get_experiment_data(self, group_directory):
+        # TODO: Change if processed group info changes. So far nothing is added to the experiment
+        # JSON file in the processing step
         """Get experiment information
 
         Args:
@@ -72,7 +128,7 @@ class SubjectDataAggregator:
         experiment = Experiment(experiment_data['id'])
         return experiment.to_json()
 
-    def get_data(self, group_directory):
+    def get_clean_data(self, group_directory):
         """Get framework clean data
 
         Args:
@@ -105,36 +161,109 @@ class SubjectDataAggregator:
 
                     camera_files[camera_id][frame] = frame_file
             files[task.name] = camera_files
-        # print(files['task_1']['pc1'].keys())
+
         return files
 
-    def get_densepose_data(self, densepose_group_directory):
-        print("Densepose Directory: ", densepose_group_directory)
-        return dict()
-
-    def merge_subject_dicts(self, subject_list1: list, subject_list2: list):
-        """Merge subjects data from different frameworks
+    def get_processed_data(self, group_directory):
+        """Get processed data. This includes calculated metrics
 
         Args:
-            subject_list1 (list): Subject data
-            subject_list2 (list): Subject data
+            group_directory ([type]): Group's processed data directory path
 
         Returns:
-            list: Merged subjects attributes
+            dict: Processed data output files paths
         """
-        pose_key = 'pose'
-        face_key = 'face'
-        subjects_list = dict()
-        for subject1 in subject_list1:
-            for subject2 in subject_list2:
-                if subject1['id'] == subject2['id']:
-                    if face_key in subject1.keys() and face_key in subject2.keys():
-                        subject1[face_key].update(subject2[face_key])
-                    if pose_key in subject1.keys() and pose_key in subject2.keys():
-                        subject1[pose_key].update(subject2[pose_key])
-                subjects_list[subject1['id']] = subject1
-                break
-        return list(subjects_list.values())
+        processed_dir = [x for x in group_directory.iterdir()
+                         if x.is_dir() and 'processed' in x.name][0]
+
+        task_dirs = [x for x in processed_dir.iterdir()
+                     if x.is_dir() and 'task' in x.name]
+
+        files = dict()
+        for task in task_dirs:
+            task_frame_files = [x for x in task.iterdir()
+                                if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES]
+            for frame_file in task_frame_files:
+                frame = int(re.search(r'(?<=_)(\d{12})(?=_)',
+                                      frame_file.name).group(0))
+                if task.name not in files:
+                    files[task.name] = dict()
+                files[task.name][frame] = frame_file
+
+        return files
+
+    def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, key: str, camera: str = None):
+        frame_data_type = None
+
+        agg_frame_subjetcs = agg_frame.subjects
+
+        if 'is_raw_data_valid' in frame_data:
+            agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']
+            frame_data_type = 'raw'
+
+        if 'is_processed_data_valid' in frame_data:
+            agg_frame.is_processed_data_valid = frame_data['is_processed_data_valid']
+            frame_data_type = 'processed'
+
+        if 'group' in frame_data:
+            self.group = frame_data['group']
+
+        if 'subjects' in frame_data:
+            frame_subjects = frame_data['subjects']
+            for subject in frame_subjects:
+                subject_id = subject['id']
+
+                agg_subject = agg_frame_subjetcs[subject_id] if subject_id in agg_frame_subjetcs \
+                    else AggregateSubject(subject_id)
+
+                if camera is not None and camera not in agg_subject.clean_data['pose']:
+                    agg_subject.clean_data['pose'][camera] = dict()
+
+                if camera is not None and camera not in agg_subject.clean_data['face']:
+                    agg_subject.clean_data['face'][camera] = dict()
+
+                if frame_data_type == 'raw':
+                    if 'pose' in subject:
+                        agg_subject.clean_data['pose'][camera].update(
+                            subject['pose'])
+                    if 'face' in subject:
+                        agg_subject.clean_data['face'][camera].update(
+                            subject['face'])
+                elif frame_data_type == 'processed':
+                    if 'pose' in subject:
+                        agg_subject.processed_data['pose'].update(
+                            subject['pose'])
+                    if 'face' in subject:
+                        agg_subject.processed_data['face'].update(
+                            subject['face'])
+
+                agg_frame.subjects[subject_id] = agg_subject
+
+        return agg_frame
+
+    # def merge_subject_dicts(self, subject_list1: list, subject_list2: list):
+    #     """Merge subjects data from different frameworks
+
+    #     Args:
+    #         subject_list1 (list): Subject data
+    #         subject_list2 (list): Subject data
+
+    #     Returns:
+    #         list: Merged subjects attributes
+    #     """
+    #     pose_key = 'pose'
+    #     face_key = 'face'
+    #     subjects_list = dict()
+    #     for subject1 in subject_list1:
+    #         for subject2 in subject_list2:
+    #             if subject1['id'] == subject2['id']:
+    #                 if face_key in subject1.keys() and face_key in subject2.keys():
+    #                     subject1[face_key].update(subject2[face_key])
+    #                 if pose_key in subject1.keys() and pose_key in subject2.keys():
+    #                     subject1[pose_key].update(subject2[pose_key])
+    #             subjects_list[subject1['id']] = subject1
+    #             break
+    #     return list(subjects_list.values())
 
     def aggregate(self, prettify: bool = False):
         """Aggregate framework clean output data
@@ -145,47 +274,61 @@ class SubjectDataAggregator:
         """
         openpose_data = self.openpose_data
         openface_data = self.openface_data
-        densepose_data = self.densepose_data
 
-        for task in openpose_data:
-            for camera in openpose_data[task]:
-                for frame, file in openpose_data[task][camera].items():
-                    frame_file = dict()
-                    frame_file['frame'] = frame
-                    frame_file['subjects'] = dict()
+        # TODO: CHECK DENSEPOSE IMPLEMENTATION AFTER
+        # IMPLEMENTING DENSEPOSE EXTRACTION
+        # densepose_data = self.densepose_data
 
-                    openpose_frame_file = json.load(open(file, 'r'))
-                    openpose_subjects = openpose_frame_file['subjects']
-                    frame_file['subjects'] = openpose_subjects
+        cleaned_openpose = openpose_data['cleaned']
+        processed_openpose = openpose_data['processed']
 
-                    if task in openface_data and camera in openface_data[task]:
-                        if frame in openface_data[task][camera]:
-                            openface_frame_file = json.load(
-                                open(openface_data[task][camera][frame], 'r'))
-                            openface_subjects = openface_frame_file['subjects']
-                            frame_file['subjects'] = self.merge_subject_dicts(
-                                frame_file['subjects'], openface_subjects)
+        for task in cleaned_openpose:
+            output_frame_directory = self.group_directory / \
+                FEATURE_AGGREGATE_DIR / task
+            makedirs(output_frame_directory, exist_ok=True)
 
-                    # TODO: CHECK DENSEPOSE IMPLEMENTATION AFTER DENSEPOSE EXTRACTION
-                    if task in densepose_data and camera in densepose_data[task]:
-                        if frame in densepose_data[task][camera]:
-                            densepose_frame_file = json.load(
-                                open(densepose_data[task][camera][frame], 'r'))
-                            densepose_subjects = densepose_frame_file['subjects']
-                            frame_file['subjects'] = self.merge_subject_dicts(
-                                frame_file['subjects'], densepose_subjects['subjects'])
+            processed_openpose_files = processed_openpose[task]
+            for frame in processed_openpose_files:
+                output_frame_file = output_frame_directory / \
+                    ("%.12d" % frame + '.json')
+                frame_file = AggregateFrame(frame)
+                if frame == 3:
 
-                    output_frame_directory = self.group_directory / \
-                        FEATURE_AGGREGATE_DIR / task / camera
-                    makedirs(output_frame_directory, exist_ok=True)
-                    output_frame_file = output_frame_directory / \
-                        ("%.12d" % frame + '.json')
+                    if self.verbose:
+                        print("Processed Openpose")
+                    openpose_processed_frame_data = json.load(
+                        open(processed_openpose_files[frame], 'r'))
+                    frame_file = self.read_frame_data(
+                        frame_file, openpose_processed_frame_data, 'pose')
+
+                    for camera in cleaned_openpose[task]:
+                        cleaned_openpose_files = cleaned_openpose[task][camera]
+                        # Openpose
+                        # Open and read each frame file into a joint structure
+                        if self.verbose:
+                            print("Clean OpenPose")
+                        openpose_clean_frame_data = json.load(
+                            open(cleaned_openpose_files[frame], 'r'))
+                        frame_file = self.read_frame_data(
+                            frame_file, openpose_clean_frame_data, 'pose', camera)
+
+                        if self.verbose:
+                            print(frame, frame_file)
+
+                    # if task in openface_data and camera in openface_data[task]:
+                    #     if frame in openface_data[task][camera]:
+                    #         openface_frame_file = json.load(
+                    #             open(openface_data[task][camera][frame], 'r'))
+                    #         openface_subjects = openface_frame_file['subjects']
+                    #         frame_file['subjects'] = self.merge_subject_dicts(
+                    #             frame_file['subjects'], openface_subjects)
 
                     if prettify:
-                        json.dump(frame_file, open(
+                        json.dump(frame_file.to_json(), open(
                             output_frame_file, 'w'), indent=2)
                     else:
-                        json.dump(frame_file, open(output_frame_file, 'w'))
+                        json.dump(frame_file.to_json(),
+                                  open(output_frame_file, 'w'))
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
