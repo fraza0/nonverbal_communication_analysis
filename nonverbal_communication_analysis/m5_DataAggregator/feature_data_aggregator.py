@@ -12,26 +12,23 @@ from nonverbal_communication_analysis.utils import log
 class AggregateSubject(object):
     def __init__(self, subject_id):
         self.id = subject_id
-        self.clean_data = {
-            'pose': {
-                'openpose': dict(),
-                'densepose': dict()
-            },
-            'face': {
-                'openpose': dict(),
-                'openface': dict()
-            }
-        }
-        self.processed_data = {
-            'pose': dict(),
-            'face': dict()
-        }
+        self.clean_data = dict()
+        self.clean_pose_data = dict()
+        self.clean_face_data = dict()
+        self.processed_pose_data = dict()
+        self.processed_face_data = dict()
 
     def to_json(self):
         obj = {
             "id": self.id,
-            "raw": self.clean_data,
-            "custom": self.processed_data
+            "raw": {
+                "pose": self.clean_pose_data,
+                "face": self.clean_pose_data,
+            },
+            "custom": {
+                "pose": self.processed_pose_data,
+                "face": self.processed_face_data
+            }
         }
 
         return obj
@@ -222,25 +219,32 @@ class SubjectDataAggregator:
                 agg_subject = agg_frame_subjetcs[subject_id] if subject_id in agg_frame_subjetcs \
                     else AggregateSubject(subject_id)
 
-                if camera is not None and camera not in agg_subject.clean_data['pose']:
-                    agg_subject.clean_data['pose'][framework][camera] = dict()
+                if camera is not None:
+                    if framework not in agg_subject.clean_pose_data:
+                        agg_subject.clean_pose_data[framework] = dict()
 
-                if camera is not None and camera not in agg_subject.clean_data['face']:
-                    agg_subject.clean_data['face'][framework][camera] = dict()
+                    if camera not in agg_subject.clean_pose_data[framework]:
+                        agg_subject.clean_pose_data[framework][camera] = dict()
+
+                    if framework not in agg_subject.clean_face_data:
+                        agg_subject.clean_face_data[framework] = dict()
+
+                    if camera not in agg_subject.clean_face_data:
+                        agg_subject.clean_face_data[framework][camera] = dict()
 
                 if frame_data_type == 'raw':
                     if 'pose' in subject:
-                        agg_subject.clean_data['pose'][framework][camera].update(
+                        agg_subject.clean_pose_data[framework][camera].update(
                             subject['pose'][framework])
                     if 'face' in subject:
-                        agg_subject.clean_data['face'][framework][camera].update(
+                        agg_subject.clean_face_data[framework][camera].update(
                             subject['face'][framework])
                 elif frame_data_type == 'processed':
                     if 'pose' in subject:
-                        agg_subject.processed_data['pose'].update(
+                        agg_subject.processed_pose_data.update(
                             subject['pose'])
                     if 'face' in subject:
-                        agg_subject.processed_data['face'].update(
+                        agg_subject.processed_face_data.update(
                             subject['face'])
 
                 agg_frame.subjects[subject_id] = agg_subject
@@ -298,7 +302,8 @@ class SubjectDataAggregator:
                 output_frame_file = output_frame_directory / \
                     ("%.12d" % frame + '.json')
                 frame_file = AggregateFrame(frame)
-                # if frame == 3:
+                if frame != 3:
+                    continue
 
                 if self.verbose:
                     print("Processed Openpose")
