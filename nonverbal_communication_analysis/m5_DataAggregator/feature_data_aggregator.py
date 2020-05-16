@@ -292,43 +292,43 @@ class SubjectDataAggregator:
                 output_frame_file = output_frame_directory / \
                     ("%.12d" % frame + '.json')
                 frame_file = AggregateFrame(frame)
-                if frame == 3:
+                # if frame == 3:
+
+                if self.verbose:
+                    print("Processed Openpose")
+                openpose_processed_frame_data = json.load(
+                    open(processed_openpose_files[frame], 'r'))
+                frame_file = self.read_frame_data(
+                    frame_file, openpose_processed_frame_data, 'pose')
+
+                for camera in cleaned_openpose[task]:
+                    cleaned_openpose_files = cleaned_openpose[task][camera]
+                    # Openpose
+                    # Open and read each frame file into a joint structure
+                    if self.verbose:
+                        print("Clean OpenPose")
+                    openpose_clean_frame_data = json.load(
+                        open(cleaned_openpose_files[frame], 'r'))
+                    frame_file = self.read_frame_data(
+                        frame_file, openpose_clean_frame_data, 'pose', camera)
 
                     if self.verbose:
-                        print("Processed Openpose")
-                    openpose_processed_frame_data = json.load(
-                        open(processed_openpose_files[frame], 'r'))
-                    frame_file = self.read_frame_data(
-                        frame_file, openpose_processed_frame_data, 'pose')
+                        print(frame, frame_file)
 
-                    for camera in cleaned_openpose[task]:
-                        cleaned_openpose_files = cleaned_openpose[task][camera]
-                        # Openpose
-                        # Open and read each frame file into a joint structure
-                        if self.verbose:
-                            print("Clean OpenPose")
-                        openpose_clean_frame_data = json.load(
-                            open(cleaned_openpose_files[frame], 'r'))
-                        frame_file = self.read_frame_data(
-                            frame_file, openpose_clean_frame_data, 'pose', camera)
+                # if task in openface_data and camera in openface_data[task]:
+                #     if frame in openface_data[task][camera]:
+                #         openface_frame_file = json.load(
+                #             open(openface_data[task][camera][frame], 'r'))
+                #         openface_subjects = openface_frame_file['subjects']
+                #         frame_file['subjects'] = self.merge_subject_dicts(
+                #             frame_file['subjects'], openface_subjects)
 
-                        if self.verbose:
-                            print(frame, frame_file)
-
-                    # if task in openface_data and camera in openface_data[task]:
-                    #     if frame in openface_data[task][camera]:
-                    #         openface_frame_file = json.load(
-                    #             open(openface_data[task][camera][frame], 'r'))
-                    #         openface_subjects = openface_frame_file['subjects']
-                    #         frame_file['subjects'] = self.merge_subject_dicts(
-                    #             frame_file['subjects'], openface_subjects)
-
-                    if prettify:
-                        json.dump(frame_file.to_json(), open(
-                            output_frame_file, 'w'), indent=2)
-                    else:
-                        json.dump(frame_file.to_json(),
-                                  open(output_frame_file, 'w'))
+                if prettify:
+                    json.dump(frame_file.to_json(), open(
+                        output_frame_file, 'w'), indent=2)
+                else:
+                    json.dump(frame_file.to_json(),
+                              open(output_frame_file, 'w'))
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
