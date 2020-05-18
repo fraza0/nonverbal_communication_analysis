@@ -12,35 +12,82 @@ from nonverbal_communication_analysis.utils import log
 class AggregateSubject(object):
     def __init__(self, subject_id):
         self.id = subject_id
-        self.clean_data = dict()
-        self.clean_pose_data = dict()
-        self.clean_face_data = dict()
-        self.processed_pose_data = dict()
-        self.processed_face_data = dict()
+        self.clean_pose_data = dict()  # openpose, densepose
+        self.clean_face_data = dict()  # openpose, openface
+        self.processed_pose_data = dict()  # openpose, densepose
+        self.processed_face_data = dict()  # openpose, openface
+        self.metrics = dict()
 
     def to_json(self):
         obj = {
             "id": self.id,
             "raw": {
                 "pose": self.clean_pose_data,
-                "face": self.clean_pose_data,
+                "face": self.clean_face_data,
             },
-            "custom": {
+            "enhanced": {
                 "pose": self.processed_pose_data,
                 "face": self.processed_face_data
-            }
+            },
+            "metrics": self.metrics
         }
 
         return obj
 
     def __str__(self):
-        return "AggregateSubject: {id: %s; clean_data: %s; processed_data: %s}" % (self.id, self.clean_data, self.processed_data)
+
+        obj = {
+            "id": self.id,
+            "raw": {
+                "pose": self.clean_pose_data.keys(),
+                "face": self.clean_face_data.keys(),
+            },
+            "enhanced": {
+                "pose": self.processed_pose_data.keys(),
+                "face": self.processed_face_data.keys()
+            },
+            "metrics": self.metrics
+        }
+
+        return "AggregateSubject: %s" % (obj)
 
 
 class AggregateFrame(object):
+    """
+        frame,
+        is_raw_data_valid,
+        is_enhanced_data_valid,
+        group: {
+            intragroup_distance,
+        }
+        subjects: {
+            id,
+            raw: {
+                pose: {
+                    openpose: {cams},
+                    densepose: {cams}
+                },
+                face: {
+                    openpose: {cams},
+                    openface: {cams}
+                }
+            }
+            enhanced: {
+                pose: {
+                    openpose: {cams},
+                    densepose: {cams}
+                },
+                face: {
+                    openpose: {cams},
+                    openface: {cams}
+                }
+            }
+            metrics: {cams}
+        }
+    """
 
     def __init__(self, frame_idx):
-        self.frame = frame_idx
+        self.frame_idx = frame_idx
         self.is_raw_data_valid = None
         self.is_processed_data_valid = None
         self.group = dict()
@@ -48,7 +95,7 @@ class AggregateFrame(object):
 
     def to_json(self):
         obj = {
-            "frame": self.frame,
+            "frame": self.frame_idx,
             "is_raw_data_valid": self.is_raw_data_valid,
             "is_custom_data_valid": self.is_processed_data_valid,
             "group": self.group,
@@ -58,7 +105,16 @@ class AggregateFrame(object):
         return obj
 
     def __str__(self):
-        return "AggregateFrame {index: %s; is_raw_data_valid: %s; is_processed_data_valid: %s; subjects: %s}" % (self.frame, self.is_raw_data_valid, self.is_processed_data_valid, self.subjects)
+
+        obj = {
+            "index": self.frame_idx,
+            "is_raw_data_valid": self.is_raw_data_valid,
+            "is_processed_data_valid": self.is_processed_data_valid,
+            "group": self.group,
+            "subjects": [str(subject) for _, subject in self.subjects.items()]
+        }
+
+        return "AggregateFrame %s" % obj
 
 
 class SubjectDataAggregator:
@@ -84,12 +140,14 @@ class SubjectDataAggregator:
             self.openpose_data['processed'] = self.get_processed_data(
                 openpose_group_directory)
 
-        # if openface:
-        #     openface_group_directory = OPENFACE_OUTPUT_DIR / self.group_id
-        #     experiment_data[OPENFACE_KEY] = self.get_experiment_data(
-        #         openface_group_directory)
-        #     self.openface_data['cleaned'] = self.get_clean_data(
-        #         openface_group_directory)
+            experiment_data = experiment_data[OPENPOSE_KEY]
+
+        if openface:
+            openface_group_directory = OPENFACE_OUTPUT_DIR / self.group_id
+            experiment_data[OPENFACE_KEY] = self.get_experiment_data(
+                openface_group_directory)
+            self.openface_data['cleaned'] = self.get_clean_data(
+                openface_group_directory)
 
         # if densepose:
         #     densepose_group_directory = DENSEPOSE_OUTPUT_DIR / self.group_id
@@ -101,7 +159,6 @@ class SubjectDataAggregator:
         experiment_data_output = self.group_directory / \
             (self.group_id + '.json')
 
-        experiment_data = experiment_data[OPENPOSE_KEY]
         if prettify:
             json.dump(experiment_data, open(
                 experiment_data_output, 'w'), indent=2)
@@ -195,10 +252,30 @@ class SubjectDataAggregator:
 
         return files
 
-    def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, key: str, framework: str = None, camera: str = None):
-        frame_data_type = None
+    def parse_data(self, agg_subject_data, frame_data, camera: str = None):
+        subject_framework_metrics = None
+        for framework, data in frame_data.items():
 
-        agg_frame_subjetcs = agg_frame.subjects
+            if framework == 'metrics':
+                subject_framework_metrics = data
+                continue
+
+            if framework not in agg_subject_data:
+                agg_subject_data[framework] = dict()
+
+            if camera:
+                if camera not in agg_subject_data[framework]:
+                    agg_subject_data[framework][camera] = dict()
+                agg_subject_data[framework][camera].update(
+                    data)
+            else:
+                agg_subject_data[framework].update(
+                    data)
+
+        return agg_subject_data, subject_framework_metrics
+
+    def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, camera: str = None, frame_data_type: str = None):
+        agg_frame_subjects = agg_frame.subjects
 
         if 'is_raw_data_valid' in frame_data:
             agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']
@@ -208,72 +285,52 @@ class SubjectDataAggregator:
             agg_frame.is_processed_data_valid = frame_data['is_processed_data_valid']
             frame_data_type = 'processed'
 
-        if 'group' in frame_data:
-            agg_frame.group = frame_data['group']
-
         if 'subjects' in frame_data:
             frame_subjects = frame_data['subjects']
             for subject in frame_subjects:
-                subject_id = subject['id']
 
-                agg_subject = agg_frame_subjetcs[subject_id] if subject_id in agg_frame_subjetcs \
+                # ID
+                if 'id' not in subject:
+                    log('ERROR', 'Invalid Subject. Cannot parse subject ID.')
+                subject_id = subject['id']
+                agg_subject = agg_frame_subjects[subject_id] if subject_id in agg_frame_subjects \
                     else AggregateSubject(subject_id)
 
-                if camera is not None:
-                    if framework not in agg_subject.clean_pose_data:
-                        agg_subject.clean_pose_data[framework] = dict()
+                # FACE
+                if 'face' in subject:
+                    subject_face_data = subject['face']
+                    if frame_data_type == 'raw':
+                        agg_subject.clean_face_data, _ = self.parse_data(
+                            agg_subject.clean_face_data, subject_face_data, camera=camera)
 
-                    if camera not in agg_subject.clean_pose_data[framework]:
-                        agg_subject.clean_pose_data[framework][camera] = dict()
+                    if frame_data_type == 'processed':
+                        processed_face_data, processed_face_metrics = self.parse_data(
+                            agg_subject.processed_face_data, subject_face_data, camera=camera)
 
-                    if framework not in agg_subject.clean_face_data:
-                        agg_subject.clean_face_data[framework] = dict()
+                        agg_subject.processed_face_data = processed_face_data
+                        if processed_face_metrics:
+                            agg_subject.metrics.update(processed_face_metrics)
 
-                    if camera not in agg_subject.clean_face_data:
-                        agg_subject.clean_face_data[framework][camera] = dict()
+                # POSE
+                if 'pose' in subject:
+                    subject_pose_data = subject['pose']
+                    if frame_data_type == 'raw':
+                        agg_subject.clean_pose_data, _ = self.parse_data(
+                            agg_subject.clean_pose_data, subject_pose_data, camera)
 
-                if frame_data_type == 'raw':
-                    if 'pose' in subject:
-                        agg_subject.clean_pose_data[framework][camera].update(
-                            subject['pose'][framework])
-                    if 'face' in subject:
-                        agg_subject.clean_face_data[framework][camera].update(
-                            subject['face'][framework])
-                elif frame_data_type == 'processed':
-                    if 'pose' in subject:
-                        agg_subject.processed_pose_data.update(
-                            subject['pose'])
-                    if 'face' in subject:
-                        agg_subject.processed_face_data.update(
-                            subject['face'])
+                    if frame_data_type == 'processed':
+                        processed_pose_data, processed_pose_metrics = self.parse_data(
+                            agg_subject.processed_pose_data, subject_pose_data)
+
+                        agg_subject.processed_pose_data = processed_pose_data
+                        if processed_pose_metrics:
+                            agg_subject.metrics.update(processed_pose_data)
+
+                if 'group' in frame_data:
+                    agg_frame.group = frame_data['group']
 
                 agg_frame.subjects[subject_id] = agg_subject
-
         return agg_frame
-
-    # def merge_subject_dicts(self, subject_list1: list, subject_list2: list):
-    #     """Merge subjects data from different frameworks
-
-    #     Args:
-    #         subject_list1 (list): Subject data
-    #         subject_list2 (list): Subject data
-
-    #     Returns:
-    #         list: Merged subjects attributes
-    #     """
-    #     pose_key = 'pose'
-    #     face_key = 'face'
-    #     subjects_list = dict()
-    #     for subject1 in subject_list1:
-    #         for subject2 in subject_list2:
-    #             if subject1['id'] == subject2['id']:
-    #                 if face_key in subject1.keys() and face_key in subject2.keys():
-    #                     subject1[face_key].update(subject2[face_key])
-    #                 if pose_key in subject1.keys() and pose_key in subject2.keys():
-    #                     subject1[pose_key].update(subject2[pose_key])
-    #             subjects_list[subject1['id']] = subject1
-    #             break
-    #     return list(subjects_list.values())
 
     def aggregate(self, prettify: bool = False):
         """Aggregate framework clean output data
@@ -289,6 +346,12 @@ class SubjectDataAggregator:
         # IMPLEMENTING DENSEPOSE EXTRACTION
         # densepose_data = self.densepose_data
 
+        if not openpose_data:
+            log('ERROR', 'Nothing to Aggregate. Use -op -of and -dp to include openpose, openface and densepose data')
+
+        if openface_data:
+            cleaned_openface = openface_data['cleaned']
+
         cleaned_openpose = openpose_data['cleaned']
         processed_openpose = openpose_data['processed']
 
@@ -298,47 +361,52 @@ class SubjectDataAggregator:
             makedirs(output_frame_directory, exist_ok=True)
 
             processed_openpose_files = processed_openpose[task]
-            for frame in processed_openpose_files:
+            for frame_idx in processed_openpose_files:
                 output_frame_file = output_frame_directory / \
-                    ("%.12d" % frame + '.json')
-                frame_file = AggregateFrame(frame)
-                if frame != 3:
+                    ("%.12d" % frame_idx + '.json')
+                aggregate_frame = AggregateFrame(frame_idx)
+
+                if frame_idx != 130:
                     continue
+
+                # OPENPOSE
+                if self.verbose:
+                    print("Cleaned OpenPose")
+                for camera in cleaned_openpose[task]:
+                    cleaned_openpose_files = cleaned_openpose[task][camera]
+                    openpose_clean_frame_data = json.load(
+                        open(cleaned_openpose_files[frame_idx], 'r'))
+                    aggregate_frame = self.read_frame_data(
+                        aggregate_frame, openpose_clean_frame_data, camera=camera)
 
                 if self.verbose:
                     print("Processed Openpose")
                 openpose_processed_frame_data = json.load(
-                    open(processed_openpose_files[frame], 'r'))
-                frame_file = self.read_frame_data(
-                    frame_file, openpose_processed_frame_data, 'pose')
+                    open(processed_openpose_files[frame_idx], 'r'))
 
-                for camera in cleaned_openpose[task]:
-                    cleaned_openpose_files = cleaned_openpose[task][camera]
-                    # Openpose
-                    # Open and read each frame file into a joint structure
+                aggregate_frame = self.read_frame_data(
+                    aggregate_frame, openpose_processed_frame_data)
+
+                # OPENFACE
+                if openface_data:
                     if self.verbose:
-                        print("Clean OpenPose")
-                    openpose_clean_frame_data = json.load(
-                        open(cleaned_openpose_files[frame], 'r'))
-                    frame_file = self.read_frame_data(
-                        frame_file, openpose_clean_frame_data, 'pose', framework='openpose', camera=camera)
-
-                    if self.verbose:
-                        print(frame, frame_file)
-
-                # if task in openface_data and camera in openface_data[task]:
-                #     if frame in openface_data[task][camera]:
-                #         openface_frame_file = json.load(
-                #             open(openface_data[task][camera][frame], 'r'))
-                #         openface_subjects = openface_frame_file['subjects']
-                #         frame_file['subjects'] = self.merge_subject_dicts(
-                #             frame_file['subjects'], openface_subjects)
+                        print("Cleaned OpenFace")
+                    cleaned_task_openface = cleaned_openface[task]
+                    for camera in cleaned_task_openface:
+                        if camera in cleaned_task_openface:
+                            cleaned_openface_files = cleaned_task_openface[camera]
+                            if frame_idx in cleaned_openface_files:
+                                openface_clean_frame_data = json.load(
+                                    open(cleaned_openface_files[frame_idx], 'r'))
+                                aggregate_frame = self.read_frame_data(
+                                    aggregate_frame, openface_clean_frame_data,
+                                    camera=camera, frame_data_type='raw')
 
                 if prettify:
-                    json.dump(frame_file.to_json(), open(
+                    json.dump(aggregate_frame.to_json(), open(
                         output_frame_file, 'w'), indent=2)
                 else:
-                    json.dump(frame_file.to_json(),
+                    json.dump(aggregate_frame.to_json(),
                               open(output_frame_file, 'w'))
 
 
