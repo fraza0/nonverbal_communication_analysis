@@ -366,8 +366,8 @@ class SubjectDataAggregator:
                     ("%.12d" % frame_idx + '.json')
                 aggregate_frame = AggregateFrame(frame_idx)
 
-                if frame_idx != 130:
-                    continue
+                # if frame_idx != 130:
+                #     continue
 
                 # OPENPOSE
                 if self.verbose:
