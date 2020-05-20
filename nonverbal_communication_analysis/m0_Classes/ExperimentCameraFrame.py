@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import cm
 
-from nonverbal_communication_analysis.m6_Visualization.simple_visualization import Visualizer
+from nonverbal_communication_analysis.m6_Visualization.simple_visualization import SimpleVisualizer
 
 
 class ExperimentCameraFrame(object):
@@ -29,7 +29,7 @@ class ExperimentCameraFrame(object):
         self.frame_data_validity = False
         self.verbose = verbose
         self.display = display
-        self.vis = Visualizer('3CLC9VWRSAMPLE')
+        self.vis = SimpleVisualizer('3CLC9VWRSAMPLE')
         self.camera = camera
         self.frame = frame
         if library == OPENPOSE_KEY:

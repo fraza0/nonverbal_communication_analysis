@@ -19,7 +19,7 @@ from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path
 
 
-class Visualizer(object):
+class SimpleVisualizer(object):
 
     COLOR_MAP = {0: (0, 0, 0),
                  1: (255, 0, 0),
@@ -411,7 +411,7 @@ class Visualizer(object):
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, verbose: bool = False):
     group_id = get_group_from_file_path(group_directory)
 
-    visualizer = Visualizer(group_id)
+    visualizer = SimpleVisualizer(group_id)
     if (specific_frame and specific_task) is not None:
         visualizer.show_frame(group_directory, specific_task=specific_task,
                               specific_frame=specific_frame, openpose=openpose,

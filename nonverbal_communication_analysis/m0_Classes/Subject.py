@@ -16,7 +16,7 @@ from nonverbal_communication_analysis.environment import (
     VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY,
     QUADRANT_MIN, CONFIDENCE_THRESHOLD)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
-    Visualizer
+    SimpleVisualizer
 from nonverbal_communication_analysis.utils import log
 
 
@@ -83,13 +83,13 @@ class Subject(object):
         assert value < 5, "Invalid quadrant property value"
         self.__quadrant = value
 
-    def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: Visualizer = None):
+    def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: SimpleVisualizer = None):
         """Allocate subject to quadrant
 
         Args:
             allocated_subjects (dict): Already allocated subjects
             frame (int): Frame number
-            vis (Visualizer, optional): Visualizer instance. Defaults to None. If None, visualization will not be available
+            vis (SimpleVisualizer, optional): SimpleVisualizer instance. Defaults to None. If None, visualization will not be available
 
         Returns:
             dict: Allocated Subjects in quadrants
