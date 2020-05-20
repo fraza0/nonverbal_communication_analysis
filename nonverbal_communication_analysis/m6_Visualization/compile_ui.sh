@@ -1,0 +1,1 @@
+pyuic5 nonverbal_communication_analysis/m6_Visualization/UI/mainwindow.ui -o nonverbal_communication_analysis/m6_Visualization/visualizer_gui.py
