@@ -189,13 +189,14 @@ class Subject(object):
             openface_face_features = self.face['openface']['face']
 
             for keypoint in openface_face_features.values():
-                keypoint_x, keypoint_y = keypoint['x'], keypoint['y']
+                keypoint_x, keypoint_y = keypoint[0], keypoint[1]
                 point = Point(keypoint_x, keypoint_y)
                 for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
                     if point.intersects(polygon):
                         id_weighing[quadrant] += 1
-            identification_confidence = dict(
-                sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
+            identification_confidence = dict(sorted(id_weighing.items(),
+                                                    key=operator.itemgetter(1),
+                                                    reverse=True))
             self.identification_confidence = identification_confidence
             self.quadrant = list(identification_confidence.keys())[0]
 
@@ -327,12 +328,10 @@ class Subject(object):
                 idx = eye_col[1]
 
                 if idx not in openface_data['eye']:
-                    openface_data['eye'][idx] = dict()
+                    openface_data['eye'][idx] = list()
 
-                if coord not in openface_data['eye'][idx]:
-                    openface_data['eye'][idx][coord] = dict()
-
-                openface_data['eye'][idx][coord] = eye_features[eye_field_prefix+coord+'_'+idx]
+                openface_data['eye'][idx].append(
+                    eye_features[eye_field_prefix+coord+'_'+idx])
 
             self.confidence = features_list['confidence']
             face_features = features_list.drop(eye_cols + ['confidence'])
@@ -343,12 +342,9 @@ class Subject(object):
                 idx = face_col[1]
 
                 if idx not in openface_data['face']:
-                    openface_data['face'][idx] = dict()
+                    openface_data['face'][idx] = list()
 
-                if coord not in openface_data['face']:
-                    openface_data['face'][idx][coord] = dict()
-
-                openface_data['face'][idx][coord] = value
+                openface_data['face'][idx].append(value)
             return openface_data
 
         elif key == DENSEPOSE_KEY:
