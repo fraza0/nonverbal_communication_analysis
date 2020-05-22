@@ -92,6 +92,12 @@ class Visualizer:
                 QtWidgets.QStyle.SP_MediaPlay))
             self.playing_status = False
 
+    # def play_frame_by_frame(self):
+    #     ret, frame = self.cap.read()
+    #     img = QtGui.QImage(frame, frame.shape[1], frame.shape[0], QtGui.QImage.Format_RGB888)
+    #     pix = QtGui.QPixmap.fromImage(img)
+    #     self.video_frame.setPixmap(pix)
+
     def position_changed(self, position):
         self.ui.time_slider.setValue(position)
 
