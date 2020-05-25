@@ -12,6 +12,8 @@ from nonverbal_communication_analysis.m0_Classes.Experiment import \
     get_group_from_file_path
 from nonverbal_communication_analysis.m4_DataProcessing.openpose_process import \
     OpenposeProcess
+from nonverbal_communication_analysis.m4_DataProcessing.openface_process import \
+    OpenfaceProcess
 
 
 def main(group_directory: str, task: int = None, specific_frame: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
@@ -28,11 +30,15 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, ope
         if verbose:
             print("Processing Openpose data")
         opp = OpenposeProcess(group_id, prettify=prettify, verbose=verbose)
-        opp.process(tasks_directories, specific_frame=specific_frame, display=display)
+        opp.process(tasks_directories,
+                    specific_frame=specific_frame, display=display)
 
     if openface:
         if verbose:
             print("Processing Openface data")
+        ofp = OpenfaceProcess(group_id, prettify=prettify, verbose=verbose)
+        ofp.process(tasks_directories,
+                    specific_frame=specific_frame, display=display)
 
     if densepose:
         if verbose:
