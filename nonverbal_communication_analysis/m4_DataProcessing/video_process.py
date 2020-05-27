@@ -116,16 +116,11 @@ class VideoProcess(object):
             ('htmp_energy_pc%s.png' % camera)
         energy_heatmap = metrics['energy_htmp']
 
-        cv2.imwrite(str(energy_heatmap_path), energy_heatmap)
-
         if self.verbose:
             plt.imshow(energy_heatmap)
             plt.show()
 
-        print(energy_heatmap.shape)
-
-        # cv2.imshow("Energy", energy_heatmap)
-        # cv2.imwrite(energy_heatmap_path, energy_heatmap)
+        cv2.imwrite(str(energy_heatmap_path), energy_heatmap)
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
 
