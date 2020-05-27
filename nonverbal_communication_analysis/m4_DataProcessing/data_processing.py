@@ -10,13 +10,15 @@ import yaml
 
 from nonverbal_communication_analysis.m0_Classes.Experiment import \
     get_group_from_file_path
+from nonverbal_communication_analysis.m4_DataProcessing.video_process import \
+    VideoProcess
 from nonverbal_communication_analysis.m4_DataProcessing.openpose_process import \
     OpenposeProcess
 from nonverbal_communication_analysis.m4_DataProcessing.openface_process import \
     OpenfaceProcess
 
 
-def main(group_directory: str, task: int = None, specific_frame: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
+def main(group_directory: str, task: int = None, specific_frame: int = None, video: bool = False, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
     group_directory = Path(group_directory)
     group_id = get_group_from_file_path(group_directory)
     tasks_directories = [x for x in group_directory.iterdir()
@@ -25,6 +27,13 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, ope
     if task is not None:
         tasks_directories = [x for x in group_directory.iterdir()
                              if x.is_dir() and str(task) in str(x.name)]
+
+    if video:
+        if verbose:
+            print("Processing Video data")
+        vp = VideoProcess(group_id, prettify=prettify, verbose=verbose)
+        vp.process(tasks_directories,
+                   specific_frame=specific_frame, display=display)
 
     if openpose:
         if verbose:
@@ -50,6 +59,8 @@ if __name__ == "__main__":
         description='Data processing step')
     parser.add_argument('group_data', type=str,
                         help='Group data directory')
+    parser.add_argument('-vid', '--video', dest='video',
+                        help='Process Video data', action='store_true')
     parser.add_argument('-op', '--openpose', dest='openpose',
                         help='Process Openpose data', action='store_true')
     parser.add_argument('-dp', '--densepose', dest='densepose',
@@ -74,6 +85,7 @@ if __name__ == "__main__":
     group_directory = args['group_data']
     prettify = args['prettify']
     specific_frame = args['specific_frame']
+    video = args['video']
     openpose = args['openpose']
     openface = args['openface']
     densepose = args['densepose']
@@ -82,5 +94,5 @@ if __name__ == "__main__":
     display = args['display']
 
     main(group_directory=group_directory, task=task, specific_frame=specific_frame,
-         openpose=openpose, openface=openface, densepose=densepose,
+         video=video, openpose=openpose, openface=openface, densepose=densepose,
          prettify=prettify, display=display, verbose=verbose)
