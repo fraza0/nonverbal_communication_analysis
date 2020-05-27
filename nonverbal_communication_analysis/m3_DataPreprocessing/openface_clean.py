@@ -178,7 +178,7 @@ class OpenfaceClean(object):
                                             == subject.framework_given_id]
 
             subject_face = subject.face['openface']
-            subject_face['AUS'] = {k: of_subject_data.get(
+            subject_face['AUs'] = {k: of_subject_data.get(
                 k).values[0] for k in of_subject_data[self.columns_aus_intensity]}
             subject_face['head'] = {
                 'location': list(of_subject_data[self.columns_head_loc].values[0]),
