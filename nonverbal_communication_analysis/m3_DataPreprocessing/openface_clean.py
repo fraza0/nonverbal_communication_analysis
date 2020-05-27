@@ -1,20 +1,21 @@
 import argparse
 import csv
 import json
-import re
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
 import yaml
 
 from nonverbal_communication_analysis.environment import (
-    VALID_OUTPUT_FILE_TYPES, OPENFACE_OUTPUT_DIR, NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, OPENFACE_KEY, VIDEO_RESOLUTION, QUADRANT_MIN, QUADRANT_MAX)
+    NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, OPENFACE_KEY, OPENFACE_OUTPUT_DIR,
+    QUADRANT_MAX, QUADRANT_MIN, VALID_OUTPUT_FILE_TYPES, VIDEO_RESOLUTION)
+from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
+from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import \
+    ExperimentCameraFrame
 from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
                                                     filter_files, log)
-
-from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment
-from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import ExperimentCameraFrame
 
 
 class OpenfaceClean(object):
@@ -161,13 +162,11 @@ class OpenfaceClean(object):
                 output_frame_file = output_frame_directory / \
                     ("%s_%.12d_clean.json" % (_cam, frame))
                 os.makedirs(output_frame_directory, exist_ok=True)
+                openface_frame = ExperimentCameraFrame(
+                    _cam, int(frame), df[['confidence', 'face_id'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks], OPENFACE_KEY, verbose=verbose, display=display)
 
-                if _cam_count > 1:
-                    openface_frame = ExperimentCameraFrame(
-                        _cam, int(frame), df[['confidence', 'face_id'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks], OPENFACE_KEY, verbose=verbose, display=display)
-
-                    self.save_data(df, openface_frame,
-                                   output_frame_file, prettify=prettify)
+                self.save_data(df, openface_frame,
+                                output_frame_file, prettify=prettify)
 
     def save_data(self, openface_data: pd.DataFrame, frame_data: ExperimentCameraFrame, path, prettify: bool = False):
 
@@ -185,8 +184,6 @@ class OpenfaceClean(object):
                 'location': list(of_subject_data[self.columns_head_loc].values[0]),
                 'rotation': list(of_subject_data[self.columns_head_rot].values[0])
             }
-
-            # print(subject_face['AUS'])
 
             sub_obj = {
                 "id": subject.quadrant,
