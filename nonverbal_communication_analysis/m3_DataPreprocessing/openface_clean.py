@@ -210,7 +210,7 @@ class OpenfaceClean(object):
         return frame_obj
 
     def clean(self, tasks_directories: dict, specific_frame: int = None, prettify: bool = False, verbose: bool = False, display: bool = False):
-        """Openface feature data cleansing and filtering
+        """ Openface feature data cleansing and filtering
 
         Args:
             tasks_directories (dict): Experiment Group Tasks directory

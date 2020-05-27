@@ -1,23 +1,26 @@
 import argparse
 import json
-from math import pi, degrees
+import os
+import re
+from math import degrees, pi
 from os.path import isfile, join, splitext
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import re
-import os
 
-from pathlib import Path
-
-from nonverbal_communication_analysis.environment import (NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, NUM_NON_RIGID,
-                                                          OPENFACE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, EMOTIONS_ENCONDING,
-                                                          FRAME_THRESHOLD, HEAD_MOV_VARIANCE_THRESHOLD)
-from nonverbal_communication_analysis.utils import fetch_files_from_directory, filter_files, strided_split
-
-from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
+from nonverbal_communication_analysis.environment import (
+    CAMERAS_3D_AXES, EMOTIONS_ENCONDING, FRAME_THRESHOLD,
+    HEAD_MOV_VARIANCE_THRESHOLD, NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS,
+    NUM_NON_RIGID, OPENFACE_KEY, OPENFACE_OUTPUT_DIR, SUBJECT_AXES,
+    VALID_OUTPUT_FILE_TYPES)
+from nonverbal_communication_analysis.m0_Classes.Experiment import (
+    Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
-from nonverbal_communication_analysis.environment import OPENFACE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENFACE_KEY, CAMERAS_3D_AXES
+from nonverbal_communication_analysis.utils import (fetch_files_from_directory,
+                                                    filter_files, log,
+                                                    strided_split)
+
 
 '''
 https://www.cs.cmu.edu/~face/facs.htm
@@ -28,11 +31,13 @@ class OpenfaceSubject(Subject):
     # See Also: Between Shoulders Distance Analysis section of Openpose Analysis notebook
     _distance_threshold = 0.5
 
-    def __init__(self, _id, prettify: bool = False, verbose: bool = False):
+    def __init__(self, _id):
         self.id = _id
 
-        self.verbose = verbose
-        self.prettify = prettify
+        self.data_buffer = {
+            'head': list(),
+            'eye': list()
+        }
 
     def __str__(self):
         return "OpenposeSubject: {id: %s}" % self.id
@@ -56,13 +61,12 @@ class OpenfaceProcess(object):
         json.dump(self.experiment.to_json(),
                   open(self.output_group_dir / (self.group_id + '.json'), 'w'))
 
-        self.current_frame = -1
-        self.n_subjects = -1
-        self.subjects = {subject_id: OpenfaceSubject(
-            subject_id, verbose) for subject_id in range(1, 5)}
-        self.intragroup_distance = dict()
+        self.subjects = dict()
+
         self.prettify = prettify
         self.verbose = verbose
+
+        
 
     columns_basic = [
         # 'frame',       # Frame number
@@ -132,13 +136,6 @@ class OpenfaceProcess(object):
 
     columns_output = columns_relevant + columns_features
 
-    def radians_to_degrees_df(self, rads_list: pd.Series):
-
-        for a, val_rad in rads_list.items():
-            rads_list[a] = degrees(val_rad)
-
-        return rads_list
-
     def calculate_au_vector_coef(self, au_intensity_list: list, decrease_factor: float):
         weight = 1
         au_coef = 0
@@ -147,40 +144,45 @@ class OpenfaceProcess(object):
             weight -= decrease_factor
         return au_coef
 
-    def identify_emotion(self, aus_vector: pd.Series):
+    def identify_emotion(self, action_units_data: dict):
+        # TODO: update docs
         """Emotion Identification based on relation matrix using \
             Discriminative Power method as Velusamy et al. used \
             in "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS"
 
         Args:
-            aus_vector (pd.Series): Vectors of Action Units intensities
+            aus_vector (dict): Vectors of Action Units intensities
 
         See Also:
             "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS":
             https://ieeexplore.ieee.org/document/5946910/
 
+        To Do: 
+            predict_emotion(aus_vector: pd.Series) using a ML classifier
+
         Returns:
             str: identified emotion
         """
 
-        aus_vector = aus_vector[columns_aus_intensity]
+        aus_vector = dict()
+        for au_col in self.columns_aus_intensity:
+            if au_col in action_units_data:
+                aus_vector[au_col] = action_units_data[au_col]
 
         emotion_vector_coefs = dict()
         for emotion_name, emotion_aus_vector in EMOTIONS_ENCONDING.items():
             decrease_factor = 1/len(emotion_aus_vector)
             emotion_aus = list()
             for au in emotion_aus_vector:
-                emotion_aus.append(au+"_r")
+                emotion_aus.append(aus_vector[au+"_r"])
 
-            emotion_vector_coefs[emotion_name] = calculate_au_vector_coef(
-                aus_vector.filter(emotion_aus), decrease_factor)
+            emotion_vector_coefs[emotion_name] = self.calculate_au_vector_coef(emotion_aus, decrease_factor)
 
         emotion_vector_coefs['NEUTRAL'] = 1
         emotion_pred = max(emotion_vector_coefs, key=emotion_vector_coefs.get)
 
         return emotion_pred
 
-    # TODO: predict_emotion(aus_vector: pd.Series) using a ML classifier
 
     def is_sequence_increasing(self, seq: list):
         return all(earlier <= later for earlier, later in zip(seq, seq[1:]))
@@ -188,44 +190,36 @@ class OpenfaceProcess(object):
     def is_sequence_decreasing(self, seq: list):
         return all(earlier >= later for earlier, later in zip(seq, seq[1:]))
 
-    def identify_head_movement_orientation(self, col: str, vector: str):
-        col = col.lower()
-        orientation = {
+    def identify_head_movement(self, data_buffer: str):
+        
+        orientation_labels = {
             'x': ['UP', 'DOWN'],
             'y': ['LEFT', 'RIGHT'],
             'z': ['CW', 'CCW']
         }
 
-        for axis, label in orientation.items():
-            if axis in col:
-                break
+        x_vector = list()
+        y_vector = list()
+        z_vector = list()
+        for entry in data_buffer:
+            x_vector.append(degrees(entry[0]))
+            y_vector.append(degrees(entry[1]))
+            z_vector.append(degrees(entry[2]))
 
-        vector_variance = np.var(vector)
-        valid_variance = vector_variance >= HEAD_MOV_VARIANCE_THRESHOLD
+        vectors = {'x': x_vector, 'y': y_vector, 'z': z_vector}
+        orientation = {'x': None, 'y': None, 'z': None}
 
-        if self.is_sequence_increasing(vector) and valid_variance:
-            return label[0]
-        elif self.is_sequence_decreasing(vector) and valid_variance:
-            return label[1]
-        else:
-            return 'CENTER'
+        for axis, vector in vectors.items():
+            if np.var(vector) >= HEAD_MOV_VARIANCE_THRESHOLD:
+                if self.is_sequence_increasing(vector):
+                    orientation[axis] = orientation_labels[axis][0]
+                elif self.is_sequence_decreasing(vector):
+                    orientation[axis] = orientation_labels[axis][1]
+            else:
+                orientation[axis] = 'CENTER'
 
-    def identify_head_movement(self, head_pose_df: pd.DataFrame, columns_head_rotation_out: list):
-        head_pose_out = pd.DataFrame(columns=columns_head_rotation_out)
-
-        for df_split in strided_split(head_pose_df, FRAME_THRESHOLD):
-            movement_split = list()
-            for col in df_split.columns:
-                movement = identify_head_movement_orientation(
-                    col, df_split[col])
-                movement_split.append(movement)
-
-            movement_split_df = pd.DataFrame([movement_split for _ in range(
-                len(df_split))], columns=columns_head_rotation_out)
-            head_pose_out = head_pose_out.append(
-                movement_split_df, ignore_index=True)
-
-        return head_pose_out
+        return orientation
+        
 
     def identify_gaze_movement_orientation(self, col: str, vector: str):
         """If a person is looking left-right this will results in the change of gaze_angle_x (from positive to negative) \
@@ -300,37 +294,49 @@ class OpenfaceProcess(object):
         return True
 
     def handle_frames(self, camera_frame_files: dict, output_directory: str, display: bool = False):
-        pass
-        # for frame_idx in sorted(camera_frame_files):
-        #     # print('=== FRAME %s ===' % frame_idx)
-        #     self.current_frame = frame_idx
-        #     frame_camera_dict = camera_frame_files[frame_idx]
-        #     is_valid_frame = True
-        #     for camera, frame_file in frame_camera_dict.items():
-        #         data = json.load(open(frame_file))
-        #         data = self.frame_data_transform(data)
-        #         is_valid_frame = self.camera_frame_parse_subjects(camera, data)
-        #         if not is_valid_frame:
-        #             if self.verbose:
-        #                 log('INFO', 'Not enough poses detected. Skipping frame')
-        #             break
+        for frame_idx in sorted(camera_frame_files):
+            print('=== FRAME %s ===' % frame_idx)
+            self.current_frame = frame_idx
+            frame_camera_dict = camera_frame_files[frame_idx]
+            is_valid_frame = None
+            for camera, frame_file in frame_camera_dict.items():
+                data = json.load(open(frame_file))
+                # TODO: Replace by condition if needed
+                is_valid_frame = data['is_raw_data_valid']
 
-        #     if is_valid_frame:
-        #         group_data = self.metric_intragroup_distance(
-        #             self.subjects)
-        #         self.intragroup_distance = group_data
-        #         for _, subject in self.subjects.items():
-        #             if not self.has_required_cameras(subject):
-        #                 log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
-        #                     'Not enough information to process frame (%s)' % frame_idx)
-        #             self.process_subject_individual_metrics(
-        #                 subject, group_data)
+                for subject in data['subjects']:
+                    subject_id = subject['id']
+                    print("== SUBJECT %s ==" % subject_id)
+                    if subject_id in self.subjects:
+                        openface_subject = self.subjects[subject_id]
+                    else:
+                        openface_subject = OpenfaceSubject(subject['id'])
+                        self.subjects[subject_id] = openface_subject
 
-        #     # writting every frame. Indent if invalid frames should not be saved
-        #     self.save_output(output_directory, is_valid_frame)
+                    subject_openface_data = subject['face']['openface']
 
-        # if frame_idx == 3:
-        #     exit()
+                    # EMOTION IDENTIFICATION
+                    openface_subject.face = subject_openface_data
+                    openface_subject.emotion = self.identify_emotion(subject_openface_data['AUs'])
+
+                    # HEAD MOVEMENT DIRECTION
+                    head_rotation_data = subject_openface_data['head']['rotation']
+                    if len(openface_subject.data_buffer['head']) >= FRAME_THRESHOLD:
+                        openface_subject.data_buffer['head'].pop(0)
+                    
+                    openface_subject.data_buffer['head'].append(head_rotation_data)
+                    if len(openface_subject.data_buffer['head']) == FRAME_THRESHOLD:
+                        openface_subject.head_rotation = self.identify_head_movement(openface_subject.data_buffer['head'])
+
+                    # EYE GAZE MOVEMENT DIRECTION
+                    
+            
+
+            # writting every frame. Indent if invalid frames should not be saved
+            # self.save_output(output_directory, is_valid_frame)
+            
+            if frame_idx == 135:
+                exit()
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
@@ -361,8 +367,7 @@ class OpenfaceProcess(object):
                 camera_files = specific_camera_files
 
             output_directory = self.output_group_dir / task.name
-            print(camera_files, output_directory, display)
-            # self.handle_frames(camera_files, output_directory, display=display)
+            self.handle_frames(camera_files, output_directory, display=display)
 
 
 # if __name__ == "__main__":
