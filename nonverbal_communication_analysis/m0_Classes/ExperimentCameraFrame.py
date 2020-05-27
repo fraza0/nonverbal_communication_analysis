@@ -101,10 +101,10 @@ class ExperimentCameraFrame(object):
 
                 unconfirmed_identity_subject.assign_quadrant(key=OPENFACE_KEY)
                 if self.verbose:
-                    print(unconfirmed_identity_subject)
+                    print('Unconfirmed:', unconfirmed_identity_subject)
 
-            allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
-                allocated_subjects, self.frame, self.vis)
+                allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
+                    allocated_subjects, self.frame, self.vis)
         elif key == DENSEPOSE_KEY:
             print("DP")
 
