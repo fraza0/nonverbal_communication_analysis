@@ -71,6 +71,8 @@ class Subject(object):
         self.identification_confidence = dict()
         self.verbose = verbose
         self.display = display
+
+        self.framework_given_id = None
         if verbose:
             matplotlib.use('QT5Agg')
 
@@ -187,6 +189,9 @@ class Subject(object):
             return identification_confidence
         if key == OPENFACE_KEY:
             openface_face_features = self.face['openface']['face']
+
+            self.framework_given_id = int(openface_face_features['id'][0])
+            del openface_face_features['id']
 
             for keypoint in openface_face_features.values():
                 keypoint_x, keypoint_y = keypoint[0], keypoint[1]

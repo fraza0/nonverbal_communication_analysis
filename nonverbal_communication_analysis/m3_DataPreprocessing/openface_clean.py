@@ -19,7 +19,7 @@ from nonverbal_communication_analysis.m0_Classes.ExperimentCameraFrame import Ex
 
 class OpenfaceClean(object):
     """ 
-        
+
 
         WARNING: Might have inaccuracies as this could
         not be extensively tested due to low
@@ -48,13 +48,6 @@ class OpenfaceClean(object):
     columns_2d_eye_lmks = columns_2d_eye_lmks_x + \
         columns_2d_eye_lmks_y  # 2D Eye Landmarks (x,y) coordinates
 
-    # columns_3d_eye_lmks = [('eye_lmk_X_%s' % lmk_idx) for lmk_idx in range(
-    #     NUM_EYE_LANDMARKS)] + \
-    #     [('eye_lmk_Y_%s' % lmk_idx) for lmk_idx in range(
-    #         NUM_EYE_LANDMARKS)] + \
-    #     [('eye_lmk_Z_%s' % lmk_idx) for lmk_idx in range(
-    #         NUM_EYE_LANDMARKS)]  # 3D Eye Landmarks (X,Y,Z) coordinates
-
     # Relative Location to Camera
     columns_head_loc = ['pose_Tx', 'pose_Ty', 'pose_Tz']
     columns_head_rot = ['pose_Rx', 'pose_Ry',
@@ -68,11 +61,6 @@ class OpenfaceClean(object):
 
     columns_2d_facial_lmks = columns_2d_facial_lmks_x + \
         columns_2d_facial_lmks_y  # 2D Face Landmarks (x,y) coordinates
-
-    # columns_3d_facial_lmks = [('X_%s' % lmk_idx) for lmk_idx in range(NUM_FACE_LANDMARKS)] + \
-    #     [('Y_%s' % lmk_idx) for lmk_idx in range(NUM_FACE_LANDMARKS)] + \
-    #     [('Z_%s' % lmk_idx) for lmk_idx in range(NUM_FACE_LANDMARKS)
-    #      ]  # 3D Face Landmarks (X,Y,Z) coordinate
 
     # Rigid face shape (location, scale, rotation)
     columns_rigid_shape = ['p_scale',                   # Face scale
@@ -166,7 +154,7 @@ class OpenfaceClean(object):
                 _cam_count = frame_camera[1]
                 if verbose:
                     if _cam_count < self.experiment._n_subjects:
-                        log("WARN", "Camera %s only found %s subjects faces" %
+                        log("WARN", "Camera %s only has %s subjects faces" %
                             (_cam, _cam_count))
 
                 output_frame_directory = output_directory / _cam
@@ -174,15 +162,55 @@ class OpenfaceClean(object):
                     ("%s_%.12d_clean.json" % (_cam, frame))
                 os.makedirs(output_frame_directory, exist_ok=True)
 
-                experiment_frame = ExperimentCameraFrame(
-                    _cam, int(frame), df[['confidence'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks], OPENFACE_KEY, verbose=verbose, display=display)
+                if _cam_count > 1:
+                    openface_frame = ExperimentCameraFrame(
+                        _cam, int(frame), df[['confidence', 'face_id'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks], OPENFACE_KEY, verbose=verbose, display=display)
 
-                if prettify:
-                    json.dump(experiment_frame.to_json(), open(
-                        output_frame_file, 'w'), indent=2)
-                else:
-                    json.dump(experiment_frame.to_json(), open(
-                        output_frame_file, 'w'))
+                    self.save_data(df, openface_frame,
+                                   output_frame_file, prettify=prettify)
+
+    def save_data(self, openface_data: pd.DataFrame, frame_data: ExperimentCameraFrame, path, prettify: bool = False):
+
+        frame = frame_data.frame
+        is_valid_data = frame_data.frame_data_validity
+        subjects = list()
+        for subject in frame_data.subjects:
+            of_subject_data = openface_data[openface_data['face_id']
+                                            == subject.framework_given_id]
+
+            subject_face = subject.face['openface']
+            subject_face['AUS'] = {k: of_subject_data.get(
+                k).values[0] for k in of_subject_data[self.columns_aus_intensity]}
+            subject_face['head'] = {
+                'location': list(of_subject_data[self.columns_head_loc].values[0]),
+                'rotation': list(of_subject_data[self.columns_head_rot].values[0])
+            }
+
+            # print(subject_face['AUS'])
+
+            sub_obj = {
+                "id": subject.quadrant,
+                "face": {
+                    'openface': subject_face
+                }
+            }
+
+            subjects.append(sub_obj)
+
+        frame_obj = {
+            'frame': frame,
+            'is_raw_data_valid': is_valid_data,
+            'subjects': [subject for subject in subjects]
+        }
+
+        if prettify:
+            json.dump(frame_obj, open(
+                path, 'w'), indent=2)
+        else:
+            json.dump(frame_obj, open(
+                path, 'w'))
+
+        return frame_obj
 
     def clean(self, tasks_directories: dict, specific_frame: int = None, prettify: bool = False, verbose: bool = False, display: bool = False):
         """Openface feature data cleansing and filtering
