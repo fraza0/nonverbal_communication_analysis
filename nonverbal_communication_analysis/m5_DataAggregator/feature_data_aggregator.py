@@ -97,7 +97,7 @@ class AggregateFrame(object):
         obj = {
             "frame": self.frame_idx,
             "is_raw_data_valid": self.is_raw_data_valid,
-            "is_custom_data_valid": self.is_processed_data_valid,
+            "is_enhanced_data_valid": self.is_processed_data_valid,
             "group": self.group,
             "subjects": [subject.to_json() for _, subject in self.subjects.items()]
         }
@@ -109,7 +109,7 @@ class AggregateFrame(object):
         obj = {
             "index": self.frame_idx,
             "is_raw_data_valid": self.is_raw_data_valid,
-            "is_processed_data_valid": self.is_processed_data_valid,
+            "is_enhanced_data_valid": self.is_processed_data_valid,
             "group": self.group,
             "subjects": [str(subject) for _, subject in self.subjects.items()]
         }
@@ -147,6 +147,8 @@ class SubjectDataAggregator:
             experiment_data[OPENFACE_KEY] = self.get_experiment_data(
                 openface_group_directory)
             self.openface_data['cleaned'] = self.get_clean_data(
+                openface_group_directory)
+            self.openface_data['processed'] = self.get_processed_data(
                 openface_group_directory)
 
         # if densepose:
@@ -241,14 +243,39 @@ class SubjectDataAggregator:
 
         files = dict()
         for task in task_dirs:
-            task_frame_files = [x for x in task.iterdir()
-                                if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES]
-            for frame_file in task_frame_files:
-                frame = int(re.search(r'(?<=_)(\d{12})(?=_)',
-                                      frame_file.name).group(0))
-                if task.name not in files:
-                    files[task.name] = dict()
-                files[task.name][frame] = frame_file
+            task_camera_dirs = [x for x in task.iterdir()
+                                if x.is_dir() and 'pc' in x.name]
+
+            task_frame_files = list()
+            if task_camera_dirs:
+                task_frame_files = dict()
+                for camera_dir in task_camera_dirs:
+                    task_frame_files[camera_dir.name] = [x for x in camera_dir.iterdir()
+                                                         if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES]
+
+                for camera, frame_files in task_frame_files.items():
+                    for frame_file in frame_files:
+                        frame = int(re.search(r'(?<=_)(\d{12})(?=_)',
+                                              frame_file.name).group(0))
+                        if task.name not in files:
+                            files[task.name] = dict()
+
+                        if frame not in files[task.name]:
+                            files[task.name][frame] = dict()
+
+                        files[task.name][frame][camera] = frame_file
+
+            else:
+                task_frame_files = [x for x in task.iterdir()
+                                    if not x.is_dir()
+                                    and x.suffix in VALID_OUTPUT_FILE_TYPES]
+
+                for frame_file in task_frame_files:
+                    frame = int(re.search(r'(?<=_)(\d{12})(?=_)',
+                                          frame_file.name).group(0))
+                    if task.name not in files:
+                        files[task.name] = dict()
+                    files[task.name][frame] = frame_file
 
         return files
 
@@ -281,8 +308,8 @@ class SubjectDataAggregator:
             agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']
             frame_data_type = 'raw'
 
-        if 'is_processed_data_valid' in frame_data:
-            agg_frame.is_processed_data_valid = frame_data['is_processed_data_valid']
+        if 'is_enhanced_data_valid' in frame_data:
+            agg_frame.is_processed_data_valid = frame_data['is_enhanced_data_valid']
             frame_data_type = 'processed'
 
         if 'subjects' in frame_data:
@@ -324,7 +351,7 @@ class SubjectDataAggregator:
 
                         agg_subject.processed_pose_data = processed_pose_data
                         if processed_pose_metrics:
-                            agg_subject.metrics.update(processed_pose_data)
+                            agg_subject.metrics.update(processed_pose_metrics)
 
                 if 'group' in frame_data:
                     agg_frame.group = frame_data['group']
@@ -347,10 +374,11 @@ class SubjectDataAggregator:
         # densepose_data = self.densepose_data
 
         if not openpose_data:
-            log('ERROR', 'Nothing to Aggregate. Use -op -of and -dp to include openpose, openface and densepose data')
+            log('ERROR', 'Nothing to Aggregate. Use -op -of and -dp to include openpose, openface and densepose data. The use of Openpose data is mandatory.')
 
         if openface_data:
             cleaned_openface = openface_data['cleaned']
+            processed_openface = openface_data['processed']
 
         cleaned_openpose = openpose_data['cleaned']
         processed_openpose = openpose_data['processed']
@@ -365,9 +393,6 @@ class SubjectDataAggregator:
                 output_frame_file = output_frame_directory / \
                     ("%.12d" % frame_idx + '.json')
                 aggregate_frame = AggregateFrame(frame_idx)
-
-                # if frame_idx != 130:
-                #     continue
 
                 # OPENPOSE
                 if self.verbose:
@@ -402,12 +427,25 @@ class SubjectDataAggregator:
                                     aggregate_frame, openface_clean_frame_data,
                                     camera=camera, frame_data_type='raw')
 
-                if prettify:
-                    json.dump(aggregate_frame.to_json(), open(
-                        output_frame_file, 'w'), indent=2)
-                else:
-                    json.dump(aggregate_frame.to_json(),
-                              open(output_frame_file, 'w'))
+                    if self.verbose:
+                        print("Processed Openface")
+
+                    processed_task_openface = processed_openface[task]
+                    for frame_idx in processed_task_openface:
+                        processed_task_frame = processed_task_openface[frame_idx]
+                        for camera, frame_file in processed_task_frame.items():
+                            openface_processed_frame_data = json.load(
+                                open(frame_file, 'r'))
+                            aggregate_frame = self.read_frame_data(
+                                aggregate_frame, openface_processed_frame_data,
+                                camera=camera, frame_data_type='processed')
+
+                    if prettify:
+                        json.dump(aggregate_frame.to_json(), open(
+                            output_frame_file, 'w'), indent=2)
+                    else:
+                        json.dump(aggregate_frame.to_json(),
+                                  open(output_frame_file, 'w'))
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
