@@ -418,20 +418,19 @@ class SubjectDataAggregator:
                         print("Cleaned OpenFace")
                     cleaned_task_openface = cleaned_openface[task]
                     for camera in cleaned_task_openface:
-                        if camera in cleaned_task_openface:
-                            cleaned_openface_files = cleaned_task_openface[camera]
-                            if frame_idx in cleaned_openface_files:
-                                openface_clean_frame_data = json.load(
-                                    open(cleaned_openface_files[frame_idx], 'r'))
-                                aggregate_frame = self.read_frame_data(
-                                    aggregate_frame, openface_clean_frame_data,
-                                    camera=camera, frame_data_type='raw')
+                        cleaned_openface_files = cleaned_task_openface[camera]
+                        if frame_idx in cleaned_openface_files:
+                            openface_clean_frame_data = json.load(
+                                open(cleaned_openface_files[frame_idx], 'r'))
+                            aggregate_frame = self.read_frame_data(
+                                aggregate_frame, openface_clean_frame_data,
+                                camera=camera, frame_data_type='raw')
 
                     if self.verbose:
                         print("Processed Openface")
 
                     processed_task_openface = processed_openface[task]
-                    for frame_idx in processed_task_openface:
+                    if frame_idx in processed_task_openface:
                         processed_task_frame = processed_task_openface[frame_idx]
                         for camera, frame_file in processed_task_frame.items():
                             openface_processed_frame_data = json.load(
@@ -440,12 +439,12 @@ class SubjectDataAggregator:
                                 aggregate_frame, openface_processed_frame_data,
                                 camera=camera, frame_data_type='processed')
 
-                    if prettify:
-                        json.dump(aggregate_frame.to_json(), open(
-                            output_frame_file, 'w'), indent=2)
-                    else:
-                        json.dump(aggregate_frame.to_json(),
-                                  open(output_frame_file, 'w'))
+                if prettify:
+                    json.dump(aggregate_frame.to_json(), open(
+                        output_frame_file, 'w'), indent=2)
+                else:
+                    json.dump(aggregate_frame.to_json(),
+                              open(output_frame_file, 'w'))
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
