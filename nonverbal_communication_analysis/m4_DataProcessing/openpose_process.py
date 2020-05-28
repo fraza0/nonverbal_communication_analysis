@@ -378,7 +378,7 @@ class OpenposeProcess(object):
 
         obj = {
             "frame": self.current_frame,
-            "is_processed_data_valid": frame_validity,
+            "is_enhanced_data_valid": frame_validity,
             "group": self.to_json(),
             "subjects": [subject.to_json() for subject_id, subject in self.subjects.items()],
         }
