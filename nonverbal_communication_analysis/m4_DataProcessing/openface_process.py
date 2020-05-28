@@ -39,6 +39,30 @@ class OpenfaceSubject(Subject):
             'eye': list()
         }
 
+        self.face = None
+        self.emotion = None
+        self.eye_gaze = None
+        self.head_rotation = None
+
+    def to_json(self):
+
+        obj = {
+            "id": self.id,
+            "face": {
+                "openface": {
+                    "raw": self.face,
+                    "processed": None
+                },
+                "metrics": {
+                    "emotion": self.emotion,
+                    "head_movement": self.head_rotation,
+                    "gaze_movement":    self.eye_gaze
+                }
+            }
+        }
+
+        return obj
+
     def __str__(self):
         return "OpenposeSubject: {id: %s}" % self.id
 
@@ -62,11 +86,10 @@ class OpenfaceProcess(object):
                   open(self.output_group_dir / (self.group_id + '.json'), 'w'))
 
         self.subjects = dict()
+        self.is_valid_frame = None
 
         self.prettify = prettify
         self.verbose = verbose
-
-        
 
     columns_basic = [
         # 'frame',       # Frame number
@@ -157,7 +180,7 @@ class OpenfaceProcess(object):
             "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS":
             https://ieeexplore.ieee.org/document/5946910/
 
-        To Do: 
+        To Do:
             predict_emotion(aus_vector: pd.Series) using a ML classifier
 
         Returns:
@@ -176,13 +199,13 @@ class OpenfaceProcess(object):
             for au in emotion_aus_vector:
                 emotion_aus.append(aus_vector[au+"_r"])
 
-            emotion_vector_coefs[emotion_name] = self.calculate_au_vector_coef(emotion_aus, decrease_factor)
+            emotion_vector_coefs[emotion_name] = self.calculate_au_vector_coef(
+                emotion_aus, decrease_factor)
 
         emotion_vector_coefs['NEUTRAL'] = 1
         emotion_pred = max(emotion_vector_coefs, key=emotion_vector_coefs.get)
 
         return emotion_pred
-
 
     def is_sequence_increasing(self, seq: list):
         return all(earlier <= later for earlier, later in zip(seq, seq[1:]))
@@ -191,7 +214,7 @@ class OpenfaceProcess(object):
         return all(earlier >= later for earlier, later in zip(seq, seq[1:]))
 
     def identify_head_movement(self, data_buffer: str):
-        
+
         orientation_labels = {
             'x': ['UP', 'DOWN'],
             'y': ['LEFT', 'RIGHT'],
@@ -215,13 +238,14 @@ class OpenfaceProcess(object):
                     orientation[axis] = orientation_labels[axis][0]
                 elif self.is_sequence_decreasing(vector):
                     orientation[axis] = orientation_labels[axis][1]
+                else:
+                    orientation[axis] = 'CENTER'
             else:
                 orientation[axis] = 'CENTER'
 
         return orientation
-        
 
-    def identify_gaze_movement_orientation(self, col: str, vector: str):
+    def identify_eye_gaze_movement(self, data_buffer: str):
         """If a person is looking left-right this will results in the change of gaze_angle_x (from positive to negative) \
         If a person is looking up-down this will result in change of gaze_angle_y (from negative to positive) \
         If a person is looking straight ahead both of the angles will be close to 0 (within measurement error)
@@ -237,72 +261,66 @@ class OpenfaceProcess(object):
         Returns:
             str: [description]
         """
-        col = col.lower()
-        orientation = {
+        orientation_labels = {
             'x': ['RIGHT', 'CENTER', 'LEFT'],
             'y': ['UP', 'CENTER', 'DOWN'],
         }
 
-        for axis, label in orientation.items():
-            if axis in col:
-                vector_mean = np.mean(vector)
-                vector_std = np.std(vector)
+        x_vector = list()
+        y_vector = list()
+        for entry in data_buffer:
+            x_vector.append(degrees(entry[0]))
+            y_vector.append(degrees(entry[1]))
 
-                if (vector_mean-vector_std <= 0 <= vector_mean+vector_std):
-                    return label[1]
-                elif vector_mean > 0:
-                    return label[2]
-                elif vector_mean < 0:
-                    return label[0]
+        vectors = {'x': x_vector, 'y': y_vector}
+        orientation = {'x': None, 'y': None}
 
-        return "MEASUREMENT ERROR"
+        for axis, vector in vectors.items():
+            vector_mean = np.mean(vector)
+            vector_std = np.std(vector)
 
-    def identify_eye_gaze_movement(self, eye_gaze_df: pd.DataFrame, columns_eye_movement_out: list):
-        """If a person is looking left-right this will results in the change of gaze_angle_x (from positive to negative) \
-        If a person is looking up-down this will result in change of gaze_angle_y (from negative to positive) \
-        If a person is looking straight ahead both of the angles will be close to 0 (within measurement error)
+            if (vector_mean-vector_std <= 0 <= vector_mean+vector_std):
+                orientation[axis] = orientation_labels[axis][1]
+            elif vector_mean > 0:
+                orientation[axis] = orientation_labels[axis][2]
+            elif vector_mean < 0:
+                orientation[axis] = orientation_labels[axis][0]
+            else:
+                orientation[axis] = 'MEASUREMENT ERROR'
 
-        See Also:
-            Check 'Gaze related' section in OpenFace Documentation
-            https://github.com/TadasBaltrusaitis/OpenFace/wiki/Output-Format
+        return orientation
 
-        Args:
-            eye_gaze_df (pd.DataFrame): Gaze angles dataframe
-            columns_eye_movement_out (list): Output columns' names
+    def save_output(self, output_path, frame_subjects):
 
-        Returns:
-            pd.DataFrame: Returns output columns dataframe
-        """
-        eye_movement_out = pd.DataFrame(columns=columns_eye_movement_out)
+        obj = {
+            "frame": self.current_frame,
+            "is_processed_data_valid": self.is_valid_frame,
+            "subjects": [subject.to_json() for subject in frame_subjects.values()]
+        }
 
-        for df_split in strided_split(eye_gaze_df, FRAME_THRESHOLD):
-            movement_split = list()
-            for col in df_split.columns:
-                movement = self.identify_gaze_movement_orientation(
-                    col, df_split[col])
-                movement_split.append(movement)
+        if self.prettify:
+            json.dump(obj, open(output_path, 'w'), indent=2)
+        else:
+            json.dump(obj, open(output_path, 'w'))
 
-            movement_split_df = pd.DataFrame([movement_split for _ in range(
-                len(df_split))], columns=columns_eye_movement_out)
-            eye_movement_out = eye_movement_out.append(
-                movement_split_df, ignore_index=True)
-
-        return eye_movement_out
-
-    def df_format_to_json(self, line):
-        # print(list(line))
-        return True
+        return obj
 
     def handle_frames(self, camera_frame_files: dict, output_directory: str, display: bool = False):
+
         for frame_idx in sorted(camera_frame_files):
             print('=== FRAME %s ===' % frame_idx)
             self.current_frame = frame_idx
             frame_camera_dict = camera_frame_files[frame_idx]
-            is_valid_frame = None
             for camera, frame_file in frame_camera_dict.items():
+                output_path_dir = output_directory / camera
+                output_path = output_path_dir / \
+                    ("%s_%.12d_processed.json" % (camera, frame_idx))
+                os.makedirs(output_path_dir, exist_ok=True)
                 data = json.load(open(frame_file))
                 # TODO: Replace by condition if needed
-                is_valid_frame = data['is_raw_data_valid']
+                self.is_valid_frame = data['is_raw_data_valid']
+
+                frame_subjects = dict()
 
                 for subject in data['subjects']:
                     subject_id = subject['id']
@@ -313,30 +331,41 @@ class OpenfaceProcess(object):
                         openface_subject = OpenfaceSubject(subject['id'])
                         self.subjects[subject_id] = openface_subject
 
+                    # Parse data
                     subject_openface_data = subject['face']['openface']
 
                     # EMOTION IDENTIFICATION
                     openface_subject.face = subject_openface_data
-                    openface_subject.emotion = self.identify_emotion(subject_openface_data['AUs'])
+                    openface_subject.emotion = self.identify_emotion(
+                        subject_openface_data['AUs'])
 
                     # HEAD MOVEMENT DIRECTION
-                    head_rotation_data = subject_openface_data['head']['rotation']
+                    head_rotation_data = subject_openface_data['head']
                     if len(openface_subject.data_buffer['head']) >= FRAME_THRESHOLD:
                         openface_subject.data_buffer['head'].pop(0)
-                    
-                    openface_subject.data_buffer['head'].append(head_rotation_data)
+
+                    openface_subject.data_buffer['head'].append(
+                        head_rotation_data)
                     if len(openface_subject.data_buffer['head']) == FRAME_THRESHOLD:
-                        openface_subject.head_rotation = self.identify_head_movement(openface_subject.data_buffer['head'])
+                        openface_subject.head_rotation = self.identify_head_movement(
+                            openface_subject.data_buffer['head'])
 
-                    # EYE GAZE MOVEMENT DIRECTION
-                    
-            
+                    # EYE MOVEMENT DIRECTION
+                    eye_gaze_data = subject_openface_data['gaze']
+                    if len(openface_subject.data_buffer['eye']) >= FRAME_THRESHOLD:
+                        openface_subject.data_buffer['eye'].pop(0)
 
-            # writting every frame. Indent if invalid frames should not be saved
-            # self.save_output(output_directory, is_valid_frame)
-            
-            if frame_idx == 135:
-                exit()
+                    openface_subject.data_buffer['eye'].append(eye_gaze_data)
+                    if len(openface_subject.data_buffer['eye']) == FRAME_THRESHOLD:
+                        openface_subject.eye_gaze = self.identify_eye_gaze_movement(
+                            openface_subject.data_buffer['eye'])
+
+                    # Update subject - Not needed?
+                    frame_subjects[subject_id] = openface_subject
+            write = self.save_output(output_path, frame_subjects)
+            if not write:
+                log('ERROR', 'Could not save frame %s to %s' %
+                    (frame_idx, output_path))
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir

@@ -163,10 +163,10 @@ class OpenfaceClean(object):
                     ("%s_%.12d_clean.json" % (_cam, frame))
                 os.makedirs(output_frame_directory, exist_ok=True)
                 openface_frame = ExperimentCameraFrame(
-                    _cam, int(frame), df[['confidence', 'face_id'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks], OPENFACE_KEY, verbose=verbose, display=display)
+                    _cam, int(frame), df[['confidence', 'face_id'] + self.columns_2d_facial_lmks + self.columns_2d_eye_lmks + self.columns_gaze[6:8]], OPENFACE_KEY, verbose=verbose, display=display)
 
                 self.save_data(df, openface_frame,
-                                output_frame_file, prettify=prettify)
+                               output_frame_file, prettify=prettify)
 
     def save_data(self, openface_data: pd.DataFrame, frame_data: ExperimentCameraFrame, path, prettify: bool = False):
 
@@ -180,10 +180,10 @@ class OpenfaceClean(object):
             subject_face = subject.face['openface']
             subject_face['AUs'] = {k: of_subject_data.get(
                 k).values[0] for k in of_subject_data[self.columns_aus_intensity]}
-            subject_face['head'] = {
-                'location': list(of_subject_data[self.columns_head_loc].values[0]),
-                'rotation': list(of_subject_data[self.columns_head_rot].values[0])
-            }
+            subject_face['head'] = list(
+                of_subject_data[self.columns_head_rot].values[0])
+            subject_face['gaze'] = list(
+                of_subject_data[self.columns_gaze[6:8]].values[0])
 
             sub_obj = {
                 "id": subject.quadrant,
@@ -201,11 +201,9 @@ class OpenfaceClean(object):
         }
 
         if prettify:
-            json.dump(frame_obj, open(
-                path, 'w'), indent=2)
+            json.dump(frame_obj, open(path, 'w'), indent=2)
         else:
-            json.dump(frame_obj, open(
-                path, 'w'))
+            json.dump(frame_obj, open(path, 'w'))
 
         return frame_obj
 
