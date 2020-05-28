@@ -51,12 +51,12 @@ class OpenfaceSubject(Subject):
             "face": {
                 "openface": {
                     "raw": self.face,
-                    "processed": None
+                    "enhanced": None
                 },
                 "metrics": {
                     "emotion": self.emotion,
                     "head_movement": self.head_rotation,
-                    "gaze_movement":    self.eye_gaze
+                    "gaze_movement": self.eye_gaze
                 }
             }
         }
