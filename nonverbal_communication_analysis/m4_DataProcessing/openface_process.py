@@ -308,7 +308,7 @@ class OpenfaceProcess(object):
     def handle_frames(self, camera_frame_files: dict, output_directory: str, display: bool = False):
 
         for frame_idx in sorted(camera_frame_files):
-            print('=== FRAME %s ===' % frame_idx)
+            # print('=== FRAME %s ===' % frame_idx)
             self.current_frame = frame_idx
             frame_camera_dict = camera_frame_files[frame_idx]
             for camera, frame_file in frame_camera_dict.items():
@@ -324,7 +324,7 @@ class OpenfaceProcess(object):
 
                 for subject in data['subjects']:
                     subject_id = subject['id']
-                    print("== SUBJECT %s ==" % subject_id)
+                    # print("== SUBJECT %s ==" % subject_id)
                     if subject_id in self.subjects:
                         openface_subject = self.subjects[subject_id]
                     else:
