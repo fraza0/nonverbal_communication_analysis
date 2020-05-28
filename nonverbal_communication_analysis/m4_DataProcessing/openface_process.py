@@ -49,10 +49,7 @@ class OpenfaceSubject(Subject):
         obj = {
             "id": self.id,
             "face": {
-                "openface": {
-                    "raw": self.face,
-                    "enhanced": None
-                },
+                "openface": self.face,
                 "metrics": {
                     "emotion": self.emotion,
                     "head_movement": self.head_rotation,
@@ -294,7 +291,7 @@ class OpenfaceProcess(object):
 
         obj = {
             "frame": self.current_frame,
-            "is_processed_data_valid": self.is_valid_frame,
+            "is_enhanced_data_valid": self.is_valid_frame,
             "subjects": [subject.to_json() for subject in frame_subjects.values()]
         }
 
