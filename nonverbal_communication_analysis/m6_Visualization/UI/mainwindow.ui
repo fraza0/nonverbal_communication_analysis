@@ -294,7 +294,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>TextLabel</string>
+                 <string>Pose Keypoints</string>
                 </property>
                </widget>
               </item>
@@ -307,20 +307,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>TextLabel</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QSlider" name="horizontalSlider">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <string>Face Keypoints</string>
                 </property>
                </widget>
               </item>
@@ -333,7 +320,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>TextLabel</string>
+                 <string>Center Interaction</string>
                 </property>
                </widget>
               </item>
@@ -346,7 +333,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>TextLabel</string>
+                 <string>Expansiveness</string>
                 </property>
                </widget>
               </item>
@@ -379,9 +366,32 @@
                 </property>
                </spacer>
               </item>
+              <item row="2" column="4">
+               <widget class="QSlider" name="horizontalSlider">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
            </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="frame">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
           </widget>
          </item>
          <item>
