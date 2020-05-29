@@ -46,8 +46,8 @@ class Worker(threading.Thread):
             gs_frame_diff, 127, 1, cv2.THRESH_BINARY)
         return frame_energy
 
-    def save_frame(self, frame_data):
-        output_directory = self.output_directory
+    def save_frame(self, frame_data, output_directory):
+        os.makedirs(output_directory, exist_ok=True)
         output_frame_file = output_directory / \
             ("frame_%.12d_processed.json" % (self.frame_idx))
 
@@ -83,7 +83,8 @@ class Worker(threading.Thread):
                     current_frame)
                 cumulative_energy_frame += frame_energy
 
-                self.save_frame(frame_energy)
+                output_path = self.output_directory / ('pc%s' % self.camera)
+                self.save_frame(frame_energy, output_path)
 
                 self.previous_frame = current_frame
                 self.frame_idx += 1
