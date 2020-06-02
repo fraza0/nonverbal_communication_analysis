@@ -7,12 +7,43 @@ from nonverbal_communication_analysis.environment import DATASET_SYNC
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import Ui_Visualizer
 
 
-class Visualizer:
+class VideoCapture(QtWidgets.QWidget):
+
+    def __init__(self, filename, video_frame):
+        super(QtWidgets.QWidget, self).__init__()
+        self.cap = cv2.VideoCapture(str(filename))
+        self.video_frame = video_frame
+
+    def nextFrameSlot(self):
+        ret, frame = self.cap.read()
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            print(frame.shape, self.video_frame.size())
+            img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
+                            QtGui.QImage.Format_RGBA8888)
+            pix = QtGui.QPixmap.fromImage(img)
+            self.video_frame.setScaledContents(True)
+            self.video_frame.setPixmap(pix)
+
+    def start(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.nextFrameSlot)
+        self.timer.start(1000.0/30)
+
+    def pause(self):
+        self.timer.stop()
+
+    def deleteLater(self):
+        self.cap.release()
+        super(QtWidgets.QWidget, self).deleteLater()
+
+
+class Visualizer(object):
 
     def __init__(self):
         self.playing_status = False
-        self.group_dirs = {
-            x.name: x for x in DATASET_SYNC.iterdir() if x.is_dir()}
+        self.group_dirs = {x.name: x for x in DATASET_SYNC.iterdir()
+                           if x.is_dir()}
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
@@ -56,17 +87,20 @@ class Visualizer:
         for video in selected_group_videos:
             video_name = video.name
             if 'pc1' in video_name:
-                self.player_1.setMedia(QMediaContent(
-                    QtCore.QUrl.fromLocalFile(str(video))))
-                self.player_1.setVideoOutput(self.ui.video_1)
+                self.ui.video_1 = VideoCapture(str(video), self.ui.video_1)
+                # self.player_1.setMedia(QMediaContent(
+                #     QtCore.QUrl.fromLocalFile(str(video))))
+                # self.player_1.setVideoOutput(self.ui.video_1)
             elif 'pc2' in video_name:
-                self.player_2.setMedia(QMediaContent(
-                    QtCore.QUrl.fromLocalFile(str(video))))
-                self.player_2.setVideoOutput(self.ui.video_2)
+                self.ui.video_2 = VideoCapture(str(video), self.ui.video_2)
+                # self.player_2.setMedia(QMediaContent(
+                #     QtCore.QUrl.fromLocalFile(str(video))))
+                # self.player_2.setVideoOutput(self.ui.video_2)
             elif 'pc3' in video_name:
-                self.player_3.setMedia(QMediaContent(
-                    QtCore.QUrl.fromLocalFile(str(video))))
-                self.player_3.setVideoOutput(self.ui.video_3)
+                self.ui.video_3 = VideoCapture(str(video), self.ui.video_3)
+                # self.player_3.setMedia(QMediaContent(
+                #     QtCore.QUrl.fromLocalFile(str(video))))
+                # self.player_3.setVideoOutput(self.ui.video_3)
 
         self.ui.time_slider.setEnabled(True)
         self.ui.btn_play.setEnabled(True)
@@ -78,16 +112,22 @@ class Visualizer:
     # CONTROLS FRAMES METHODS
     def videos_state(self, visualizer, btn, playing_status):
         if not playing_status:
-            self.player_1.play()
-            self.player_2.play()
-            self.player_3.play()
+            # self.player_1.play()
+            # self.player_2.play()
+            # self.player_3.play()
+            self.ui.video_1.start()
+            self.ui.video_2.start()
+            self.ui.video_3.start()
             btn.setIcon(visualizer.style().standardIcon(
                 QtWidgets.QStyle.SP_MediaPause))
             self.playing_status = True
         else:
-            self.player_1.pause()
-            self.player_2.pause()
-            self.player_3.pause()
+            # self.player_1.pause()
+            # self.player_2.pause()
+            # self.player_3.pause()
+            self.ui.video_1.pause()
+            self.ui.video_2.pause()
+            self.ui.video_3.pause()
             btn.setIcon(visualizer.style().standardIcon(
                 QtWidgets.QStyle.SP_MediaPlay))
             self.playing_status = False
@@ -114,6 +154,8 @@ class Visualizer:
         Visualizer = QtWidgets.QMainWindow()
         self.ui = Ui_Visualizer()
         self.ui.setupUi(Visualizer)
+
+        self.ui.actionExit.triggered.connect(self.exit_application)
 
         # Group Frame
         cb_group_id = self.ui.cb_groupId
@@ -159,6 +201,9 @@ class Visualizer:
 
         Visualizer.show()
         sys.exit(app.exec_())
+
+    def exit_application(self):
+        sys.exit()
 
 
 if __name__ == "__main__":
