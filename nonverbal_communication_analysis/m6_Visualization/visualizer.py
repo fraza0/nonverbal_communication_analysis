@@ -9,28 +9,75 @@ from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import Ui_
 
 class VideoCapture(QtWidgets.QWidget):
 
-    def __init__(self, filename, video_frame):
+    # TODO: fix bug: Play button not changing style after video finish automatically.
+    # Need to press 2 times to replay
+    def __init__(self, filename, video_frame, slider):
         super(QtWidgets.QWidget, self).__init__()
         self.cap = cv2.VideoCapture(str(filename))
+        self.length = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.frame_count = 0
         self.video_frame = video_frame
+        self.slider = slider
+        self.is_playing = False
 
     def nextFrameSlot(self):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_count)
         ret, frame = self.cap.read()
-        if ret:
+
+        if ret and self.is_playing:
+            self.is_playing = True
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-            print(frame.shape, self.video_frame.size())
+            frame = self.frame_transform(frame)
             img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
-                            QtGui.QImage.Format_RGBA8888)
+                               QtGui.QImage.Format_RGBA8888)
             pix = QtGui.QPixmap.fromImage(img)
             self.video_frame.setScaledContents(True)
             self.video_frame.setPixmap(pix)
+            self.frame_count += 1
+
+            slider_position = round(self.frame_count/self.length * 100)
+        else:
+            self.is_playing = False
+            self.frame_count = 0
+            slider_position = 0
+        self.slider.setValue(slider_position)
+
+    def frame_transform(self, frame, openpose: bool = False, densepose: bool = False, openface: bool = False, video: bool = False):
+
+        if openpose:
+            self.openpose_overlay()
+
+        if densepose:
+            self.densepose_overlay()
+
+        if openface:
+            self.openface_overlay()
+
+        if video:
+            self.video_overlay()
+
+        return frame
+
+    def openpose_overlay(self):
+        print("Openpose Overlay")
+
+    def densepose_overlay(self):
+        print("Densepose Overlay")
+
+    def openface_overlay(self):
+        print("Openface Overlay")
+
+    def video_overlay(self):
+        print("Video Overlay")
 
     def start(self):
+        self.is_playing = True
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.nextFrameSlot)
         self.timer.start(1000.0/30)
 
     def pause(self):
+        self.is_playing = False
         self.timer.stop()
 
     def deleteLater(self):
@@ -57,7 +104,6 @@ class Visualizer(object):
         cb_task = self.ui.cb_task
         btn_confirm = self.ui.btn_confirm
         group_cb_idx = int(cb_group.currentIndex())
-        # task_cb_idx = int(cb_task.currentIndex())
 
         if group_cb_idx != 0:
             cb_task.setEnabled(True)
@@ -87,20 +133,18 @@ class Visualizer(object):
         for video in selected_group_videos:
             video_name = video.name
             if 'pc1' in video_name:
-                self.ui.video_1 = VideoCapture(str(video), self.ui.video_1)
-                # self.player_1.setMedia(QMediaContent(
-                #     QtCore.QUrl.fromLocalFile(str(video))))
-                # self.player_1.setVideoOutput(self.ui.video_1)
+                self.ui.video_1 = VideoCapture(
+                    str(video), self.ui.video_1, self.ui.time_slider)
+                self.player_1 = self.ui.video_1
             elif 'pc2' in video_name:
-                self.ui.video_2 = VideoCapture(str(video), self.ui.video_2)
-                # self.player_2.setMedia(QMediaContent(
-                #     QtCore.QUrl.fromLocalFile(str(video))))
-                # self.player_2.setVideoOutput(self.ui.video_2)
+                self.ui.video_2 = VideoCapture(
+                    str(video), self.ui.video_2, self.ui.time_slider)
+                self.player_2 = self.ui.video_2
+
             elif 'pc3' in video_name:
-                self.ui.video_3 = VideoCapture(str(video), self.ui.video_3)
-                # self.player_3.setMedia(QMediaContent(
-                #     QtCore.QUrl.fromLocalFile(str(video))))
-                # self.player_3.setVideoOutput(self.ui.video_3)
+                self.ui.video_3 = VideoCapture(
+                    str(video), self.ui.video_3, self.ui.time_slider)
+                self.player_3 = self.ui.video_3
 
         self.ui.time_slider.setEnabled(True)
         self.ui.btn_play.setEnabled(True)
@@ -110,50 +154,42 @@ class Visualizer(object):
     # OVERLAYS FRAMES METHODS
 
     # CONTROLS FRAMES METHODS
-    def videos_state(self, visualizer, btn, playing_status):
-        if not playing_status:
-            # self.player_1.play()
-            # self.player_2.play()
-            # self.player_3.play()
-            self.ui.video_1.start()
-            self.ui.video_2.start()
-            self.ui.video_3.start()
-            btn.setIcon(visualizer.style().standardIcon(
-                QtWidgets.QStyle.SP_MediaPause))
-            self.playing_status = True
+    def video_play(self):
+        print(self.ui.video_1.frame_count)
+        self.ui.video_1.start()
+        self.ui.video_2.start()
+        self.ui.video_3.start()
+        self.ui.btn_play.setIcon(self.visualizer.style().standardIcon(
+            QtWidgets.QStyle.SP_MediaPause))
+        self.playing_status = True
+
+    def video_pause(self):
+        self.ui.video_1.pause()
+        self.ui.video_2.pause()
+        self.ui.video_3.pause()
+        self.ui.btn_play.setIcon(self.visualizer.style().standardIcon(
+            QtWidgets.QStyle.SP_MediaPlay))
+        self.playing_status = False
+
+    def videos_state(self):
+        if not self.playing_status:
+            self.video_play()
         else:
-            # self.player_1.pause()
-            # self.player_2.pause()
-            # self.player_3.pause()
-            self.ui.video_1.pause()
-            self.ui.video_2.pause()
-            self.ui.video_3.pause()
-            btn.setIcon(visualizer.style().standardIcon(
-                QtWidgets.QStyle.SP_MediaPlay))
-            self.playing_status = False
-
-    # def play_frame_by_frame(self):
-    #     ret, frame = self.cap.read()
-    #     img = QtGui.QImage(frame, frame.shape[1], frame.shape[0], QtGui.QImage.Format_RGB888)
-    #     pix = QtGui.QPixmap.fromImage(img)
-    #     self.video_frame.setPixmap(pix)
-
-    def position_changed(self, position):
-        self.ui.time_slider.setValue(position)
-
-    def duration_changed(self, duration):
-        self.ui.time_slider.setRange(0, duration)
+            self.video_pause()
 
     def set_position(self, position):
-        self.player_1.setPosition(position)
-        self.player_2.setPosition(position)
-        self.player_3.setPosition(position)
+        total_frames = self.player_1.length
+        frame_position = round(position*total_frames/100)
+
+        self.player_1.frame_count = frame_position
+        self.player_2.frame_count = frame_position
+        self.player_3.frame_count = frame_position
 
     def main(self):
         app = QtWidgets.QApplication(sys.argv)
-        Visualizer = QtWidgets.QMainWindow()
+        self.visualizer = QtWidgets.QMainWindow()
         self.ui = Ui_Visualizer()
-        self.ui.setupUi(Visualizer)
+        self.ui.setupUi(self.visualizer)
 
         self.ui.actionExit.triggered.connect(self.exit_application)
 
@@ -170,36 +206,26 @@ class Visualizer(object):
             lambda: self.group_select_confirm(group_select_frame))
 
         # Player Frames
-        self.player_1 = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        self.player_2 = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        self.player_3 = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-
-        self.player_1.positionChanged.connect(self.position_changed)
-        self.player_1.durationChanged.connect(self.duration_changed)
-
-        self.player_2.positionChanged.connect(self.position_changed)
-        self.player_2.durationChanged.connect(self.duration_changed)
-
-        self.player_3.positionChanged.connect(self.position_changed)
-        self.player_3.durationChanged.connect(self.duration_changed)
+        self.player_1 = None
+        self.player_2 = None
+        self.player_3 = None
 
         # Controls Frame
         btn_play = self.ui.btn_play
         btn_back = self.ui.btn_back
         btn_skip = self.ui.btn_skip
         time_slider = self.ui.time_slider
-        btn_play.setIcon(Visualizer.style().standardIcon(
+        btn_play.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_MediaPlay))
-        btn_play.clicked.connect(
-            lambda: self.videos_state(Visualizer, btn_play, self.playing_status))
-        btn_back.setIcon(Visualizer.style().standardIcon(
+        btn_play.clicked.connect(self.videos_state)
+        btn_back.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_ArrowBack))
-        btn_skip.setIcon(Visualizer.style().standardIcon(
+        btn_skip.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_ArrowForward))
 
         time_slider.sliderMoved.connect(self.set_position)
 
-        Visualizer.show()
+        self.visualizer.show()
         sys.exit(app.exec_())
 
     def exit_application(self):
