@@ -50,6 +50,19 @@ def is_relevant_face_keypoint(entry):
     return False
 
 
+COLOR_MAP = {0: (0, 0, 0, 255),
+             1: (255, 0, 0, 255),
+             2: (0, 255, 255, 255),
+             3: (0, 255, 0, 255),
+             4: (0, 0, 255, 255)}
+
+COLORMAP = {0: 'black',
+            1: 'blue',
+            2: 'yellow',
+            3: 'green',
+            4: 'red'}
+
+
 class Subject(object):
     """Subject class.
     Subject is a person after pose data parsing/processing
