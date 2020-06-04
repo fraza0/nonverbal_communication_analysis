@@ -307,8 +307,10 @@ class SubjectDataAggregator:
     def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, camera: str = None, frame_data_type: str = None):
         agg_frame_subjects = agg_frame.subjects
 
-        if agg_frame.is_raw_data_valid is None and 'is_raw_data_valid' in frame_data:
-            agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']
+        # TODO: Fix data_valid attribute bug
+        if 'is_raw_data_valid' in frame_data:
+            if agg_frame.is_raw_data_valid is not False:
+                agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']
             frame_data_type = 'raw'
 
         if agg_frame.is_processed_data_valid is None and 'is_enhanced_data_valid' in frame_data:
@@ -344,6 +346,7 @@ class SubjectDataAggregator:
                 # POSE
                 if 'pose' in subject:
                     subject_pose_data = subject['pose']
+
                     if frame_data_type == 'raw':
                         agg_subject.clean_pose_data, _ = self.parse_data(
                             agg_subject.clean_pose_data, subject_pose_data, camera)
@@ -398,7 +401,8 @@ class SubjectDataAggregator:
             processed_openpose_files = processed_openpose[task]
 
             if self.specific_frame is not None:
-                processed_openpose_files = {self.specific_frame: processed_openpose_files[self.specific_frame]}
+                processed_openpose_files = {
+                    self.specific_frame: processed_openpose_files[self.specific_frame]}
 
             for frame_idx in processed_openpose_files:
                 output_frame_file = output_frame_directory / \
@@ -409,12 +413,11 @@ class SubjectDataAggregator:
                 if self.verbose:
                     print("Cleaned OpenPose")
                 for camera in cleaned_openpose[task]:
-                    print("clean ", camera)
                     cleaned_openpose_files = cleaned_openpose[task][camera]
                     openpose_clean_frame_data = json.load(
                         open(cleaned_openpose_files[frame_idx], 'r'))
                     aggregate_frame = self.read_frame_data(
-                        aggregate_frame, openpose_clean_frame_data, camera=camera)
+                        aggregate_frame, openpose_clean_frame_data, camera=camera, frame_data_type='raw')
 
                 if self.verbose:
                     print("Processed Openpose")
@@ -422,7 +425,7 @@ class SubjectDataAggregator:
                     open(processed_openpose_files[frame_idx], 'r'))
 
                 aggregate_frame = self.read_frame_data(
-                    aggregate_frame, openpose_processed_frame_data)
+                    aggregate_frame, openpose_processed_frame_data, frame_data_type='processed')
 
                 # OPENFACE
                 if openface_data:
