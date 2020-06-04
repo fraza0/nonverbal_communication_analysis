@@ -119,11 +119,14 @@ class AggregateFrame(object):
 
 class SubjectDataAggregator:
 
-    def __init__(self, group_directory: str, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
+    def __init__(self, group_directory: str, openpose: bool = False, openface: bool = False, densepose: bool = False, specific_task: int = None, specific_frame: int = None, prettify: bool = False, verbose: bool = False):
         self.group_directory = Path(group_directory)
         self.group_id = get_group_from_file_path(group_directory)
         self.prettify = prettify
         self.verbose = verbose
+
+        self.specific_task = specific_task
+        self.specific_frame = specific_frame
 
         self.openpose_data = dict()
         self.openface_data = dict()
@@ -382,13 +385,21 @@ class SubjectDataAggregator:
 
         cleaned_openpose = openpose_data['cleaned']
         processed_openpose = openpose_data['processed']
+        tasks = cleaned_openpose.keys()
 
-        for task in cleaned_openpose:
+        if self.specific_task is not None:
+            tasks = [task for task in tasks if str(self.specific_task) in task]
+
+        for task in tasks:
             output_frame_directory = self.group_directory / \
                 FEATURE_AGGREGATE_DIR / task
             makedirs(output_frame_directory, exist_ok=True)
 
             processed_openpose_files = processed_openpose[task]
+
+            if self.specific_frame is not None:
+                processed_openpose_files = {self.specific_frame: processed_openpose_files[self.specific_frame]}
+
             for frame_idx in processed_openpose_files:
                 output_frame_file = output_frame_directory / \
                     ("%.12d" % frame_idx + '.json')
@@ -398,6 +409,7 @@ class SubjectDataAggregator:
                 if self.verbose:
                     print("Cleaned OpenPose")
                 for camera in cleaned_openpose[task]:
+                    print("clean ", camera)
                     cleaned_openpose_files = cleaned_openpose[task][camera]
                     openpose_clean_frame_data = json.load(
                         open(cleaned_openpose_files[frame_idx], 'r'))
@@ -450,8 +462,7 @@ class SubjectDataAggregator:
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
     group_directory = Path(group_directory)
     aggregator = SubjectDataAggregator(group_directory, openpose=openpose,
-                                       openface=openface, densepose=densepose,
-                                       verbose=verbose)
+                                       openface=openface, densepose=densepose, specific_task=specific_task, specific_frame=specific_frame, verbose=verbose)
     aggregator.aggregate(prettify=prettify)
 
 
