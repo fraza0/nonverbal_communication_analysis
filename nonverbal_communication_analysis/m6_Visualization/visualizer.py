@@ -36,8 +36,10 @@ class VideoCapture(QtWidgets.QWidget):
         self.is_playing = False
         self.visualizer = visualizer
         self.play_btn = q_components['play_btn']
-        self.back_btn = q_components['back_btn']
         self.skip_btn = q_components['skip_btn']
+        self.skip_btn.clicked.connect(lambda: self.jump_frames(10))
+        self.back_btn = q_components['back_btn']
+        self.back_btn.clicked.connect(lambda: self.jump_frames(-10))
         self.slider = q_components['slider']
         self.slider.sliderMoved.connect(self.set_frame_by_slider)
         self.chb_op_pose = q_components['chb_op_pose']
@@ -50,6 +52,9 @@ class VideoCapture(QtWidgets.QWidget):
         self.btn_frame_goto.clicked.connect(self.set_frame_by_spinner)
         self.radbtn_raw = q_components['radbtn_raw']
         self.radbtn_enhanced = q_components['radbtn_enhanced']
+
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.play)
 
     def show_frame(self, frame):
         img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
@@ -90,6 +95,12 @@ class VideoCapture(QtWidgets.QWidget):
 
     def set_frame_by_spinner(self):
         self.frame_count = int(self.spn_frame_idx.value())
+        self.update_frame()
+
+    def jump_frames(self, increment):
+        self.frame_count += increment-1
+        if self.frame_count < 0:
+            self.frame_count = 0
         self.update_frame()
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
@@ -227,8 +238,6 @@ class VideoCapture(QtWidgets.QWidget):
 
     def start(self):
         self.is_playing = True
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.play)
         self.timer.start(1000.0/30)
 
     def pause(self):
@@ -321,17 +330,21 @@ class Visualizer(object):
                                                self.ui.video_1, group_feature_data,
                                                q_components)
                 self.player_1 = self.ui.video_1
+                self.player_1.update_frame()
+
             elif 'pc2' in video_name:
                 self.ui.video_2 = VideoCapture(2, str(video),
                                                self.ui.video_2, group_feature_data,
                                                q_components)
                 self.player_2 = self.ui.video_2
+                self.player_2.update_frame()
 
             elif 'pc3' in video_name:
                 self.ui.video_3 = VideoCapture(3, str(video),
                                                self.ui.video_3, group_feature_data,
                                                q_components)
                 self.player_3 = self.ui.video_3
+                self.player_3.update_frame()
 
         self.ui.time_slider.setEnabled(True)
         self.ui.btn_play.setEnabled(True)
