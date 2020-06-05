@@ -5,3 +5,4 @@ pandas-profiling
 shapely
 PyQt5
 sympy
+imutils
