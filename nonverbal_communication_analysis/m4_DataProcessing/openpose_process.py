@@ -90,10 +90,10 @@ class OpenposeSubject(Subject):
 
         # print("=====", self, "=====")
         for camera, keypoints in self.current_pose.items():
-            
+
             horizontal = {'min': None, 'max': None}
             vertical = {'min': None, 'max': None}
-            
+
             for _, keypoint in keypoints.items():
                 if not horizontal['min']:
                     horizontal['min'] = keypoint[0]
@@ -365,9 +365,9 @@ class OpenposeProcess(object):
             points.append(points[0])
             polygon = Polygon(*points)
             polygon_area = float(abs(polygon.area))
-            centroid = polygon.centroid
-            polygon_center = [float(centroid.x), float(centroid.y)]
-
+            centroid = (sum([point[0] for point in points]) / len(points),
+                        sum([point[1] for point in points]) / len(points))
+            polygon_center = [float(centroid[0]), float(centroid[1])]
             intragroup_distance[camera] = {'polygon': points,
                                            'area': polygon_area,
                                            'center': polygon_center}
