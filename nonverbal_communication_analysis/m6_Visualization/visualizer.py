@@ -15,7 +15,7 @@ from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
 from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 
 
-class VideoPlayerManager(object):
+class VideoPlayerMonitor(object):
     def __init__(self):
         pass
 
@@ -35,78 +35,108 @@ class VideoCapture(QtWidgets.QWidget):
         self.frame_count = 0
         self.is_playing = False
         self.visualizer = visualizer
-        self.slider = q_components['slider']
         self.play_btn = q_components['play_btn']
         self.back_btn = q_components['back_btn']
         self.skip_btn = q_components['skip_btn']
         self.slider = q_components['slider']
+        self.slider.valueChanged.connect(self.set_frame_by_slider)
         self.chb_op_pose = q_components['chb_op_pose']
         self.chb_op_face = q_components['chb_op_face']
         self.chb_op_exp = q_components['chb_op_exp']
         self.chb_op_cntr_int = q_components['chb_op_cntr_int']
         self.chb_op_ig_dist = q_components['chb_op_ig_dist']
-        self.lbl_frame_idx = q_components['lbl_frame_idx']
+        self.spn_frame_idx = q_components['spn_frame_idx']
+        self.btn_frame_goto = q_components['frame_goto_btn']
+        self.btn_frame_goto.clicked.connect(self.set_frame_by_spinner)
         self.radbtn_raw = q_components['radbtn_raw']
         self.radbtn_enhanced = q_components['radbtn_enhanced']
 
-    def nextFrameSlot(self):
+    def show_frame(self, frame):
+        img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
+                           QtGui.QImage.Format_RGBA8888)
+        pix = QtGui.QPixmap.fromImage(img)
+        self.video_frame.setScaledContents(True)
+        self.video_frame.setPixmap(pix)
+
+    def play(self, skip: bool = False):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_count)
         ret, frame = self.cap.read()
-        self.lbl_frame_idx.setText(str(self.frame_count))
-        self.frame_count += 1
-        print("FRAME: ", self.frame_count)
+        self.spn_frame_idx.setValue(self.frame_count)
 
-        if ret and self.is_playing:
+        if ret and (self.is_playing or skip):
             self.is_playing = True
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             frame = self.frame_transform(frame)
-            img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
-                               QtGui.QImage.Format_RGBA8888)
-            pix = QtGui.QPixmap.fromImage(img)
-            self.video_frame.setScaledContents(True)
-            self.video_frame.setPixmap(pix)
-
+            self.show_frame(frame)
             slider_position = round(self.frame_count/self.length * 100)
         else:
             self.is_playing = False
             self.frame_count = 0
             slider_position = 0
+
         self.slider.setValue(slider_position)
+        self.frame_count += 1
 
-    def openpose_overlay_video(self, openpose_data: dict, img_frame: np.ndarray, camera: str):
-        subject_id = openpose_data['id'] if 'id' in openpose_data else 0
-        del openpose_data['id']
+    def set_frame_by_slider(self, position):
+        print(position)
+        total_frames = self.length
+        frame_position = round(position*total_frames/100)
+        self.frame_count = frame_position
 
-        for key, data in openpose_data.items():
-            for keypoint_idx, keypoint_values in data.items():
-                keypoint_x = round(
-                    keypoint_values[0] * VIDEO_RESOLUTION[camera]['x'])
-                keypoint_y = round(
-                    keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
-                keypoint_c = round(keypoint_values[2] * 5)
+    def set_frame_by_spinner(self):
+        self.frame_count = int(self.spn_frame_idx.value())
+        self.play(skip=True)
+        self.pause()
 
-                cv2.circle(img_frame, (keypoint_x, keypoint_y),
-                           keypoint_c, COLOR_MAP[subject_id], -1)
+    def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
 
-                # Connected joints
-                if key == 'pose':
-                    keypoint_idx = int(keypoint_idx)
-                    if keypoint_idx in OPENPOSE_KEYPOINT_LINKS:
-                        for keypoint_link_idx in OPENPOSE_KEYPOINT_LINKS[keypoint_idx]:
-                            pose_keypoints = openpose_data['pose']
-                            if str(keypoint_link_idx) in pose_keypoints:
-                                keypoint = pose_keypoints[str(
-                                    keypoint_link_idx)]
-                                keypoint_link_x = round(
-                                    keypoint[0] * VIDEO_RESOLUTION[camera]['x'])
-                                keypoint_link_y = round(
-                                    keypoint[1] * VIDEO_RESOLUTION[camera]['y'])
+        for key, data in subject_data.items():
+            if key == 'pose' or key == 'face':
+                for keypoint_idx, keypoint_values in data.items():
+                    keypoint_x = round(
+                        keypoint_values[0] * VIDEO_RESOLUTION[camera]['x'])
+                    keypoint_y = round(
+                        keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
+                    keypoint_c = round(keypoint_values[2] * 5)
 
-                                if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
-                                    break
+                    cv2.circle(img_frame, (keypoint_x, keypoint_y),
+                               keypoint_c, COLOR_MAP[subject_id], -1)
 
-                                cv2.line(img_frame, (keypoint_x, keypoint_y),
-                                         (keypoint_link_x, keypoint_link_y), COLOR_MAP[subject_id], 2)
+                    # Connected joints
+                    if key == 'pose':
+                        keypoint_idx = int(keypoint_idx)
+                        if keypoint_idx in OPENPOSE_KEYPOINT_LINKS:
+                            for keypoint_link_idx in OPENPOSE_KEYPOINT_LINKS[keypoint_idx]:
+                                pose_keypoints = subject_data['pose']
+                                if str(keypoint_link_idx) in pose_keypoints:
+                                    keypoint = pose_keypoints[str(
+                                        keypoint_link_idx)]
+                                    keypoint_link_x = round(
+                                        keypoint[0] * VIDEO_RESOLUTION[camera]['x'])
+                                    keypoint_link_y = round(
+                                        keypoint[1] * VIDEO_RESOLUTION[camera]['y'])
+
+                                    if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
+                                        break
+
+                                    cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                             (keypoint_link_x, keypoint_link_y), COLOR_MAP[subject_id], 1)
+            elif key == 'expansiveness':
+                if camera in data:
+                    expansiveness_data = data[camera]
+                    # print("Openpose_overlay", camera, self.frame_count,
+                    #       subject_id, expansiveness_data)
+                    xmin = round(
+                        expansiveness_data['x'][0] * VIDEO_RESOLUTION[camera]['x'])
+                    xmax = round(
+                        expansiveness_data['x'][1] * VIDEO_RESOLUTION[camera]['x'])
+                    ymin = round(
+                        expansiveness_data['y'][0] * VIDEO_RESOLUTION[camera]['y'])
+                    ymax = round(
+                        expansiveness_data['y'][1] * VIDEO_RESOLUTION[camera]['y'])
+
+                    cv2.rectangle(img_frame, (xmin, ymax), (xmax, ymin),
+                                  COLOR_MAP[subject_id])
 
         return img_frame
 
@@ -125,10 +155,16 @@ class VideoCapture(QtWidgets.QWidget):
         group_data = frame_data['group']
         subjects_data = frame_data['subjects']
 
-        openpose_data = dict()
-        densepose_data = dict()
-        openface_data = dict()
-        video_metrics_data = dict()
+        # openpose_data = dict()
+        # densepose_data = dict()
+        # openface_data = dict()
+        # video_metrics_data = dict()
+        frame_subject_data = {
+            'openpose': dict(),
+            'densepose': dict(),
+            'openface': dict(),
+            'video': dict()
+        }
 
         data_type = None
 
@@ -142,29 +178,39 @@ class VideoCapture(QtWidgets.QWidget):
 
         for subject in subjects_data:
             # Openpose
+            subject_id = subject['id']
+            frame_subject_data['id'] = subject_id
             # Pose
             if self.chb_op_pose.isChecked():
-                openpose_data['id'] = subject['id']
                 subject_type_data = subject[data_type]
                 subject_type_data_pose = subject_type_data['pose'] \
                     if 'pose' in subject_type_data else dict()
                 subject_type_data_pose_openpose = subject_type_data_pose['openpose'] \
                     if 'openpose' in subject_type_data_pose else dict()
-                openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
+                frame_subject_data['openpose']['pose'] = subject_type_data_pose_openpose[self.camera] \
                     if self.camera in subject_type_data_pose_openpose else dict()
 
-                frame = self.openpose_overlay_video(
-                    openpose_data, frame, self.camera)
+            # Face
+            if self.chb_op_face.isChecked():
+                subject_type_data = subject[data_type]
+                subject_type_data_face = subject_type_data['face'] \
+                    if 'face' in subject_type_data else dict()
+                subject_type_data_face_openpose = subject_type_data_face['openpose'] \
+                    if 'openpose' in subject_type_data_face else dict()
+                frame_subject_data['openpose']['face'] = subject_type_data_face_openpose[self.camera] \
+                    if self.camera in subject_type_data_face_openpose else dict()
 
-            # # Face
-            # if self.chb_op_face.isChecked():
-            #     openpose_data['face'] = subject['face']['openpose'] if 'face' in subject else dict(
-            #     )
+            # Expansiveness
+            if self.chb_op_exp.isChecked():
+                frame_subject_data['openpose']['expansiveness'] = subject['metrics']['expansiveness']
+
+                if self.frame_count == 178:
+                    print(subject['id'])
+
+            frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
+                                          frame, self.camera)
 
         return frame
-
-    def openpose_overlay(self):
-        print("Openpose Overlay")
 
     def densepose_overlay(self):
         print("Densepose Overlay")
@@ -178,7 +224,7 @@ class VideoCapture(QtWidgets.QWidget):
     def start(self):
         self.is_playing = True
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.nextFrameSlot)
+        self.timer.timeout.connect(self.play)
         self.timer.start(1000.0/30)
 
     def pause(self):
@@ -251,7 +297,8 @@ class Visualizer(object):
         q_components['chb_op_exp'] = self.ui.chb_op_exp
         q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
         q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
-        q_components['lbl_frame_idx'] = self.ui.lbl_frame_idx
+        q_components['spn_frame_idx'] = self.ui.spn_frame_idx
+        q_components['frame_goto_btn'] = self.ui.btn_frame_go
         q_components['radbtn_raw'] = self.ui.radbtn_raw
         q_components['radbtn_enhanced'] = self.ui.radbtn_enh
 
@@ -312,17 +359,6 @@ class Visualizer(object):
         else:
             self.video_pause()
 
-    def set_position(self, position):
-        total_frames = self.player_1.length
-        frame_position = round(position*total_frames/100)
-
-        self.player_1.frame_count = frame_position
-        self.player_2.frame_count = frame_position
-        self.player_3.frame_count = frame_position
-
-    def set_positions(self, position):
-        print(position)
-
     def main(self):
         app = QtWidgets.QApplication(sys.argv)
         self.visualizer = QtWidgets.QMainWindow()
@@ -335,9 +371,10 @@ class Visualizer(object):
         cb_group_id = self.ui.cb_groupId
         cb_task = self.ui.cb_task
         btn_confirm = self.ui.btn_confirm
-        spinner_frame_idx = self.ui.lbl_frame_idx
+        spn_frame_idx = self.ui.spn_frame_idx
+        btn_frame_goto = self.ui.btn_frame_go
         group_select_disable = [cb_group_id, cb_task, btn_confirm]
-        group_select_enable = []
+        group_select_enable = [spn_frame_idx, btn_frame_goto]
 
         cb_group_id.addItems(
             ['Select Group ID']+list(self.group_dirs.keys()))
@@ -363,7 +400,7 @@ class Visualizer(object):
         btn_skip.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_ArrowForward))
 
-        time_slider.sliderMoved.connect(self.set_position)
+        # time_slider.sliderMoved.connect(self.set_position)
 
         self.visualizer.show()
         sys.exit(app.exec_())
