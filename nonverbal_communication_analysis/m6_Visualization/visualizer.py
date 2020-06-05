@@ -39,7 +39,7 @@ class VideoCapture(QtWidgets.QWidget):
         self.back_btn = q_components['back_btn']
         self.skip_btn = q_components['skip_btn']
         self.slider = q_components['slider']
-        self.slider.valueChanged.connect(self.set_frame_by_slider)
+        self.slider.sliderMoved.connect(self.set_frame_by_slider)
         self.chb_op_pose = q_components['chb_op_pose']
         self.chb_op_face = q_components['chb_op_face']
         self.chb_op_exp = q_components['chb_op_exp']
@@ -77,16 +77,20 @@ class VideoCapture(QtWidgets.QWidget):
         self.slider.setValue(slider_position)
         self.frame_count += 1
 
+    def update_frame(self):
+        self.play(skip=True)
+        self.pause()
+
     def set_frame_by_slider(self, position):
         print(position)
         total_frames = self.length
         frame_position = round(position*total_frames/100)
         self.frame_count = frame_position
+        self.update_frame()
 
     def set_frame_by_spinner(self):
         self.frame_count = int(self.spn_frame_idx.value())
-        self.play(skip=True)
-        self.pause()
+        self.update_frame()
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
 
