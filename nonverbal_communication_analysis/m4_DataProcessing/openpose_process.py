@@ -85,13 +85,15 @@ class OpenposeSubject(Subject):
             print("Expansiveness on ", self)
         # TODO: Change if necessary to use keypoint confidence to get
         # minimum keypoint value
-        horizontal = {'min': None, 'max': None}
-        vertical = {'min': None, 'max': None}
 
         expansiveness = dict()
 
         # print("=====", self, "=====")
         for camera, keypoints in self.current_pose.items():
+            
+            horizontal = {'min': None, 'max': None}
+            vertical = {'min': None, 'max': None}
+            
             for _, keypoint in keypoints.items():
                 if not horizontal['min']:
                     horizontal['min'] = keypoint[0]
@@ -120,6 +122,10 @@ class OpenposeSubject(Subject):
                                           horizontal['max']]
             expansiveness[camera]['y'] = [vertical['min'],
                                           vertical['max']]
+
+            # if camera == 'pc2':
+            #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
+
         return expansiveness
 
     def metric_body_direction(self, verbose: bool = False):
@@ -416,9 +422,6 @@ class OpenposeProcess(object):
 
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)
-
-            # if frame_idx == 3:
-            #     exit()
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
         clean_task_directory = self.clean_group_dir
