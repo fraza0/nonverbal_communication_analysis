@@ -56,13 +56,6 @@ class VideoCapture(QtWidgets.QWidget):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.play)
 
-    def show_frame(self, frame):
-        img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
-                           QtGui.QImage.Format_RGBA8888)
-        pix = QtGui.QPixmap.fromImage(img)
-        self.video_frame.setScaledContents(True)
-        self.video_frame.setPixmap(pix)
-
     def play(self, skip: bool = False):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_count)
         ret, frame = self.cap.read()
@@ -82,12 +75,14 @@ class VideoCapture(QtWidgets.QWidget):
         self.slider.setValue(slider_position)
         self.frame_count += 1
 
-    def update_frame(self):
-        self.play(skip=True)
-        self.pause()
+    def show_frame(self, frame):
+        img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
+                           QtGui.QImage.Format_RGBA8888)
+        pix = QtGui.QPixmap.fromImage(img)
+        self.video_frame.setScaledContents(True)
+        self.video_frame.setPixmap(pix)
 
     def set_frame_by_slider(self, position):
-        print(position)
         total_frames = self.length
         frame_position = round(position*total_frames/100)
         self.frame_count = frame_position
@@ -103,8 +98,11 @@ class VideoCapture(QtWidgets.QWidget):
             self.frame_count = 0
         self.update_frame()
 
-    def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
+    def update_frame(self):
+        self.play(skip=True)
+        self.pause()
 
+    def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
         for key, data in subject_data.items():
             if key == 'pose' or key == 'face':
                 for keypoint_idx, keypoint_values in data.items():
@@ -139,8 +137,6 @@ class VideoCapture(QtWidgets.QWidget):
             elif key == 'expansiveness':
                 if camera in data:
                     expansiveness_data = data[camera]
-                    # print("Openpose_overlay", camera, self.frame_count,
-                    #       subject_id, expansiveness_data)
                     xmin = round(
                         expansiveness_data['x'][0] * VIDEO_RESOLUTION[camera]['x'])
                     xmax = round(
@@ -152,6 +148,37 @@ class VideoCapture(QtWidgets.QWidget):
 
                     cv2.rectangle(img_frame, (xmin, ymax), (xmax, ymin),
                                   COLOR_MAP[subject_id])
+
+            elif key == 'intragroup_distance':
+                color = (163, 32, 219, 255)
+                if camera in data:
+                    intragroup_distance_data = data[camera]
+                    intragroup_distance_center = intragroup_distance_data['center']
+                    intragroup_distance_polygon = intragroup_distance_data['polygon']
+                    center_x = round(intragroup_distance_center[0] *
+                                     VIDEO_RESOLUTION[camera]['x'])
+                    center_y = round(intragroup_distance_center[1] *
+                                     VIDEO_RESOLUTION[camera]['y'])
+
+                    cv2.drawMarker(img_frame, (center_x, center_y), color,
+                                   markerType=cv2.MARKER_CROSS, markerSize=8, thickness=1)
+
+                    vertices = list()
+                    for point in intragroup_distance_polygon:
+                        point_x, point_y = point[0], point[1]
+                        point_x = round(
+                            point_x * VIDEO_RESOLUTION[camera]['x'])
+                        point_y = round(
+                            point_y * VIDEO_RESOLUTION[camera]['y'])
+
+                        point_int = [point_x, point_y]
+                        if point_int not in vertices:
+                            vertices.append(point_int)
+
+                    vertices = np.array(vertices, np.int32)
+                    vertices = np.array(order_points(vertices), np.int32)
+                    cv2.polylines(img_frame, [vertices],
+                                  True, color)
 
         return img_frame
 
@@ -170,10 +197,11 @@ class VideoCapture(QtWidgets.QWidget):
         group_data = frame_data['group']
         subjects_data = frame_data['subjects']
 
-        # openpose_data = dict()
-        # densepose_data = dict()
-        # openface_data = dict()
-        # video_metrics_data = dict()
+        openpose_data = dict()
+        densepose_data = dict()
+        openface_data = dict()
+        video_metrics_data = dict()
+
         frame_subject_data = {
             'openpose': dict(),
             'densepose': dict(),
@@ -202,7 +230,7 @@ class VideoCapture(QtWidgets.QWidget):
                     if 'pose' in subject_type_data else dict()
                 subject_type_data_pose_openpose = subject_type_data_pose['openpose'] \
                     if 'openpose' in subject_type_data_pose else dict()
-                frame_subject_data['openpose']['pose'] = subject_type_data_pose_openpose[self.camera] \
+                openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
                     if self.camera in subject_type_data_pose_openpose else dict()
 
             # Face
@@ -212,16 +240,21 @@ class VideoCapture(QtWidgets.QWidget):
                     if 'face' in subject_type_data else dict()
                 subject_type_data_face_openpose = subject_type_data_face['openpose'] \
                     if 'openpose' in subject_type_data_face else dict()
-                frame_subject_data['openpose']['face'] = subject_type_data_face_openpose[self.camera] \
+                openpose_data['face'] = subject_type_data_face_openpose[self.camera] \
                     if self.camera in subject_type_data_face_openpose else dict()
 
             # Expansiveness
             if self.chb_op_exp.isChecked():
-                frame_subject_data['openpose']['expansiveness'] = subject['metrics']['expansiveness']
+                openpose_data['expansiveness'] = subject['metrics']['expansiveness']
 
                 if self.frame_count == 178:
                     print(subject['id'])
 
+            # Intragroup Distance
+            if self.chb_op_ig_dist.isChecked():
+                openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
+
+            frame_subject_data['openpose'] = openpose_data
             frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
                                           frame, self.camera)
 
