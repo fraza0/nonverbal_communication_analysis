@@ -1,11 +1,16 @@
 import argparse
 import json
 import re
+import shutil
 from os import makedirs
 from pathlib import Path
 
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, VIDEO_KEY, FEATURE_AGGREGATE_DIR, VIDEO_OUTPUT_DIR
-from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, get_group_from_file_path
+from nonverbal_communication_analysis.environment import (
+    DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
+    OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
+    VALID_OUTPUT_FILE_TYPES, VIDEO_KEY, VIDEO_OUTPUT_DIR)
+from nonverbal_communication_analysis.m0_Classes.Experiment import (
+    Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
 
 
@@ -502,9 +507,12 @@ class SubjectDataAggregator:
                     json.dump(aggregate_frame.to_json(),
                               open(output_frame_file, 'w'))
 
-            # if video_data:
-            #     video_data_heatmaps = video_data['heatmap'][task]
-                # print(task, video_data_heatmaps)
+            if video_data:
+                video_data_heatmaps = video_data['heatmap']
+                if task in video_data_heatmaps:
+                    video_data_heatmaps_task = video_data_heatmaps[task]
+                    for file_name in video_data_heatmaps_task:
+                        shutil.copy(file_name, output_frame_directory)
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, video: bool = False, prettify: bool = False, verbose: bool = False):
