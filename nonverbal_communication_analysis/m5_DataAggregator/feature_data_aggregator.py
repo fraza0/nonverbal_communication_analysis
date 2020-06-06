@@ -8,7 +8,7 @@ from pathlib import Path
 from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
-    VALID_OUTPUT_FILE_TYPES, VIDEO_KEY, VIDEO_OUTPUT_DIR)
+    VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, VIDEO_OUTPUT_DIR)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -180,7 +180,7 @@ class SubjectDataAggregator:
                      and 'task' in x.name]
             for task in tasks:
                 self.video_data['heatmap'] = {task.name: [x for x in task.iterdir() if not x.is_dir()
-                                                          and x.suffix in VALID_OUTPUT_FILE_TYPES]}
+                                                          and x.suffix in VALID_OUTPUT_IMG_TYPES]}
 
         experiment_data_output = self.group_directory / \
             (self.group_id + '.json')

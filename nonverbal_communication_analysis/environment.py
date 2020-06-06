@@ -88,7 +88,8 @@ OPENFACE_OUTPUT_FLAGS = ['-pose', '-2Dfp', '-aus', '-gaze']
 ####################
 
 # VARIABLES
-VALID_OUTPUT_FILE_TYPES = ['.csv', '.json', '.png']
+VALID_OUTPUT_FILE_TYPES = ['.csv', '.json']
+VALID_OUTPUT_IMG_TYPES = ['.png']
 
 '''
 Emotions enconding. AUs are ordered by relevance to emotion identification according to 
