@@ -88,7 +88,7 @@ OPENFACE_OUTPUT_FLAGS = ['-pose', '-2Dfp', '-aus', '-gaze']
 ####################
 
 # VARIABLES
-VALID_OUTPUT_FILE_TYPES = ['.csv', '.json']
+VALID_OUTPUT_FILE_TYPES = ['.csv', '.json', '.png']
 
 '''
 Emotions enconding. AUs are ordered by relevance to emotion identification according to 
@@ -178,6 +178,7 @@ CAMERA_ROOM_GEOMETRY = {
 
 OPENFACE_KEY = 'OPENFACE'
 DENSEPOSE_KEY = 'DENSEPOSE'
+VIDEO_KEY = 'VIDEO'
 
 FEATURE_AGGREGATE_DIR = 'FEATURE_DATA'
 
