@@ -4,7 +4,7 @@ import re
 from os import makedirs
 from pathlib import Path
 
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, FEATURE_AGGREGATE_DIR
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY, VIDEO_KEY, FEATURE_AGGREGATE_DIR, VIDEO_OUTPUT_DIR
 from nonverbal_communication_analysis.m0_Classes.Experiment import Experiment, get_group_from_file_path
 from nonverbal_communication_analysis.utils import log
 
@@ -119,7 +119,7 @@ class AggregateFrame(object):
 
 class SubjectDataAggregator:
 
-    def __init__(self, group_directory: str, openpose: bool = False, openface: bool = False, densepose: bool = False, specific_task: int = None, specific_frame: int = None, prettify: bool = False, verbose: bool = False):
+    def __init__(self, group_directory: str, openpose: bool = False, openface: bool = False, densepose: bool = False, video: bool = False, specific_task: int = None, specific_frame: int = None, prettify: bool = False, verbose: bool = False):
         self.group_directory = Path(group_directory)
         self.group_id = get_group_from_file_path(group_directory)
         self.prettify = prettify
@@ -131,6 +131,7 @@ class SubjectDataAggregator:
         self.openpose_data = dict()
         self.openface_data = dict()
         self.densepose_data = dict()
+        self.video_data = dict()
 
         experiment_data = dict()
 
@@ -161,6 +162,21 @@ class SubjectDataAggregator:
         #     self.densepose_data = self.get_densepose_data(
         #         densepose_group_directory)
 
+        if video:
+            video_data_group_directory = VIDEO_OUTPUT_DIR / self.group_id
+            experiment_data[VIDEO_KEY] = self.get_experiment_data(
+                video_data_group_directory, dir_type='processed')
+            self.video_data['processed'] = self.get_processed_data(
+                video_data_group_directory)
+
+            processed_path = video_data_group_directory / \
+                (self.group_id + '_processed')
+            tasks = [x for x in processed_path.iterdir() if x.is_dir()
+                     and 'task' in x.name]
+            for task in tasks:
+                self.video_data['heatmap'] = {task.name: [x for x in task.iterdir() if not x.is_dir()
+                                                          and x.suffix in VALID_OUTPUT_FILE_TYPES]}
+
         experiment_data_output = self.group_directory / \
             (self.group_id + '.json')
 
@@ -170,7 +186,7 @@ class SubjectDataAggregator:
         else:
             json.dump(experiment_data, open(experiment_data_output, 'w'))
 
-    def get_experiment_data(self, group_directory):
+    def get_experiment_data(self, group_directory, dir_type: str = 'clean'):
         # TODO: Change if processed group info changes. So far nothing is added to the experiment
         # JSON file in the processing step
         """Get experiment information
@@ -182,7 +198,7 @@ class SubjectDataAggregator:
             dict: Group basic information: ID and TYPE
         """
         clean_dir = [x for x in group_directory.iterdir()
-                     if x.is_dir() and 'clean' in x.name][0]
+                     if x.is_dir() and dir_type in x.name][0]
 
         experiment_file = [x for x in clean_dir.iterdir()
                            if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES][0]
@@ -317,6 +333,9 @@ class SubjectDataAggregator:
             agg_frame.is_processed_data_valid = frame_data['is_enhanced_data_valid']
             frame_data_type = 'processed'
 
+        if 'group' in frame_data:
+            agg_frame.group.update(frame_data['group'])
+
         if 'subjects' in frame_data:
             frame_subjects = frame_data['subjects']
             for subject in frame_subjects:
@@ -359,10 +378,11 @@ class SubjectDataAggregator:
                         if processed_pose_metrics:
                             agg_subject.metrics.update(processed_pose_metrics)
 
-                if 'group' in frame_data:
-                    agg_frame.group = frame_data['group']
+                # if 'group' in frame_data:
+                #     agg_frame.group = frame_data['group']
 
                 agg_frame.subjects[subject_id] = agg_subject
+
         return agg_frame
 
     def aggregate(self, prettify: bool = False):
@@ -374,6 +394,7 @@ class SubjectDataAggregator:
         """
         openpose_data = self.openpose_data
         openface_data = self.openface_data
+        video_data = self.video_data
 
         # TODO: CHECK DENSEPOSE IMPLEMENTATION AFTER
         # IMPLEMENTING DENSEPOSE EXTRACTION
@@ -416,16 +437,19 @@ class SubjectDataAggregator:
                     cleaned_openpose_files = cleaned_openpose[task][camera]
                     openpose_clean_frame_data = json.load(
                         open(cleaned_openpose_files[frame_idx], 'r'))
-                    aggregate_frame = self.read_frame_data(
-                        aggregate_frame, openpose_clean_frame_data, camera=camera, frame_data_type='raw')
+                    aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                           openpose_clean_frame_data,
+                                                           camera=camera,
+                                                           frame_data_type='raw')
 
                 if self.verbose:
                     print("Processed Openpose")
                 openpose_processed_frame_data = json.load(
                     open(processed_openpose_files[frame_idx], 'r'))
 
-                aggregate_frame = self.read_frame_data(
-                    aggregate_frame, openpose_processed_frame_data, frame_data_type='processed')
+                aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                       openpose_processed_frame_data,
+                                                       frame_data_type='processed')
 
                 # OPENFACE
                 if openface_data:
@@ -437,9 +461,10 @@ class SubjectDataAggregator:
                         if frame_idx in cleaned_openface_files:
                             openface_clean_frame_data = json.load(
                                 open(cleaned_openface_files[frame_idx], 'r'))
-                            aggregate_frame = self.read_frame_data(
-                                aggregate_frame, openface_clean_frame_data,
-                                camera=camera, frame_data_type='raw')
+                            aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                                   openface_clean_frame_data,
+                                                                   camera=camera,
+                                                                   frame_data_type='raw')
 
                     if self.verbose:
                         print("Processed Openface")
@@ -450,9 +475,25 @@ class SubjectDataAggregator:
                         for camera, frame_file in processed_task_frame.items():
                             openface_processed_frame_data = json.load(
                                 open(frame_file, 'r'))
-                            aggregate_frame = self.read_frame_data(
-                                aggregate_frame, openface_processed_frame_data,
-                                camera=camera, frame_data_type='processed')
+                            aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                                   openface_processed_frame_data,
+                                                                   camera=camera,
+                                                                   frame_data_type='processed')
+
+                # VIDEO
+                if video_data:
+                    processed_video_data = video_data['processed']
+                    if task in processed_video_data:
+                        processed_video_data_task = processed_video_data[task]
+                        if frame_idx in processed_video_data_task:
+                            processed_video_data_frame = processed_video_data_task[frame_idx]
+                            for camera, frame_file in processed_video_data_frame.items():
+                                video_data_processed_frame_data = json.load(
+                                    open(frame_file, 'r'))
+                                aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                                       video_data_processed_frame_data,
+                                                                       camera=camera,
+                                                                       frame_data_type='processed')
 
                 if prettify:
                     json.dump(aggregate_frame.to_json(), open(
@@ -461,11 +502,17 @@ class SubjectDataAggregator:
                     json.dump(aggregate_frame.to_json(),
                               open(output_frame_file, 'w'))
 
+            # if video_data:
+            #     video_data_heatmaps = video_data['heatmap'][task]
+                # print(task, video_data_heatmaps)
 
-def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, verbose: bool = False):
+
+def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, video: bool = False, prettify: bool = False, verbose: bool = False):
     group_directory = Path(group_directory)
     aggregator = SubjectDataAggregator(group_directory, openpose=openpose,
-                                       openface=openface, densepose=densepose, specific_task=specific_task, specific_frame=specific_frame, verbose=verbose)
+                                       openface=openface, densepose=densepose,
+                                       video=video, specific_task=specific_task,
+                                       specific_frame=specific_frame, verbose=verbose)
     aggregator.aggregate(prettify=prettify)
 
 
@@ -484,6 +531,8 @@ if __name__ == "__main__":
                         help='Overlay densepose data', action='store_true')
     parser.add_argument('-of', '--openface',
                         help='Overlay openface data', action='store_true')
+    parser.add_argument('-vid', '--video',
+                        help='Overlay video energy data', action='store_true')
     parser.add_argument('-p', '--prettify', dest="prettify", action='store_true',
                         help='Output pretty printed JSON')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
@@ -497,8 +546,9 @@ if __name__ == "__main__":
     openpose = args['openpose']
     openface = args['openface']
     densepose = args['densepose']
+    video = args['video']
     prettify = args['prettify']
     verbose = args['verbose']
 
     main(group_directory, specific_frame=specific_frame, specific_task=specific_task,
-         openpose=openpose, openface=openface, densepose=densepose, prettify=prettify, verbose=verbose)
+         openpose=openpose, openface=openface, densepose=densepose, video=video, prettify=prettify, verbose=verbose)
