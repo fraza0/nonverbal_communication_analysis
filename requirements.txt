@@ -6,3 +6,4 @@ shapely
 PyQt5
 sympy
 imutils
+cmapy

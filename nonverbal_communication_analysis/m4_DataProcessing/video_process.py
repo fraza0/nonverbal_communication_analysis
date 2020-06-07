@@ -8,6 +8,7 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 from nonverbal_communication_analysis.environment import (DATASET_SYNC,
                                                           VALID_VIDEO_TYPES,
@@ -117,11 +118,20 @@ class VideoProcess(object):
             ('htmp_energy_pc%s.png' % camera)
         energy_heatmap = metrics['energy_htmp']
 
+        masked_data = np.ma.masked_where(energy_heatmap == 0, energy_heatmap)
+
+        scaled_heatmap = masked_data.astype('float64')
+        scaled_heatmap *= 255.0/scaled_heatmap.max()
+        scaled_heatmap = scaled_heatmap.astype(int)
+
+        cmap = plt.get_cmap('Reds')
+        cmap.set_under('k', alpha=0)
+
         if self.verbose:
-            plt.imshow(energy_heatmap)
+            plt.imshow(scaled_heatmap, cmap=cmap)
             plt.show()
 
-        cv2.imwrite(str(energy_heatmap_path), energy_heatmap)
+        plt.imsave(str(energy_heatmap_path), scaled_heatmap, cmap=cmap)
 
     def process(self, tasks_directories: dict, specific_frame: int = None, display: bool = False):
 
