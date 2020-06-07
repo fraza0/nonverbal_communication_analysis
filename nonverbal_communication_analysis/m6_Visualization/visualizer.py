@@ -6,9 +6,11 @@ from imutils.perspective import order_points
 import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+import matplotlib.pyplot as plt
+import cmapy
 
 from nonverbal_communication_analysis.environment import (
-    DATASET_SYNC, FEATURE_AGGREGATE_DIR, VALID_OUTPUT_FILE_TYPES,
+    DATASET_SYNC, FEATURE_AGGREGATE_DIR, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
     VIDEO_RESOLUTION, OPENPOSE_KEYPOINT_LINKS, OPENPOSE_KEYPOINT_MAP)
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
@@ -24,10 +26,11 @@ class VideoCapture(QtWidgets.QWidget):
 
     # TODO: fix bug: Play button not changing style after video finish automatically.
     # Need to press 2 times to replay
-    def __init__(self, tid, filename, video_frame, group_feature_data: dict, q_components: dict):
+    def __init__(self, tid, filename, video_frame, group_data_path, group_feature_data: dict, q_components: dict):
         super(QtWidgets.QWidget, self).__init__()
         self.thread_id = tid,
         self.camera = 'pc%s' % tid
+        self.group_data_path = group_data_path
         self.group_feature_data = group_feature_data
         self.cap = cv2.VideoCapture(str(filename))
         self.length = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -47,11 +50,18 @@ class VideoCapture(QtWidgets.QWidget):
         self.chb_op_exp = q_components['chb_op_exp']
         self.chb_op_cntr_int = q_components['chb_op_cntr_int']
         self.chb_op_ig_dist = q_components['chb_op_ig_dist']
+
+        self.chb_vid_energy_htmp = q_components['chb_vid_energy_htmp']
         self.spn_frame_idx = q_components['spn_frame_idx']
         self.btn_frame_goto = q_components['frame_goto_btn']
         self.btn_frame_goto.clicked.connect(self.set_frame_by_spinner)
         self.radbtn_raw = q_components['radbtn_raw']
         self.radbtn_enhanced = q_components['radbtn_enhanced']
+
+        self.heatmap_overlay_transparency = 0.5
+        self.sld_overlay_transp = q_components['sld_overlay_transp']
+        self.sld_overlay_transp.sliderMoved.connect(
+            self.update_heatmap_transparency)
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.play)
@@ -101,6 +111,9 @@ class VideoCapture(QtWidgets.QWidget):
     def update_frame(self):
         self.play(skip=True)
         self.pause()
+
+    def update_heatmap_transparency(self, position):
+        self.heatmap_overlay_transparency = position / 10
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
         for key, data in subject_data.items():
@@ -247,16 +260,30 @@ class VideoCapture(QtWidgets.QWidget):
             if self.chb_op_exp.isChecked():
                 openpose_data['expansiveness'] = subject['metrics']['expansiveness']
 
-                if self.frame_count == 178:
-                    print(subject['id'])
-
             # Intragroup Distance
             if self.chb_op_ig_dist.isChecked():
                 openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
 
             frame_subject_data['openpose'] = openpose_data
+
+            # Densepose
+
+            # Openface
+
             frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
                                           frame, self.camera)
+
+        # Video
+        if self.chb_vid_energy_htmp.isChecked():
+            heatmap_file = [str(x) for x in self.group_data_path.iterdir()
+                            if self.camera in x.name
+                            and x.suffix in VALID_OUTPUT_IMG_TYPES][0]
+
+            heatmap = cv2.imread(heatmap_file, cv2.IMREAD_UNCHANGED)
+            heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGRA2RGBA)
+
+            frame = cv2.addWeighted(frame, 1, heatmap,
+                                    self.heatmap_overlay_transparency, 0)
 
         return frame
 
@@ -343,10 +370,12 @@ class Visualizer(object):
         q_components['chb_op_exp'] = self.ui.chb_op_exp
         q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
         q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
+        q_components['chb_vid_energy_htmp'] = self.ui.chb_vid_energy_htmp
         q_components['spn_frame_idx'] = self.ui.spn_frame_idx
         q_components['frame_goto_btn'] = self.ui.btn_frame_go
         q_components['radbtn_raw'] = self.ui.radbtn_raw
         q_components['radbtn_enhanced'] = self.ui.radbtn_enh
+        q_components['sld_overlay_transp'] = self.ui.sld_transparency
 
         for video in selected_group_videos:
             video_name = video.name
@@ -359,23 +388,20 @@ class Visualizer(object):
                                   if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
 
             if 'pc1' in video_name:
-                self.ui.video_1 = VideoCapture(1, str(video),
-                                               self.ui.video_1, group_feature_data,
-                                               q_components)
+                self.ui.video_1 = VideoCapture(1, video, self.ui.video_1, feature_data_path,
+                                               group_feature_data, q_components)
                 self.player_1 = self.ui.video_1
                 self.player_1.update_frame()
 
             elif 'pc2' in video_name:
-                self.ui.video_2 = VideoCapture(2, str(video),
-                                               self.ui.video_2, group_feature_data,
-                                               q_components)
+                self.ui.video_2 = VideoCapture(2, video, self.ui.video_2, feature_data_path,
+                                               group_feature_data, q_components)
                 self.player_2 = self.ui.video_2
                 self.player_2.update_frame()
 
             elif 'pc3' in video_name:
-                self.ui.video_3 = VideoCapture(3, str(video),
-                                               self.ui.video_3, group_feature_data,
-                                               q_components)
+                self.ui.video_3 = VideoCapture(3, video, self.ui.video_3, feature_data_path,
+                                               group_feature_data, q_components)
                 self.player_3 = self.ui.video_3
                 self.player_3.update_frame()
 
@@ -449,6 +475,12 @@ class Visualizer(object):
             QtWidgets.QStyle.SP_ArrowBack))
         btn_skip.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_ArrowForward))
+
+        self.ui.sld_transparency.setMinimum(0)
+        self.ui.sld_transparency.setMaximum(10)
+        self.ui.sld_transparency.setValue(5)
+        self.ui.sld_transparency.setTickInterval(1)
+        self.ui.sld_transparency.setTickPosition(5)
 
         # time_slider.sliderMoved.connect(self.set_position)
 

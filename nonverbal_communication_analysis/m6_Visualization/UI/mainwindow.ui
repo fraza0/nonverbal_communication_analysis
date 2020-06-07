@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
+    <width>1420</width>
     <height>720</height>
    </rect>
   </property>
@@ -407,13 +407,6 @@
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <layout class="QGridLayout" name="gridLayout_2">
-              <item row="3" column="0">
-               <widget class="QCheckBox" name="chb_op_ig_dist">
-                <property name="text">
-                 <string>Intragroup Distance</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="0">
                <widget class="QCheckBox" name="chb_op_pose">
                 <property name="sizePolicy">
@@ -424,13 +417,6 @@
                 </property>
                 <property name="text">
                  <string>Pose Lmks</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QCheckBox" name="chb_op_face">
-                <property name="text">
-                 <string>Face Lmks</string>
                 </property>
                </widget>
               </item>
@@ -448,10 +434,38 @@
                </widget>
               </item>
               <item row="2" column="1">
+               <widget class="QCheckBox" name="chb_op_ig_dist">
+                <property name="text">
+                 <string>Intragroup Distance</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
                <widget class="QCheckBox" name="chb_op_cntr_int">
                 <property name="text">
                  <string>Center Interaction</string>
                 </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="chb_op_face">
+                <property name="text">
+                 <string>Face Lmks</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="cb_framework">
+                <item>
+                 <property name="text">
+                  <string>Openpose</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Densepose</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
@@ -520,10 +534,30 @@
            <layout class="QVBoxLayout" name="verticalLayout_8">
             <item>
              <layout class="QGridLayout" name="gridLayout_4">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Overlay Transparency</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox_9">
+               <widget class="QCheckBox" name="chb_vid_energy_htmp">
                 <property name="text">
                  <string>Energy Heatmap Overlay</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSlider" name="sld_transparency">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -544,7 +578,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1280</width>
+     <width>1420</width>
      <height>22</height>
     </rect>
    </property>
