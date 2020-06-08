@@ -229,3 +229,21 @@ CAMERAS_3D_AXES = {
         'y': 'z'
     }
 }
+
+SCALE_FACTORS = {
+    'pc1': {
+        'closer_edge': 627,
+        'farther_edge': 371,
+        'scale_factor': 627/371,
+    },
+    'pc2': {
+        'closer_edge': 13900,
+        'farther_edge': 10660,
+        'scale_factor': 13900/10660,
+    },
+    'pc3': {
+        'closer_edge': 17680,
+        'farther_edge': 12710,
+        'scale_factor': 17680/12710,
+    },
+}
