@@ -23,9 +23,6 @@ class VideoPlayerMonitor(object):
 
 
 class VideoCapture(QtWidgets.QWidget):
-
-    # TODO: fix bug: Play button not changing style after video finish automatically.
-    # Need to press 2 times to replay
     def __init__(self, tid, filename, video_frame, group_data_path, group_feature_data: dict, q_components: dict):
         super(QtWidgets.QWidget, self).__init__()
         self.thread_id = tid,
@@ -310,13 +307,17 @@ class VideoCapture(QtWidgets.QWidget):
 
 
 class Visualizer(object):
+    """
+    Visualizer is the Main class of the Visualization Tool.
+    Visualizer instanciates the Monitor which is responsible to manipulate the VideoPlayer 
+    threads and the feature analyzer tab states.
+
+    """
 
     def __init__(self):
         self.playing_status = False
         self.group_dirs = {x.name: x for x in DATASET_SYNC.iterdir()
                            if x.is_dir()}
-
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
     # GROUP FRAME METHODS
     def group_tasks(self, group_id):
