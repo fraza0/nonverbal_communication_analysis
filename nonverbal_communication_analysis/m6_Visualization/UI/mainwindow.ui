@@ -81,7 +81,13 @@
             </spacer>
            </item>
            <item row="0" column="1">
-            <widget class="QComboBox" name="cb_groupId"/>
+            <widget class="QComboBox" name="cb_groupId">
+             <item>
+              <property name="text">
+               <string>Select Group ID</string>
+              </property>
+             </item>
+            </widget>
            </item>
            <item row="0" column="3">
             <widget class="QLabel" name="lbl_task">
