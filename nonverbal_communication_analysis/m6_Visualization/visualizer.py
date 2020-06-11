@@ -1,13 +1,13 @@
 import json
 import re
 import sys
+import time
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from imutils.perspective import order_points
 from PyQt5 import QtCore, QtGui, QtWidgets
-import time
 
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
