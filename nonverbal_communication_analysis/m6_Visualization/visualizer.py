@@ -1,116 +1,59 @@
 import json
 import re
 import sys
+
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from imutils.perspective import order_points
-import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
-import matplotlib.pyplot as plt
-import cmapy
+import time
 
 from nonverbal_communication_analysis.environment import (
-    DATASET_SYNC, FEATURE_AGGREGATE_DIR, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
-    VIDEO_RESOLUTION, OPENPOSE_KEYPOINT_LINKS, OPENPOSE_KEYPOINT_MAP)
+    DATASET_SYNC, FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
+    OPENPOSE_KEYPOINT_MAP, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
+    VIDEO_RESOLUTION)
+from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
-from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 
 
-class VideoPlayerMonitor(object):
-    def __init__(self):
-        pass
-
-
-class VideoCapture(QtWidgets.QWidget):
-    def __init__(self, tid, filename, video_frame, group_data_path, group_feature_data: dict, q_components: dict):
+class VideoPlayer(QtWidgets.QWidget):
+    def __init__(self, tid, filename, video_frame, timer, group_data_path, group_feature_data: dict):
         super(QtWidgets.QWidget, self).__init__()
-        self.thread_id = tid,
+        self.thread_id = tid
         self.camera = 'pc%s' % tid
-        self.group_data_path = group_data_path
-        self.group_feature_data = group_feature_data
+
         self.cap = cv2.VideoCapture(str(filename))
         self.length = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+        self.frame_idx = 0
+        self.progress = 0.0
+
         self.video_frame = video_frame
-        self.frame_count = 0
-        self.is_playing = False
-        self.visualizer = visualizer
-        self.play_btn = q_components['play_btn']
-        self.skip_btn = q_components['skip_btn']
-        self.skip_btn.clicked.connect(lambda: self.jump_frames(10))
-        self.back_btn = q_components['back_btn']
-        self.back_btn.clicked.connect(lambda: self.jump_frames(-10))
-        self.slider = q_components['slider']
-        self.slider.sliderMoved.connect(self.set_frame_by_slider)
-        self.chb_op_pose = q_components['chb_op_pose']
-        self.chb_op_face = q_components['chb_op_face']
-        self.chb_op_exp = q_components['chb_op_exp']
-        self.chb_op_cntr_int = q_components['chb_op_cntr_int']
-        self.chb_op_ig_dist = q_components['chb_op_ig_dist']
 
-        self.chb_vid_energy_htmp = q_components['chb_vid_energy_htmp']
-        self.spn_frame_idx = q_components['spn_frame_idx']
-        self.btn_frame_goto = q_components['frame_goto_btn']
-        self.btn_frame_goto.clicked.connect(self.set_frame_by_spinner)
-        self.radbtn_raw = q_components['radbtn_raw']
-        self.radbtn_enhanced = q_components['radbtn_enhanced']
+        self.group_data_path = group_data_path
+        self.group_feature_data = group_feature_data
 
-        self.heatmap_overlay_transparency = 0.5
-        self.sld_overlay_transp = q_components['sld_overlay_transp']
-        self.sld_overlay_transp.sliderMoved.connect(
-            self.update_heatmap_transparency)
+        self.overlay_heatmap_transparency = 0.5
 
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.play)
+        self.gui_state = None
 
-    def play(self, skip: bool = False):
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_count)
+    def play_step(self, frame_idx: int = 0, gui_state: dict = None):
+        self.frame_idx = frame_idx
+        self.gui_state = gui_state
+        self.overlay_heatmap_transparency = gui_state['overlay_heatmap_transparency']
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
         ret, frame = self.cap.read()
-        self.spn_frame_idx.setValue(self.frame_count)
 
-        if ret and (self.is_playing or skip):
-            self.is_playing = True
+        if ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             frame = self.frame_transform(frame)
-            self.show_frame(frame)
-            slider_position = round(self.frame_count/self.length * 100)
-        else:
-            self.is_playing = False
-            self.frame_count = 0
-            slider_position = 0
-
-        self.slider.setValue(slider_position)
-        self.frame_count += 1
-
-    def show_frame(self, frame):
-        img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
-                           QtGui.QImage.Format_RGBA8888)
-        pix = QtGui.QPixmap.fromImage(img)
-        self.video_frame.setScaledContents(True)
-        self.video_frame.setPixmap(pix)
-
-    def set_frame_by_slider(self, position):
-        total_frames = self.length
-        frame_position = round(position*total_frames/100)
-        self.frame_count = frame_position
-        self.update_frame()
-
-    def set_frame_by_spinner(self):
-        self.frame_count = int(self.spn_frame_idx.value())
-        self.update_frame()
-
-    def jump_frames(self, increment):
-        self.frame_count += increment-1
-        if self.frame_count < 0:
-            self.frame_count = 0
-        self.update_frame()
-
-    def update_frame(self):
-        self.play(skip=True)
-        self.pause()
-
-    def update_heatmap_transparency(self, position):
-        self.heatmap_overlay_transparency = position / 10
+            img = QtGui.QImage(frame, frame.shape[1], frame.shape[0],
+                               QtGui.QImage.Format_RGBA8888)
+            pix = QtGui.QPixmap.fromImage(img)
+            self.video_frame.setScaledContents(True)
+            self.video_frame.setPixmap(pix)
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
         for key, data in subject_data.items():
@@ -195,22 +138,22 @@ class VideoCapture(QtWidgets.QWidget):
     def frame_transform(self, frame):
 
         # Read FEATURE_DATA
-        current_frame = self.frame_count
+        current_frame = self.frame_idx
         if current_frame not in self.group_feature_data:
             return frame
 
         frame_data = json.load(
             open(self.group_feature_data[current_frame], 'r'))
-        frame_id = frame_data['frame']
-        is_raw_data_valid = frame_data['is_raw_data_valid']
-        is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
-        group_data = frame_data['group']
+        # frame_id = frame_data['frame']
+        # is_raw_data_valid = frame_data['is_raw_data_valid']
+        # is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
+        # group_data = frame_data['group']
         subjects_data = frame_data['subjects']
 
         openpose_data = dict()
-        densepose_data = dict()
-        openface_data = dict()
-        video_metrics_data = dict()
+        # densepose_data = dict()
+        # openface_data = dict()
+        # video_metrics_data = dict()
 
         frame_subject_data = {
             'openpose': dict(),
@@ -221,20 +164,21 @@ class VideoCapture(QtWidgets.QWidget):
 
         data_type = None
 
-        if self.radbtn_raw.isChecked():
+        if self.gui_state['overlay_data_raw']:
             data_type = 'raw'
-        elif self.radbtn_enhanced.isChecked():
+        elif self.gui_state['overlay_data_enhanced']:
             data_type = 'enhanced'
         else:
-            print(
-                "Error", "Invalid type of feature data. must be {raw, enhanced}")
+            print("Error",
+                  "Invalid type of feature data. must be {raw, enhanced}")
+            exit()
 
         for subject in subjects_data:
             # Openpose
             subject_id = subject['id']
             frame_subject_data['id'] = subject_id
             # Pose
-            if self.chb_op_pose.isChecked():
+            if self.gui_state['overlay_framework_pose']:
                 subject_type_data = subject[data_type]
                 subject_type_data_pose = subject_type_data['pose'] \
                     if 'pose' in subject_type_data else dict()
@@ -244,7 +188,7 @@ class VideoCapture(QtWidgets.QWidget):
                     if self.camera in subject_type_data_pose_openpose else dict()
 
             # Face
-            if self.chb_op_face.isChecked():
+            if self.gui_state['overlay_framework_face']:
                 subject_type_data = subject[data_type]
                 subject_type_data_face = subject_type_data['face'] \
                     if 'face' in subject_type_data else dict()
@@ -254,33 +198,24 @@ class VideoCapture(QtWidgets.QWidget):
                     if self.camera in subject_type_data_face_openpose else dict()
 
             # Expansiveness
-            if self.chb_op_exp.isChecked():
+            if self.gui_state['overlay_framework_expansiveness']:
                 openpose_data['expansiveness'] = subject['metrics']['expansiveness']
 
             # Intragroup Distance
-            if self.chb_op_ig_dist.isChecked():
+            if self.gui_state['overlay_framework_intragroup_distance']:
                 openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
 
             frame_subject_data['openpose'] = openpose_data
+            frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
+                                          frame, self.camera)
 
             # Densepose
 
             # Openface
 
-            frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
-                                          frame, self.camera)
-
         # Video
-        if self.chb_vid_energy_htmp.isChecked():
-            heatmap_file = [str(x) for x in self.group_data_path.iterdir()
-                            if self.camera in x.name
-                            and x.suffix in VALID_OUTPUT_IMG_TYPES][0]
-
-            heatmap = cv2.imread(heatmap_file, cv2.IMREAD_UNCHANGED)
-            heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGRA2RGBA)
-
-            frame = cv2.addWeighted(frame, 1, heatmap,
-                                    self.heatmap_overlay_transparency, 0)
+        if self.gui_state['overlay_video_energy_heatmap']:
+            frame = self.video_overlay(frame)
 
         return frame
 
@@ -290,56 +225,182 @@ class VideoCapture(QtWidgets.QWidget):
     def openface_overlay(self):
         print("Openface Overlay")
 
-    def video_overlay(self):
-        print("Video Overlay")
+    def video_overlay(self, frame):
+        heatmap_file = [str(x) for x in self.group_data_path.iterdir()
+                        if self.camera in x.name
+                        and x.suffix in VALID_OUTPUT_IMG_TYPES][0]
 
-    def start(self):
-        self.is_playing = True
-        self.timer.start(1000.0/30)
+        heatmap = cv2.imread(heatmap_file, cv2.IMREAD_UNCHANGED)
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGRA2RGBA)
 
-    def pause(self):
+        frame = cv2.addWeighted(frame, 1, heatmap,
+                                self.overlay_heatmap_transparency, 0)
+
+        return frame
+
+
+class VideoPlayerMonitor(object):
+    def __init__(self, visualizer: QtWidgets.QMainWindow, ui: Ui_Visualizer, groups_directories: dict, q_components: dict):
+        self.visualizer = visualizer
+        self.ui = ui
+        self.groups_directories = groups_directories
+        self.q_components = q_components
+
+        group_select_disable = [self.ui.cb_groupId,
+                                self.ui.cb_task,
+                                self.ui.btn_confirm]
+        group_select_enable = [self.ui.spn_frame_idx,
+                               self.ui.btn_frame_go]
+
+        self.ui.cb_groupId.currentIndexChanged.connect(self.combo_on_select)
+        self.ui.btn_confirm.clicked.connect(lambda: self.group_select_confirm(group_select_disable,
+                                                                              group_select_enable))
+
+        self.selected_group = None
+        self.selected_task = None
+
+        self.current_frame = 0
+        self.video_length = 0
         self.is_playing = False
-        self.timer.stop()
 
-    def deleteLater(self):
-        self.cap.release()
-        super(QtWidgets.QWidget, self).deleteLater()
+        self.timer = QtCore.QTimer()
 
+        self.btn_play = q_components['btn_play']
+        self.btn_play.clicked.connect(self.play)
+        self.btn_back = q_components['btn_back']
+        self.btn_forward = q_components['btn_forward']
+        self.sld_time = q_components['sld_time']
+        self.sld_time.sliderMoved.connect(self.set_frame_by_slider)
+        self.spn_frame_idx = q_components['spn_frame_idx']
 
-class Visualizer(object):
-    """
-    Visualizer is the Main class of the Visualization Tool.
-    Visualizer instanciates the Monitor which is responsible to manipulate the VideoPlayer 
-    threads and the feature analyzer tab states.
+        self.overlay_heatmap_transparency = 0.5
+        self.gui_state = self.check_gui_state()
 
-    """
+        self.timer.timeout.connect(self.playing_loop)
+        self.visualizer.show()
 
-    def __init__(self):
-        self.playing_status = False
-        self.group_dirs = {x.name: x for x in DATASET_SYNC.iterdir()
-                           if x.is_dir()}
+    def playing_loop(self, update: bool = False):
+        if self.is_playing or update:
 
-    # GROUP FRAME METHODS
-    def group_tasks(self, group_id):
-        self.group_id = group_id
-        return [x.name for x in self.group_dirs[group_id].iterdir()
-                if x.is_dir() and 'task' in x.name]
+            self.gui_state = self.check_gui_state()
+
+            if self.current_frame <= self.video_length:
+                self.ui.video_1.play_step(self.current_frame, self.gui_state)
+                self.ui.video_2.play_step(self.current_frame, self.gui_state)
+                self.ui.video_3.play_step(self.current_frame, self.gui_state)
+
+                self.spn_frame_idx.setValue(self.current_frame)
+                self.sld_time.setValue(self.current_frame)
+                self.current_frame += 1
+            else:
+                self.current_frame = 0
+                self.pause(replay=True)
+
+    def play(self):
+        if not self.is_playing:
+            self.start()
+        else:
+            self.pause()
+
+    def initialize_player_threads(self):
+        self.selected_group = self.ui.cb_groupId.currentText()
+        selected_group_dir = self.groups_directories[self.selected_group]
+
+        self.selected_task = self.ui.cb_task.currentText()
+        selected_group_task = selected_group_dir / self.selected_task
+        selected_group_videos = [x for x in selected_group_task.iterdir()
+                                 if not x.is_dir()]
+
+        feature_data_path = DATASET_SYNC / self.selected_group / \
+            FEATURE_AGGREGATE_DIR / self.selected_task
+
+        group_feature_data = {int(re.search(r'(\d{12})', x.name).group(0)): x
+                              for x in feature_data_path.iterdir()
+                              if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
+
+        for video in selected_group_videos:
+
+            if 'pc1' in video.name:
+                self.ui.video_1 = VideoPlayer(1, video, self.ui.video_1, self.timer,
+                                              feature_data_path, group_feature_data)
+
+            elif 'pc2' in video.name:
+                self.ui.video_2 = VideoPlayer(2, video, self.ui.video_2, self.timer,
+                                              feature_data_path, group_feature_data)
+
+            elif 'pc3' in video.name:
+                self.ui.video_3 = VideoPlayer(3, video, self.ui.video_3, self.timer,
+                                              feature_data_path, group_feature_data)
+
+        self.ui.btn_play.setEnabled(True)1
+        self.ui.btn_back.setEnabled(True)
+        self.ui.btn_skip.setEnabled(True)
+        self.ui.time_slider.setEnabled(True)
+
+        self.ui.video_1.play_step(gui_state=self.gui_state)
+        self.ui.video_2.play_step(gui_state=self.gui_state)
+        self.ui.video_3.play_step(gui_state=self.gui_state)
+
+        self.video_length = set({self.ui.video_1.length,
+                                 self.ui.video_2.length,
+                                 self.ui.video_3.length})
+
+        self.video_framerate = set({self.ui.video_1.fps,
+                                    self.ui.video_2.fps,
+                                    self.ui.video_3.fps})
+
+        if len(self.video_length) > 1:
+            print("DIFFERENT SIZED VIDEOS")
+        self.video_length = list(self.video_length)[0]
+
+        self.players = [self.ui.video_1,
+                        self.ui.video_2,
+                        self.ui.video_3]
+
+        if len(self.video_framerate) > 1:
+            print("VIDEOS WITH DIFFERENT FRAMERATE")
+        self.video_framerate = list(self.video_framerate)[0]
+
+        self.sld_time.setMinimum(0)
+        self.sld_time.setMaximum(self.video_length)
+        self.sld_time.setTickInterval(1)
+        self.timer.timeout.connect(self.playing_loop)
+
+    def check_gui_state(self):
+        # TODO: finish adding components
+        components = self.q_components
+
+        state = {
+            'overlay_data_raw': components['radbtn_raw'].isChecked(),
+            'overlay_data_enhanced': components['radbtn_enhanced'].isChecked(),
+            'overlay_framework': components['cb_framework'],
+            'overlay_framework_pose': components['chb_op_pose'].isChecked(),
+            'overlay_framework_face': components['chb_op_face'].isChecked(),
+            'overlay_framework_expansiveness': components['chb_op_exp'].isChecked(),
+            'overlay_framework_intragroup_distance': components['chb_op_ig_dist'].isChecked(),
+            'overlay_framework_center_interaction': components['chb_op_cntr_int'].isChecked(),
+            'overlay_openface_face':  components['chb_of_face'].isChecked(),
+            # 'overlay_openface_aus':  components['chb_of_aus'].isChecked(),
+            'overlay_video_energy_heatmap': components['chb_vid_energy_htmp'].isChecked(),
+            'overlay_heatmap_transparency': self.overlay_heatmap_transparency,
+        }
+
+        return state
 
     def combo_on_select(self):
         cb_group = self.ui.cb_groupId
         cb_task = self.ui.cb_task
         btn_confirm = self.ui.btn_confirm
-        group_cb_idx = int(cb_group.currentIndex())
 
-        if group_cb_idx != 0:
+        if int(cb_group.currentIndex()) != 0:
             cb_task.setEnabled(True)
             cb_task.clear()
-            cb_task.addItems(self.group_tasks(cb_group.currentText()))
+            cb_task.addItems([x.name for x in self.groups_directories[cb_group.currentText()].iterdir()
+                              if x.is_dir() and 'task' in x.name])
             btn_confirm.setEnabled(True)
-
         else:
-            cb_task.clear()
             cb_task.setEnabled(False)
+            cb_task.clear()
             btn_confirm.setEnabled(False)
 
     def group_select_confirm(self, disable_widgets, enable_widgets):
@@ -349,146 +410,122 @@ class Visualizer(object):
         for widget in enable_widgets:
             widget.setEnabled(True)
 
-        self.load_group_videos()
+        self.initialize_player_threads()
 
-    # PLAYER FRAMES METHODS
-    def load_group_videos(self):
-        selected_group = self.ui.cb_groupId.currentText()
-        selected_group_dir = self.group_dirs[selected_group]
-        selected_task = self.ui.cb_task.currentText()
-        self.selected_task = selected_task
-        selected_group_task = selected_group_dir / selected_task
-        selected_group_videos = [x for x in selected_group_task.iterdir()
-                                 if not x.is_dir()]
+    def jump_frames(self, increment):
+        self.current_frame += increment-1
+        if self.current_frame < 0:
+            self.current_frame = 0
+        self.playing_loop(True)
 
-        q_components = dict()
-        q_components['play_btn'] = self.ui.btn_play
-        q_components['back_btn'] = self.ui.btn_back
-        q_components['skip_btn'] = self.ui.btn_skip
-        q_components['slider'] = self.ui.time_slider
-        q_components['chb_op_pose'] = self.ui.chb_op_pose
-        q_components['chb_op_face'] = self.ui.chb_op_face
-        q_components['chb_op_exp'] = self.ui.chb_op_exp
-        q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
-        q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
-        q_components['chb_vid_energy_htmp'] = self.ui.chb_vid_energy_htmp
-        q_components['spn_frame_idx'] = self.ui.spn_frame_idx
-        q_components['frame_goto_btn'] = self.ui.btn_frame_go
-        q_components['radbtn_raw'] = self.ui.radbtn_raw
-        q_components['radbtn_enhanced'] = self.ui.radbtn_enh
-        q_components['sld_overlay_transp'] = self.ui.sld_transparency
+    def set_frame_by_slider(self, position):
+        self.current_frame = position
+        self.playing_loop(True)
 
-        for video in selected_group_videos:
-            video_name = video.name
+    def set_frame_by_spinner(self):
+        self.current_frame = int(self.spn_frame_idx.value())
+        self.playing_loop(True)
 
-            feature_data_path = DATASET_SYNC / self.group_id / \
-                FEATURE_AGGREGATE_DIR / self.selected_task
+    def update_heatmap_transparency(self, position):
+        self.overlay_heatmap_transparency = position / 10
 
-            group_feature_data = {int(re.search(r'(\d{12})', x.name).group(0)): x
-                                  for x in feature_data_path.iterdir()
-                                  if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
-
-            if 'pc1' in video_name:
-                self.ui.video_1 = VideoCapture(1, video, self.ui.video_1, feature_data_path,
-                                               group_feature_data, q_components)
-                self.player_1 = self.ui.video_1
-                self.player_1.update_frame()
-
-            elif 'pc2' in video_name:
-                self.ui.video_2 = VideoCapture(2, video, self.ui.video_2, feature_data_path,
-                                               group_feature_data, q_components)
-                self.player_2 = self.ui.video_2
-                self.player_2.update_frame()
-
-            elif 'pc3' in video_name:
-                self.ui.video_3 = VideoCapture(3, video, self.ui.video_3, feature_data_path,
-                                               group_feature_data, q_components)
-                self.player_3 = self.ui.video_3
-                self.player_3.update_frame()
-
-        self.ui.time_slider.setEnabled(True)
-        self.ui.btn_play.setEnabled(True)
-        self.ui.btn_back.setEnabled(True)
-        self.ui.btn_skip.setEnabled(True)
-
-    # OVERLAYS FRAMES METHODS
-
-    # CONTROLS FRAMES METHODS
-    def video_play(self):
-        self.ui.video_1.start()
-        self.ui.video_2.start()
-        self.ui.video_3.start()
-        self.ui.btn_play.setIcon(self.visualizer.style().standardIcon(
+    def start(self):
+        self.is_playing = True
+        self.timer.start(1000.0/self.video_framerate)
+        self.btn_play.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_MediaPause))
-        self.playing_status = True
 
-    def video_pause(self):
-        self.ui.video_1.pause()
-        self.ui.video_2.pause()
-        self.ui.video_3.pause()
-        self.ui.btn_play.setIcon(self.visualizer.style().standardIcon(
+    def pause(self, replay: bool = False):
+        self.is_playing = False
+        self.timer.stop()
+        self.btn_play.setIcon(self.visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_MediaPlay))
-        self.playing_status = False
+        if replay:
+            self.btn_play.setIcon(self.visualizer.style().standardIcon(
+                QtWidgets.QStyle.SP_BrowserReload))
 
-    def videos_state(self):
-        if not self.playing_status:
-            self.video_play()
-        else:
-            self.video_pause()
+
+class Visualizer(object):
+    """
+    Visualizer is the Main class of the Visualization Tool. This class initializes the GUI 
+     and its required initial variables.
+    Visualizer instanciates the Monitor which is responsible to manipulate the VideoPlayer 
+     threads and the feature analyzer tab states.
+    """
+
+    def __init__(self):
+        self.playing_status = False
+        self.group_dirs = {x.name: x for x in DATASET_SYNC.iterdir()
+                           if x.is_dir()}
+        self.group_id = None
+        self.q_components = dict()
 
     def main(self):
         app = QtWidgets.QApplication(sys.argv)
-        self.visualizer = QtWidgets.QMainWindow()
+        visualizer = QtWidgets.QMainWindow()
         self.ui = Ui_Visualizer()
-        self.ui.setupUi(self.visualizer)
+        self.ui.setupUi(visualizer)
 
-        self.ui.actionExit.triggered.connect(self.exit_application)
+        # Window Components
+        # self.ui.action_feature_analyzer.triggered.connect()
+        self.ui.actionExit.triggered.connect(self.close_application)
 
-        # Group Frame
-        cb_group_id = self.ui.cb_groupId
-        cb_task = self.ui.cb_task
-        btn_confirm = self.ui.btn_confirm
-        spn_frame_idx = self.ui.spn_frame_idx
-        btn_frame_goto = self.ui.btn_frame_go
-        group_select_disable = [cb_group_id, cb_task, btn_confirm]
-        group_select_enable = [spn_frame_idx, btn_frame_goto]
+        # Group Frame Components
+        self.ui.cb_groupId.addItems(list(self.group_dirs.keys()))
 
-        cb_group_id.addItems(
-            ['Select Group ID']+list(self.group_dirs.keys()))
-        cb_group_id.currentIndexChanged.connect(self.combo_on_select)
-        btn_confirm.clicked.connect(
-            lambda: self.group_select_confirm(group_select_disable, group_select_enable))
-
-        # Player Frames
-        self.player_1 = None
-        self.player_2 = None
-        self.player_3 = None
-
-        # Controls Frame
+        # Controls Frame Components
         btn_play = self.ui.btn_play
         btn_back = self.ui.btn_back
         btn_skip = self.ui.btn_skip
-        time_slider = self.ui.time_slider
-        btn_play.setIcon(self.visualizer.style().standardIcon(
+
+        btn_play.setIcon(visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_MediaPlay))
-        btn_play.clicked.connect(self.videos_state)
-        btn_back.setIcon(self.visualizer.style().standardIcon(
-            QtWidgets.QStyle.SP_ArrowBack))
-        btn_skip.setIcon(self.visualizer.style().standardIcon(
-            QtWidgets.QStyle.SP_ArrowForward))
+        btn_back.setIcon(visualizer.style().standardIcon(
+            QtWidgets.QStyle.SP_MediaSeekBackward))
+        btn_skip.setIcon(visualizer.style().standardIcon(
+            QtWidgets.QStyle.SP_MediaSeekForward))
 
-        self.ui.sld_transparency.setMinimum(0)
-        self.ui.sld_transparency.setMaximum(10)
-        self.ui.sld_transparency.setValue(5)
-        self.ui.sld_transparency.setTickInterval(1)
-        self.ui.sld_transparency.setTickPosition(5)
+        sld_transparency = self.ui.sld_transparency
 
-        # time_slider.sliderMoved.connect(self.set_position)
+        sld_transparency.setMinimum(0)
+        sld_transparency.setMaximum(10)
+        sld_transparency.setValue(5)
+        sld_transparency.setTickInterval(1)
+        sld_transparency.setTickPosition(5)
 
-        self.visualizer.show()
+        btn_frame_goto = self.ui.btn_frame_go
+
+        self.q_components['btn_play'] = self.ui.btn_play
+        self.q_components['btn_back'] = self.ui.btn_back
+        self.q_components['btn_forward'] = self.ui.btn_skip
+        self.q_components['sld_time'] = self.ui.time_slider
+        self.q_components['chb_op_pose'] = self.ui.chb_op_pose
+        self.q_components['chb_op_face'] = self.ui.chb_op_face
+        self.q_components['chb_op_exp'] = self.ui.chb_op_exp
+        self.q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
+        self.q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
+        self.q_components['chb_vid_energy_htmp'] = self.ui.chb_vid_energy_htmp
+        self.q_components['spn_frame_idx'] = self.ui.spn_frame_idx
+        self.q_components['frame_goto_btn'] = self.ui.btn_frame_go
+        self.q_components['cb_framework'] = self.ui.cb_framework
+        self.q_components['radbtn_raw'] = self.ui.radbtn_raw
+        self.q_components['radbtn_enhanced'] = self.ui.radbtn_enh
+        self.q_components['chb_of_face'] = self.ui.chb_op_face
+        self.q_components['sld_overlay_transp'] = self.ui.sld_transparency
+
+        monitor_GUI = VideoPlayerMonitor(
+            visualizer, self.ui, self.group_dirs, self.q_components)
+
+        btn_play.clicked.connect(monitor_GUI.playing_loop)
+        btn_back.clicked.connect(lambda: monitor_GUI.jump_frames(-10))
+        btn_skip.clicked.connect(lambda: monitor_GUI.jump_frames(10))
+        btn_frame_goto.clicked.connect(monitor_GUI.set_frame_by_spinner)
+        sld_transparency.sliderMoved.connect(
+            monitor_GUI.update_heatmap_transparency)
+
         sys.exit(app.exec_())
 
-    def exit_application(self):
+    def close_application(self):
         sys.exit()
 
 
