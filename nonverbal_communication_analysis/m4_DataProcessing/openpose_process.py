@@ -1,17 +1,17 @@
-import argparse
-import json
-import pandas as pd
-import os
-import re
-import numpy as np
-from statistics import mean
-from math import sqrt
-from pathlib import Path
-from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
-from nonverbal_communication_analysis.m0_Classes.Subject import Subject
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES
+from sympy import Polygon, Point
 from nonverbal_communication_analysis.utils import log
-from sympy import Polygon
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES
+from nonverbal_communication_analysis.m0_Classes.Subject import Subject
+from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
+from pathlib import Path
+from math import sqrt
+from statistics import mean
+import numpy as np
+import re
+import os
+import pandas as pd
+import json
+import argparse
 
 
 def distance_between_points(p1: tuple, p2: tuple):
@@ -122,6 +122,11 @@ class OpenposeSubject(Subject):
                                           horizontal['max']]
             expansiveness[camera]['y'] = [vertical['min'],
                                           vertical['max']]
+
+            edge_x = float(horizontal['max'] - horizontal['min'])
+            edge_y = float(vertical['max'] - vertical['min'])
+            polygon_area = edge_x * edge_y
+            expansiveness[camera]['area'] = polygon_area
 
             # if camera == 'pc2':
             #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
