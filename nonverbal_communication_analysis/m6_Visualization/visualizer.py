@@ -16,6 +16,7 @@ from nonverbal_communication_analysis.environment import (
 from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
+from nonverbal_communication_analysis.m6_Visualization.feature_analyzer import FeatureAnalyzer
 
 
 class VideoPlayer(QtWidgets.QWidget):
@@ -144,16 +145,13 @@ class VideoPlayer(QtWidgets.QWidget):
 
         frame_data = json.load(
             open(self.group_feature_data[current_frame], 'r'))
-        # frame_id = frame_data['frame']
         # is_raw_data_valid = frame_data['is_raw_data_valid']
         # is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
-        # group_data = frame_data['group']
         subjects_data = frame_data['subjects']
 
         openpose_data = dict()
         # densepose_data = dict()
         # openface_data = dict()
-        # video_metrics_data = dict()
 
         frame_subject_data = {
             'openpose': dict(),
@@ -240,11 +238,12 @@ class VideoPlayer(QtWidgets.QWidget):
 
 
 class VideoPlayerMonitor(object):
-    def __init__(self, visualizer: QtWidgets.QMainWindow, ui: Ui_Visualizer, groups_directories: dict, q_components: dict):
+    def __init__(self, visualizer: QtWidgets.QMainWindow, ui: Ui_Visualizer, groups_directories: dict, q_components: dict, feature_analyzer: FeatureAnalyzer):
         self.visualizer = visualizer
         self.ui = ui
         self.groups_directories = groups_directories
         self.q_components = q_components
+        self.feature_analyzer = feature_analyzer
 
         group_select_disable = [self.ui.cb_groupId,
                                 self.ui.cb_task,
@@ -292,6 +291,7 @@ class VideoPlayerMonitor(object):
                 self.spn_frame_idx.setValue(self.current_frame)
                 self.sld_time.setValue(self.current_frame)
                 self.current_frame += 1
+                # self.update_feature_analyzer()
             else:
                 self.current_frame = 0
                 self.pause(replay=True)
@@ -314,23 +314,23 @@ class VideoPlayerMonitor(object):
         feature_data_path = DATASET_SYNC / self.selected_group / \
             FEATURE_AGGREGATE_DIR / self.selected_task
 
-        group_feature_data = {int(re.search(r'(\d{12})', x.name).group(0)): x
-                              for x in feature_data_path.iterdir()
-                              if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
+        self.group_feature_data = {int(re.search(r'(\d{12})', x.name).group(0)): x
+                                   for x in feature_data_path.iterdir()
+                                   if not x.is_dir() and x.suffix in VALID_OUTPUT_FILE_TYPES}
 
         for video in selected_group_videos:
 
             if 'pc1' in video.name:
                 self.ui.video_1 = VideoPlayer(1, video, self.ui.video_1, self.timer,
-                                              feature_data_path, group_feature_data)
+                                              feature_data_path, self.group_feature_data)
 
             elif 'pc2' in video.name:
                 self.ui.video_2 = VideoPlayer(2, video, self.ui.video_2, self.timer,
-                                              feature_data_path, group_feature_data)
+                                              feature_data_path, self.group_feature_data)
 
             elif 'pc3' in video.name:
                 self.ui.video_3 = VideoPlayer(3, video, self.ui.video_3, self.timer,
-                                              feature_data_path, group_feature_data)
+                                              feature_data_path, self.group_feature_data)
 
         self.ui.btn_play.setEnabled(True)
         self.ui.btn_back.setEnabled(True)
@@ -351,6 +351,7 @@ class VideoPlayerMonitor(object):
 
         if len(self.video_length) > 1:
             print("DIFFERENT SIZED VIDEOS")
+            exit()
         self.video_length = list(self.video_length)[0]
 
         self.players = [self.ui.video_1,
@@ -359,6 +360,7 @@ class VideoPlayerMonitor(object):
 
         if len(self.video_framerate) > 1:
             print("VIDEOS WITH DIFFERENT FRAMERATE")
+            exit()
         self.video_framerate = list(self.video_framerate)[0]
 
         self.sld_time.setMinimum(0)
@@ -367,7 +369,7 @@ class VideoPlayerMonitor(object):
         self.timer.timeout.connect(self.playing_loop)
 
     def check_gui_state(self):
-        # TODO: finish adding components
+        # TODO: finish adding necessary components
         components = self.q_components
 
         state = {
@@ -412,6 +414,15 @@ class VideoPlayerMonitor(object):
 
         self.initialize_player_threads()
 
+        data = {
+            'group_id': self.selected_group,
+            'task': self.selected_task,
+            'group_data': self.group_feature_data,
+            'data_length': self.video_length,
+        }
+
+        self.feature_analyzer.set_data(data)
+
     def jump_frames(self, increment):
         self.current_frame += increment-1
         if self.current_frame < 0:
@@ -444,6 +455,13 @@ class VideoPlayerMonitor(object):
             self.btn_play.setIcon(self.visualizer.style().standardIcon(
                 QtWidgets.QStyle.SP_BrowserReload))
 
+    # def update_feature_analyzer(self):
+    #     data = {
+    #         'group_id': self.selected_group,
+    #         'task': self.selected_task
+    #     }
+    #     self.feature_analyzer.update(data)
+
 
 class Visualizer(object):
     """
@@ -467,8 +485,10 @@ class Visualizer(object):
         self.ui.setupUi(visualizer)
 
         # Window Components
-        # self.ui.action_feature_analyzer.triggered.connect()
-        self.ui.actionExit.triggered.connect(self.close_application)
+        self.feature_analyzer = FeatureAnalyzer()
+        self.ui.action_feature_analyzer.triggered.connect(
+            self.feature_analyzer.open)
+        self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
 
         # Group Frame Components
         self.ui.cb_groupId.addItems(list(self.group_dirs.keys()))
@@ -514,7 +534,7 @@ class Visualizer(object):
         self.q_components['sld_overlay_transp'] = self.ui.sld_transparency
 
         monitor_GUI = VideoPlayerMonitor(
-            visualizer, self.ui, self.group_dirs, self.q_components)
+            visualizer, self.ui, self.group_dirs, self.q_components, self.feature_analyzer)
 
         btn_play.clicked.connect(monitor_GUI.playing_loop)
         btn_back.clicked.connect(lambda: monitor_GUI.jump_frames(-10))
@@ -525,8 +545,8 @@ class Visualizer(object):
 
         sys.exit(app.exec_())
 
-    def close_application(self):
-        sys.exit()
+    def closeEvent(self):
+        print("Closing ...")
 
 
 if __name__ == "__main__":
