@@ -125,10 +125,6 @@ class ProcessorThread(threading.Thread):
                 self.subject_metrics = self.subject_metrics.append(tmp_df,
                                                                    ignore_index=True)
 
-        # if frame_idx == 5:
-        #     # print(self.group_metrics)
-        #     # print(self.subject_metrics)
-        #     exit()
 
 
 class PlotThread(QtCore.QThread):

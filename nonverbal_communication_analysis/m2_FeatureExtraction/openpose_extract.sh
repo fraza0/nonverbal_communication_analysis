@@ -1,2 +1,1 @@
-./build/examples/openpose/openpose.bin --video $1 --write_json $2 --render_pose 1 --number_people_max 4
-./build/examples/openpose/openpose.bin --video $1 --write_json $2 --display 0 --render_pose 0 --face --keypoint_scale 4
+./build/examples/openpose/openpose.bin --video $1 --write_json $2 --display 0 --render_pose 0 --face --keypoint_scale 3
