@@ -171,8 +171,9 @@ def main(video_files: list, verbose: bool = False):
         log('ERROR', 'Error opening video stream or file')
         exit()
 
-    frame_count = 0
     marker_validator = {ord(str(i)): False for i in range(1, 9)}
+
+    precision_step = 10
 
     while(all(vid.cap.isOpened() for vid in cap_list)):
 
@@ -183,6 +184,7 @@ def main(video_files: list, verbose: bool = False):
             # Read frame
             vid.ret, vid.frame = vid.cap.read()
             vid.current_frame_idx += 1
+            # print(vid.current_frame_idx)
             # Update current_timestamp
             file_ts = vid.timestamps.readline()
             vid.current_timestamp = int(file_ts) if file_ts is not '' else -1
@@ -206,6 +208,47 @@ def main(video_files: list, verbose: bool = False):
                     vid.current_frame_idx = vid.init_synced_frame
 
                 vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('f'):                         # Jump Back
+            for vid in cap_list:
+                vid.current_frame_idx -= FRAME_SKIP*10
+                if vid.current_frame_idx < vid.init_synced_frame:
+                    vid.current_frame_idx = vid.init_synced_frame
+
+                vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        # if key == ord('s'): # Set sync point
+        #     print("SET SYNC POINT")
+
+        if key == ord('u'):
+            vid = cap_list[0]
+            vid.current_frame_idx -= precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('i'):
+            vid = cap_list[0]
+            vid.current_frame_idx += precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('j'):
+            vid = cap_list[1]
+            vid.current_frame_idx -= precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('k'):
+            vid = cap_list[1]
+            vid.current_frame_idx += precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('n'):
+            vid = cap_list[2]
+            vid.current_frame_idx -= precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
+
+        if key == ord('m'):
+            vid = cap_list[2]
+            vid.current_frame_idx += precision_step
+            vid.cap.set(cv2.CAP_PROP_POS_FRAMES, vid.current_frame_idx)
 
         if key >= ord('1') and key <= ord('8'):
             print("Marker %s set" % chr(key))
@@ -236,7 +279,7 @@ def main(video_files: list, verbose: bool = False):
                         vid.frame, (grid_vertical_axis['x'], grid_vertical_axis['y0']), (grid_vertical_axis['x'], grid_vertical_axis['y1']), (0, 0, 255), 1)
                     cv2.imshow(vid.title, vid.frame)
 
-            if key == ord('s'):                 # Save
+            if key == ord('g'):                 # Save
                 if verbose:
                     print("Start writting phase")
 
@@ -283,10 +326,6 @@ def main(video_files: list, verbose: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Syncronize Videos')
-    # parser.add_argument('-f', '--file', type=str, dest='video_files',
-    #                     action='append', help='Video file path')
-    # parser.add_argument('-t' '--timestamp', type=str, nargs=1,
-    #                     dest='timestamp_files', action='append', help='Media files')
     parser.add_argument('-d', '--directory', type=str, required=True,
                         dest='group_files', help='Group Video files path')
     parser.add_argument('-v', '--verbose', help='Whether or not responses should be printed',
@@ -295,11 +334,6 @@ if __name__ == "__main__":
 
     directory = args['group_files']
     verbose = args['verbose']
-    # video_files_path = args['video_files']
-    # if not (video_files_path or directory):
-    #     log('ERROR', 'No camera video files passed')
-    #     exit()
-    # video_files = [directory if video_files_path is None else directory]
     video_files = [directory]
 
     main(video_files, verbose)
