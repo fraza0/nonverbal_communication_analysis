@@ -182,10 +182,17 @@ class OpenposeSubject(Subject):
         camera_relative_coordinates = CAMERAS_3D_AXES[sideview_camera]
         hands_body_deviation_coordinate = list(camera_relative_coordinates.keys())[
             list(camera_relative_coordinates.values()).index('y')]
+
         table_center = group_data[sideview_camera]['center']
         hands_body_deviation = subject_expansiveness[sideview_camera][hands_body_deviation_coordinate]
+
+        table_center_x = table_center[0]
+        hands_body_deviation_y = hands_body_deviation[1]
+
+        point_in_center_line = [table_center_x, hands_body_deviation_y]
+
         center_proximity = distance_between_points(
-            table_center, hands_body_deviation)
+            hands_body_deviation, point_in_center_line)
 
         return center_proximity
 
