@@ -29,7 +29,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Intragroup Energy</string>
+         <string>Intragroup Distance</string>
         </property>
        </widget>
       </item>
