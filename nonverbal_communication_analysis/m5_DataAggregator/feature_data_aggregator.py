@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 import re
 import shutil
@@ -8,7 +9,8 @@ from pathlib import Path
 from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
-    VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, VIDEO_OUTPUT_DIR)
+    VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY,
+    VIDEO_OUTPUT_DIR)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -139,6 +141,8 @@ class SubjectDataAggregator:
         self.video_data = dict()
 
         experiment_data = dict()
+
+        self.reset_files = True
 
         if openpose:
             openpose_group_directory = OPENPOSE_OUTPUT_DIR / self.group_id
@@ -500,6 +504,8 @@ class SubjectDataAggregator:
                                                                        camera=camera,
                                                                        frame_data_type='processed')
 
+                self.plot_generator(aggregate_frame, output_frame_directory)
+
                 if prettify:
                     json.dump(aggregate_frame.to_json(), open(
                         output_frame_file, 'w'), indent=2)
@@ -513,6 +519,67 @@ class SubjectDataAggregator:
                     video_data_heatmaps_task = video_data_heatmaps[task]
                     for file_name in video_data_heatmaps_task:
                         shutil.copy(file_name, output_frame_directory)
+
+    def plot_generator(self, aggregate_frame, output_directory):
+        output_directory = output_directory / 'PLOTS'
+        makedirs(output_directory, exist_ok=True)
+        frame_idx = aggregate_frame.frame_idx
+
+        # Group metrics
+        # Intragroup Distance
+        if 'intragroup_distance' in aggregate_frame.group:
+            if self.reset_files:
+                file_ig = open(output_directory/'intragroup_dist.csv', 'w')
+                file_ig.flush()
+                self.file_ig = csv.writer(file_ig)
+                self.file_ig.writerow(['frame', 'camera', 'intragroup_area'])
+            for camera, value in aggregate_frame.group['intragroup_distance'].items():
+                intragroup_entry = [frame_idx, camera, value['area']]
+                self.file_ig.writerow(intragroup_entry)
+
+        # Group Energy
+        if 'energy' in aggregate_frame.group:
+            if self.reset_files:
+                file_energy = open(output_directory/'energy.csv', 'w')
+                file_energy.flush()
+                self.file_energy = csv.writer(file_energy)
+                self.file_energy.writerow(['frame', 'energy'])
+            energy_value = aggregate_frame.group['energy']
+            energy_entry = [frame_idx, energy_value]
+            self.file_energy.writerow(energy_entry)
+
+        # Subject metrics
+        if self.reset_files:
+            file_expansiveness = open(
+                output_directory/'expansiveness.csv', 'w')
+            file_expansiveness.flush()
+            self.file_expansiveness = csv.writer(file_expansiveness)
+            self.file_expansiveness.writerow(['frame', 'camera',
+                                              'subject', 'expansiveness'])
+            file_center_interaction = open(
+                output_directory/'center_interaction.csv', 'w')
+            file_center_interaction.flush()
+            self.file_center_interaction = csv.writer(file_center_interaction)
+            self.file_center_interaction.writerow(['frame', 'subject',
+                                                   'center_proximity'])
+        for subject_id, subject in aggregate_frame.subjects.items():
+            # Expansiveness
+            if 'expansiveness' in subject.metrics:
+                for camera, value in subject.metrics['expansiveness'].items():
+                    expansiveness_entry = [frame_idx,  camera,
+                                           subject_id, value['area']]
+                    self.file_expansiveness.writerow(expansiveness_entry)
+
+            # Center interaction
+            if 'center_interaction' in subject.metrics:
+                center_interaction_value = subject.metrics['center_interaction']
+                center_interaction_entry = [frame_idx, subject_id,
+                                            center_interaction_value]
+                self.file_center_interaction.writerow(center_interaction_entry)
+
+        self.reset_files = False
+
+        return None
 
 
 def main(group_directory: str, specific_frame: int = None, specific_task: int = None, openpose: bool = False, openface: bool = False, densepose: bool = False, video: bool = False, prettify: bool = False, verbose: bool = False):
