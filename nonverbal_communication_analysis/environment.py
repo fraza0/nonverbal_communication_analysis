@@ -247,3 +247,8 @@ SCALE_FACTORS = {
         'scale_factor': 17680/12710,
     },
 }
+
+PLOT_INTRAGROUP_DISTANCE = 'intragroup_distance'
+PLOT_GROUP_ENERGY = 'energy'
+PLOT_SUBJECT_EXPANSIVENESS = 'expansiveness'
+PLOT_CENTER_INTERACTION = 'center_interaction'

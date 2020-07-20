@@ -10,7 +10,7 @@ from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
     VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY,
-    VIDEO_OUTPUT_DIR)
+    VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_EXPANSIVENESS, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -529,10 +529,11 @@ class SubjectDataAggregator:
         # Intragroup Distance
         if 'intragroup_distance' in aggregate_frame.group:
             if self.reset_files:
-                file_ig = open(output_directory/'intragroup_dist.csv', 'w')
+                file_ig = open(output_directory /
+                               (PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
                 file_ig.flush()
                 self.file_ig = csv.writer(file_ig)
-                self.file_ig.writerow(['frame', 'camera', 'intragroup_area'])
+                self.file_ig.writerow(['frame', 'camera', 'intragroup_distance'])
             for camera, value in aggregate_frame.group['intragroup_distance'].items():
                 intragroup_entry = [frame_idx, camera, value['area']]
                 self.file_ig.writerow(intragroup_entry)
@@ -540,7 +541,8 @@ class SubjectDataAggregator:
         # Group Energy
         if 'energy' in aggregate_frame.group:
             if self.reset_files:
-                file_energy = open(output_directory/'energy.csv', 'w')
+                file_energy = open(
+                    output_directory/(PLOT_GROUP_ENERGY+'.csv'), 'w')
                 file_energy.flush()
                 self.file_energy = csv.writer(file_energy)
                 self.file_energy.writerow(['frame', 'energy'])
@@ -551,17 +553,17 @@ class SubjectDataAggregator:
         # Subject metrics
         if self.reset_files:
             file_expansiveness = open(
-                output_directory/'expansiveness.csv', 'w')
+                output_directory/(PLOT_SUBJECT_EXPANSIVENESS+'.csv'), 'w')
             file_expansiveness.flush()
             self.file_expansiveness = csv.writer(file_expansiveness)
             self.file_expansiveness.writerow(['frame', 'camera',
                                               'subject', 'expansiveness'])
             file_center_interaction = open(
-                output_directory/'center_interaction.csv', 'w')
+                output_directory/(PLOT_CENTER_INTERACTION+'.csv'), 'w')
             file_center_interaction.flush()
             self.file_center_interaction = csv.writer(file_center_interaction)
             self.file_center_interaction.writerow(['frame', 'subject',
-                                                   'center_proximity'])
+                                                   'center_interaction'])
         for subject_id, subject in aggregate_frame.subjects.items():
             # Expansiveness
             if 'expansiveness' in subject.metrics:

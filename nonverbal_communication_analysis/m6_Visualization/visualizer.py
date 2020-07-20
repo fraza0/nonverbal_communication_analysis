@@ -150,8 +150,8 @@ class VideoPlayer(QtWidgets.QWidget):
         subjects_data = frame_data['subjects']
 
         openpose_data = dict()
-        # densepose_data = dict()
         # openface_data = dict()
+        # densepose_data = dict()
 
         frame_subject_data = {
             'openpose': dict(),
@@ -313,6 +313,7 @@ class VideoPlayerMonitor(object):
 
         feature_data_path = DATASET_SYNC / self.selected_group / \
             FEATURE_AGGREGATE_DIR / self.selected_task
+        self.feature_data_path = feature_data_path
 
         self.group_feature_data = {int(re.search(r'(\d{12})', x.name).group(0)): x
                                    for x in feature_data_path.iterdir()
@@ -350,8 +351,8 @@ class VideoPlayerMonitor(object):
                                     self.ui.video_3.fps})
 
         if len(self.video_length) > 1:
-            print("DIFFERENT SIZED VIDEOS")
-            exit()
+            print("DIFFERENT SIZED VIDEOS", self.video_length)
+            # exit()
         self.video_length = list(self.video_length)[0]
 
         self.players = [self.ui.video_1,
@@ -417,8 +418,7 @@ class VideoPlayerMonitor(object):
         data = {
             'group_id': self.selected_group,
             'task': self.selected_task,
-            'group_data': self.group_feature_data,
-            'data_length': self.video_length,
+            'path': self.feature_data_path
         }
 
         self.feature_analyzer.set_data(data)
