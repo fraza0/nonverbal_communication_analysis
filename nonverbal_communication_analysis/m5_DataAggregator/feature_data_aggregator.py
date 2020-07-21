@@ -424,6 +424,7 @@ class SubjectDataAggregator:
             tasks = [task for task in tasks if str(self.specific_task) in task]
 
         for task in tasks:
+            self.reset_files = True
             output_frame_directory = self.group_directory / \
                 FEATURE_AGGREGATE_DIR / task
             makedirs(output_frame_directory, exist_ok=True)
@@ -529,6 +530,7 @@ class SubjectDataAggregator:
         # Intragroup Distance
         if 'intragroup_distance' in aggregate_frame.group:
             if self.reset_files:
+                print(output_directory / (PLOT_INTRAGROUP_DISTANCE+'.csv'))
                 file_ig = open(output_directory /
                                (PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
                 file_ig.flush()
