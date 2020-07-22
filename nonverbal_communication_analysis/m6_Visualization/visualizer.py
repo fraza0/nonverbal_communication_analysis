@@ -291,7 +291,6 @@ class VideoPlayerMonitor(object):
                 self.spn_frame_idx.setValue(self.current_frame)
                 self.sld_time.setValue(self.current_frame)
                 self.current_frame += 1
-                # self.update_feature_analyzer()
             else:
                 self.current_frame = 0
                 self.pause(replay=True)
@@ -454,13 +453,6 @@ class VideoPlayerMonitor(object):
         if replay:
             self.btn_play.setIcon(self.visualizer.style().standardIcon(
                 QtWidgets.QStyle.SP_BrowserReload))
-
-    # def update_feature_analyzer(self):
-    #     data = {
-    #         'group_id': self.selected_group,
-    #         'task': self.selected_task
-    #     }
-    #     self.feature_analyzer.update(data)
 
 
 class Visualizer(object):
