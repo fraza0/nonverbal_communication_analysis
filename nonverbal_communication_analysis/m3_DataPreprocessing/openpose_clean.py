@@ -24,6 +24,7 @@ class OpenposeClean(object):
         self.group_id = group_id
         self.base_output_dir = OPENPOSE_OUTPUT_DIR / \
             group_id / (group_id + '_clean')
+        print(self.base_output_dir)
         os.makedirs(self.base_output_dir, exist_ok=True)
         json.dump(self.experiment.to_json(),
                   open(self.base_output_dir / (self.group_id + '.json'), 'w'))

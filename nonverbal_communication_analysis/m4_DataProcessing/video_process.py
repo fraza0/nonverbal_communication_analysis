@@ -124,7 +124,8 @@ class VideoProcess(object):
         scaled_heatmap *= 255.0/scaled_heatmap.max()
         scaled_heatmap = scaled_heatmap.astype(int)
 
-        cmap = plt.get_cmap('Reds')
+        # cmap = plt.get_cmap('Reds')
+        cmap = copy.copy(plt.get_cmap("Reds"))
         cmap.set_under('k', alpha=0)
 
         if self.verbose:

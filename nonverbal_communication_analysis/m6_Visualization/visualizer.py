@@ -57,6 +57,7 @@ class VideoPlayer(QtWidgets.QWidget):
             self.video_frame.setPixmap(pix)
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
+        print(subject_data)
         for key, data in subject_data.items():
             if key == 'pose' or key == 'face':
                 for keypoint_idx, keypoint_values in data.items():
@@ -130,7 +131,10 @@ class VideoPlayer(QtWidgets.QWidget):
                             vertices.append(point_int)
 
                     vertices = np.array(vertices, np.int32)
-                    vertices = np.array(order_points(vertices), np.int32)
+                    try:
+                        vertices = np.array(order_points(vertices), np.int32)
+                    except ValueError:
+                        print(self.frame_idx, camera, vertices)
                     cv2.polylines(img_frame, [vertices],
                                   True, color)
 
@@ -148,7 +152,7 @@ class VideoPlayer(QtWidgets.QWidget):
         # is_raw_data_valid = frame_data['is_raw_data_valid']
         # is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
         subjects_data = frame_data['subjects']
-
+    
         openpose_data = dict()
         # openface_data = dict()
         # densepose_data = dict()
@@ -175,6 +179,7 @@ class VideoPlayer(QtWidgets.QWidget):
             # Openpose
             subject_id = subject['id']
             frame_subject_data['id'] = subject_id
+            print(self.camera)
             # Pose
             if self.gui_state['overlay_framework_pose']:
                 subject_type_data = subject[data_type]
@@ -184,6 +189,10 @@ class VideoPlayer(QtWidgets.QWidget):
                     if 'openpose' in subject_type_data_pose else dict()
                 openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
                     if self.camera in subject_type_data_pose_openpose else dict()
+
+
+                print(subject_type_data)
+                print(subject_type_data_pose_openpose)
 
             # Face
             if self.gui_state['overlay_framework_face']:
@@ -204,8 +213,9 @@ class VideoPlayer(QtWidgets.QWidget):
                 openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
 
             frame_subject_data['openpose'] = openpose_data
-            frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
-                                          frame, self.camera)
+            if frame_subject_data['openpose']:
+                frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
+                                            frame, self.camera)
 
             # Densepose
 
@@ -287,6 +297,8 @@ class VideoPlayerMonitor(object):
                 self.ui.video_1.play_step(self.current_frame, self.gui_state)
                 self.ui.video_2.play_step(self.current_frame, self.gui_state)
                 self.ui.video_3.play_step(self.current_frame, self.gui_state)
+
+                print("Clicked")
 
                 self.spn_frame_idx.setValue(self.current_frame)
                 self.sld_time.setValue(self.current_frame)

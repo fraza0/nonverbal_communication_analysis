@@ -335,10 +335,11 @@ class OpenposeProcess(object):
                 subject._update_pose(
                     camera, subject_data, self.verbose)
             elif camera not in subject.previous_pose:
-                # subject has no pose nor previous pose. Must skip frame.
+                # Subject has no pose nor previous pose.
+                # Must skip camera frame as it is impossible to reuse keypoints
+                # from other camera due to lack of 3D alignment. Future Consideration.
                 if self.verbose:
-                    log('INFO', 'Subject has no previous pose. Attention when resorting to 2nd ' +
-                        'choice camera to calculate metrics ' +
+                    log('INFO', 'Subject has no previous pose.' +
                         '(frame: %s, camera: %s, subject: %s)' %
                         (frame_idx, camera, subject))
                 return False
@@ -352,6 +353,7 @@ class OpenposeProcess(object):
             if subject_id in frame_subject_face:
                 subject_data = frame_subject_face[subject_id]
                 subject.current_face[camera] = subject_data
+
         return True
 
     def process_subject_individual_metrics(self, subject, group_data):
@@ -376,7 +378,11 @@ class OpenposeProcess(object):
             points = list(subjects.values())
             points.append(points[0])
             polygon = Polygon(*points)
-            polygon_area = float(abs(polygon.area))
+            try:
+                polygon_area = float(abs(polygon.area))
+            except AttributeError:
+                print(self.current_frame, camera, polygon, polygon_area)
+                exit()
             centroid = (sum([point[0] for point in points]) / len(points),
                         sum([point[1] for point in points]) / len(points))
             polygon_center = [float(centroid[0]), float(centroid[1])]
@@ -411,15 +417,15 @@ class OpenposeProcess(object):
             # print('=== FRAME %s ===' % frame_idx)
             self.current_frame = frame_idx
             frame_camera_dict = camera_frame_files[frame_idx]
-            is_valid_frame = True
+            is_valid_frame = None
             for camera, frame_file in frame_camera_dict.items():
                 data = json.load(open(frame_file))
                 data = self.frame_data_transform(data)
                 is_valid_frame = self.camera_frame_parse_subjects(camera, data)
                 if not is_valid_frame:
                     if self.verbose:
-                        log('INFO', 'Not enough poses detected. Skipping frame')
-                    break
+                        log('INFO', 'Not enough poses detected. Skipping camera frame')
+                    continue
 
             if is_valid_frame:
                 group_data = self.metric_intragroup_distance(
@@ -429,8 +435,9 @@ class OpenposeProcess(object):
                     if not self.has_required_cameras(subject):
                         log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
                             'Not enough information to process frame (%s)' % frame_idx)
-                    self.process_subject_individual_metrics(
-                        subject, group_data)
+                    else:
+                        self.process_subject_individual_metrics(
+                            subject, group_data)
 
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)

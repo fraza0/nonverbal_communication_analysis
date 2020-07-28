@@ -530,7 +530,7 @@ class SubjectDataAggregator:
         # Intragroup Distance
         if 'intragroup_distance' in aggregate_frame.group:
             if self.reset_files:
-                print(output_directory / (PLOT_INTRAGROUP_DISTANCE+'.csv'))
+                # print(output_directory / (PLOT_INTRAGROUP_DISTANCE+'.csv'))
                 file_ig = open(output_directory /
                                (PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
                 file_ig.flush()

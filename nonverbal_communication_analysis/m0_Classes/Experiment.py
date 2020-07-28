@@ -25,7 +25,7 @@ def get_group_from_file_path(group_directory_path: {str, Path}):
 
     id_match = None
     for group_id in list(df['Group ID']):
-        match = group_id in group_directory_path
+        match = group_id == group_directory_path.split('/')[-1]
         if is_sample:
             match = (match and sample_indicator in group_id)
 
