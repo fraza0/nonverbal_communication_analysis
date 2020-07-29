@@ -10,6 +10,37 @@ from nonverbal_communication_analysis.utils import person_identification_grid_re
 TESE_HOME = Path(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
 CONFIG_FILE = TESE_HOME / 'config.yaml'
 
+# Table dimensions to calculate scale factor.
+# edge0: closer to the camera point
+# edge1: furthest
+# measurement in milimeters (mm)
+TABLE_DIMENSIONS = {
+    'pc1': {
+        'edge0': 627,
+        'edge1': 371
+    },
+    'pc2': {
+        'edge0': 13900,
+        'edge1': 10660
+    },
+    'pc3': {
+        'edge0': 17678,
+        'edge1': 12710
+    }
+}
+
+SCALE_FACTOR = {
+    'pc1': TABLE_DIMENSIONS['pc1']['edge0'] / TABLE_DIMENSIONS['pc1']['edge1'],
+    'pc2': TABLE_DIMENSIONS['pc2']['edge0'] / TABLE_DIMENSIONS['pc2']['edge1'],
+    'pc3': TABLE_DIMENSIONS['pc3']['edge0'] / TABLE_DIMENSIONS['pc3']['edge1']
+}
+
+SCALE_SUBJECTS = {
+    'pc1': [2, 4],
+    'pc2': [3, 4],
+    'pc3': [1, 2]
+}
+
 
 #################
 # DATASET PATHS #

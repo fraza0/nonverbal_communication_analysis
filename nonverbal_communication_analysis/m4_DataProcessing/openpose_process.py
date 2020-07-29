@@ -1,6 +1,6 @@
 from sympy import Polygon, Point
 from nonverbal_communication_analysis.utils import log
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES
+from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES, SCALE_FACTOR, SCALE_SUBJECTS
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
 from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
 from pathlib import Path
@@ -66,7 +66,7 @@ class OpenposeSubject(Subject):
         if verbose:
             print("Current:", self.current_pose.keys())
 
-    def metric_expansiveness(self, verbose: bool = False):
+    def metric_expansiveness(self):
         """Calculate subject expansiveness in 2D image.
         Get both maximum and minimum keypoint values from both X and Y coordinates.
 
@@ -81,14 +81,14 @@ class OpenposeSubject(Subject):
         Returns:
             [type]: [description]
         """
-        if verbose:
+        if self.verbose:
             print("Expansiveness on ", self)
         # TODO: Change if necessary to use keypoint confidence to get
         # minimum keypoint value
 
         expansiveness = dict()
 
-        # print("=====", self, "=====")
+        print("=====", self, "=====")
         for camera, keypoints in self.current_pose.items():
 
             horizontal = {'min': None, 'max': None}
@@ -126,7 +126,12 @@ class OpenposeSubject(Subject):
             edge_x = float(horizontal['max'] - horizontal['min'])
             edge_y = float(vertical['max'] - vertical['min'])
             polygon_area = edge_x * edge_y
-            expansiveness[camera]['area'] = polygon_area
+
+            scale_factor = 1
+            if self.id in SCALE_SUBJECTS[camera]:
+                # print("Subject", self.id, "affected in", camera)
+                scale_factor = SCALE_FACTOR[camera]
+            expansiveness[camera]['area'] = polygon_area * scale_factor
 
             # if camera == 'pc2':
             #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
@@ -193,6 +198,12 @@ class OpenposeSubject(Subject):
 
         center_proximity = distance_between_points(
             hands_body_deviation, point_in_center_line)
+
+        scale_factor = 1
+        if self.id in SCALE_SUBJECTS[sideview_camera]:
+            # print("Subject", self.id, "affected in", camera)
+            scale_factor = SCALE_FACTOR[sideview_camera]
+        center_proximity = center_proximity * scale_factor
 
         return center_proximity
 
