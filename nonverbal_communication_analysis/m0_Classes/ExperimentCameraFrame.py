@@ -85,10 +85,15 @@ class ExperimentCameraFrame(object):
                     verbose=self.verbose, display=self.display)
                 unconfirmed_identity_subject.assign_quadrant(key=OPENPOSE_KEY)
 
-                if self.verbose:
-                    print(unconfirmed_identity_subject)
                 allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                     allocated_subjects, self.frame, self.vis)
+
+                if self.verbose:
+                    print("Allocated subject", allocated_subjects.keys())
+
+                # if self.display and self.camera == 'pc2':
+                #     self.vis.show_subjects_frame(self.camera, self.frame, highlighted_subject=unconfirmed_identity_subject,
+                                                #  assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
 
             for _, subject in allocated_subjects.copy().items():
                 if not subject.is_person():
@@ -111,7 +116,7 @@ class ExperimentCameraFrame(object):
         if self.display and self.vis is not None:
             print(self.camera, self.frame, allocated_subjects)
             self.vis.show_subjects_frame(self.camera, self.frame,
-                                         assigned_subjects=allocated_subjects, key=OPENFACE_KEY)
+                                         assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
 
         return list(dict(sorted(allocated_subjects.items())).values())
 

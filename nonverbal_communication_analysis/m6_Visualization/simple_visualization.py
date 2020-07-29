@@ -61,21 +61,24 @@ class SimpleVisualizer(object):
                   alpha=1, zorder=-1)
 
         if key == OPENPOSE_KEY:
+
+            if assigned_subjects is not None:
+                for _, assigned_subject in assigned_subjects.items():
+                    subject_pose = assigned_subject.pose[key.lower()]
+                    pose_keypoints_df = pd.DataFrame(
+                        subject_pose.values(), columns=['x', 'y', 'c'])
+                    ax.scatter(x=pose_keypoints_df['x'],
+                               y=pose_keypoints_df['y'], c='blue')
+
+            # print(highlighted_subject, assigned_subjects)
             if highlighted_subject is not None:
-                highlighted_subject_pose = highlighted_subject.pose[key]
+                highlighted_subject_pose = highlighted_subject.pose[key.lower()]
                 highlighted_subject_pose_keypoints_df = pd.DataFrame(
                     highlighted_subject_pose.values(), columns=['x', 'y', 'c'])
 
                 ax.scatter(x=highlighted_subject_pose_keypoints_df['x'], y=highlighted_subject_pose_keypoints_df['y'],
                            c='red')
 
-            if assigned_subjects is not None:
-                for _, assigned_subject in assigned_subjects.items():
-                    subject_pose = assigned_subject.pose[key]
-                    pose_keypoints_df = pd.DataFrame(
-                        subject_pose.values(), columns=['x', 'y', 'c'])
-                    ax.scatter(x=pose_keypoints_df['x'],
-                               y=pose_keypoints_df['y'], c='blue')
 
         elif key == OPENFACE_KEY:
             if assigned_subjects is not None:

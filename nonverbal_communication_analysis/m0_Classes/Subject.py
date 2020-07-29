@@ -14,7 +14,7 @@ from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
     VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY,
-    QUADRANT_MIN, CONFIDENCE_THRESHOLD)
+    QUADRANT_MIN, KEYPOINT_CONFIDENCE_THRESHOLD, SUBJECT_CONFIDENCE_THRESHOLD)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     SimpleVisualizer
 from nonverbal_communication_analysis.utils import log
@@ -31,7 +31,7 @@ def is_relevant_pose_keypoint(entry):
     """
     keypoint_idx = entry[0]
     keypoint = entry[1]
-    if keypoint_idx in RELEVANT_POSE_KEYPOINTS and keypoint[2] >= CONFIDENCE_THRESHOLD:
+    if keypoint_idx in RELEVANT_POSE_KEYPOINTS and keypoint[2] >= KEYPOINT_CONFIDENCE_THRESHOLD:
         return True
     return False
 
@@ -115,9 +115,12 @@ class Subject(object):
         unallocated_subject = self
         quadrant = unallocated_subject.quadrant
 
+        if self.verbose:
+            print("Subject quadrant:", unallocated_subject.quadrant)
+
         if quadrant not in allocated_subjects:
             if self.verbose:
-                print("Previous", unallocated_subject.quadrant)
+                print("First Allocation:", unallocated_subject.quadrant)
                 print("Assign Subject to Quadrant")
             allocated_subjects[quadrant] = unallocated_subject
             return allocated_subjects
@@ -135,9 +138,6 @@ class Subject(object):
                 allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
                 return replace_subject.allocate_subjects(allocated_subjects, frame)
             else:
-                if self.verbose:
-                    print("Next quadrant with most confidence value")
-
                 quadrant_confidence = unallocated_subject.identification_confidence
                 quadrant_confidence[quadrant] = 0
 
@@ -148,10 +148,15 @@ class Subject(object):
                 unallocated_subject.confidence = unallocated_subject.identification_confidence[
                     unallocated_subject.quadrant]
 
+                print(unallocated_subject.identification_confidence)
+
                 if unallocated_subject.confidence == 0:
                     if self.verbose:
                         print("No confidence, discard")
                     return allocated_subjects
+
+                if self.verbose:
+                    print("Next quadrant with most confidence value:", unallocated_subject.quadrant, unallocated_subject.confidence)
 
                 allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
 
@@ -199,6 +204,8 @@ class Subject(object):
             self.identification_confidence = identification_confidence
             self.quadrant = list(identification_confidence.keys())[0]
             self.confidence = identification_confidence[self.quadrant]
+            if self.verbose:
+                print(identification_confidence)
             return identification_confidence
         if key == OPENFACE_KEY:
             openface_face_features = self.face['openface']['face']

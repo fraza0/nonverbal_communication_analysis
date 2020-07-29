@@ -57,7 +57,7 @@ class VideoPlayer(QtWidgets.QWidget):
             self.video_frame.setPixmap(pix)
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
-        print(subject_data)
+        # print(subject_data)
         for key, data in subject_data.items():
             if key == 'pose' or key == 'face':
                 for keypoint_idx, keypoint_values in data.items():
@@ -179,7 +179,7 @@ class VideoPlayer(QtWidgets.QWidget):
             # Openpose
             subject_id = subject['id']
             frame_subject_data['id'] = subject_id
-            print(self.camera)
+            # print(self.camera)
             # Pose
             if self.gui_state['overlay_framework_pose']:
                 subject_type_data = subject[data_type]
@@ -191,8 +191,8 @@ class VideoPlayer(QtWidgets.QWidget):
                     if self.camera in subject_type_data_pose_openpose else dict()
 
 
-                print(subject_type_data)
-                print(subject_type_data_pose_openpose)
+                # print(subject_type_data)
+                # print(subject_type_data_pose_openpose)
 
             # Face
             if self.gui_state['overlay_framework_face']:
@@ -297,8 +297,6 @@ class VideoPlayerMonitor(object):
                 self.ui.video_1.play_step(self.current_frame, self.gui_state)
                 self.ui.video_2.play_step(self.current_frame, self.gui_state)
                 self.ui.video_3.play_step(self.current_frame, self.gui_state)
-
-                print("Clicked")
 
                 self.spn_frame_idx.setValue(self.current_frame)
                 self.sld_time.setValue(self.current_frame)
