@@ -165,7 +165,6 @@ class OpenfaceProcess(object):
         return au_coef
 
     def identify_emotion(self, action_units_data: dict):
-        # TODO: update docs
         """Emotion Identification based on relation matrix using \
             Discriminative Power method as Velusamy et al. used \
             in "A METHOD TO INFER EMOTIONS FROM FACIAL ACTION UNITS"

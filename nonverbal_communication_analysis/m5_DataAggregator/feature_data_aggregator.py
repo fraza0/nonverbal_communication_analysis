@@ -332,7 +332,6 @@ class SubjectDataAggregator:
     def read_frame_data(self, agg_frame: AggregateFrame, frame_data: dict, camera: str = None, frame_data_type: str = None):
         agg_frame_subjects = agg_frame.subjects
 
-        # TODO: Fix data_valid attribute bug
         if 'is_raw_data_valid' in frame_data:
             if agg_frame.is_raw_data_valid is not False:
                 agg_frame.is_raw_data_valid = frame_data['is_raw_data_valid']

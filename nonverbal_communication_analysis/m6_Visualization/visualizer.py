@@ -379,7 +379,6 @@ class VideoPlayerMonitor(object):
         self.timer.timeout.connect(self.playing_loop)
 
     def check_gui_state(self):
-        # TODO: finish adding necessary components
         components = self.q_components
 
         state = {

@@ -95,7 +95,6 @@ class PlotThread(QtCore.QThread):
 
 class PlotCanvas(QtWidgets.QWidget):
     # TODO: set xlim and/or ylim if needed
-    # TODO: Save plots as images (Add save button)
 
     _color_encoding = {
         'pc1': 'tab:red',
