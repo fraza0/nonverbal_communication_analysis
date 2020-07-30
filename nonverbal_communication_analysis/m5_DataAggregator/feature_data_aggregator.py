@@ -10,7 +10,7 @@ from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
     VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY,
-    VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_EXPANSIVENESS, PLOT_CENTER_INTERACTION)
+    VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -553,12 +553,12 @@ class SubjectDataAggregator:
 
         # Subject metrics
         if self.reset_files:
-            file_expansiveness = open(
-                output_directory/(PLOT_SUBJECT_EXPANSIVENESS+'.csv'), 'w')
-            file_expansiveness.flush()
-            self.file_expansiveness = csv.writer(file_expansiveness)
-            self.file_expansiveness.writerow(['frame', 'camera',
-                                              'subject', 'expansiveness'])
+            file_overlap = open(
+                output_directory/(PLOT_SUBJECT_OVERLAP+'.csv'), 'w')
+            file_overlap.flush()
+            self.file_overlap = csv.writer(file_overlap)
+            self.file_overlap.writerow(['frame', 'camera',
+                                              'subject', 'overlap'])
             file_center_interaction = open(
                 output_directory/(PLOT_CENTER_INTERACTION+'.csv'), 'w')
             file_center_interaction.flush()
@@ -566,12 +566,12 @@ class SubjectDataAggregator:
             self.file_center_interaction.writerow(['frame', 'subject',
                                                    'center_interaction'])
         for subject_id, subject in aggregate_frame.subjects.items():
-            # Expansiveness
-            if 'expansiveness' in subject.metrics:
-                for camera, value in subject.metrics['expansiveness'].items():
-                    expansiveness_entry = [frame_idx,  camera,
+            # overlap
+            if 'overlap' in subject.metrics:
+                for camera, value in subject.metrics['overlap'].items():
+                    overlap_entry = [frame_idx,  camera,
                                            subject_id, value['area']]
-                    self.file_expansiveness.writerow(expansiveness_entry)
+                    self.file_overlap.writerow(overlap_entry)
 
             # Center interaction
             if 'center_interaction' in subject.metrics:

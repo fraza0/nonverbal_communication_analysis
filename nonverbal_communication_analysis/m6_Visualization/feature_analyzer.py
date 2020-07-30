@@ -19,7 +19,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, PLOT_CENTER_INTERACTION, PLOT_GROUP_ENERGY,
-    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_EXPANSIVENESS)
+    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_OVERLAP)
 from nonverbal_communication_analysis.m6_Visualization.feature_analyzer_gui import \
     Ui_FeatureAnalyzer
 
@@ -28,7 +28,7 @@ warnings.simplefilter('ignore', np.RankWarning)
 warnings.simplefilter('ignore', RuntimeWarning)
 warnings.simplefilter('ignore', FutureWarning)
 
-plt.ion()
+# plt.ion()
 
 
 class PlotThread(QtCore.QThread):
@@ -50,7 +50,7 @@ class PlotThread(QtCore.QThread):
                            PlotCanvas(parent=self.parent_info[2][0], name=self.parent_info[2][1])]
 
         plot_types = [PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY,
-                      PLOT_SUBJECT_EXPANSIVENESS, PLOT_CENTER_INTERACTION]
+                      PLOT_SUBJECT_OVERLAP, PLOT_CENTER_INTERACTION]
         if plot_type not in plot_types:
             print("Invalid plot type")
             exit()
@@ -281,7 +281,7 @@ class FeatureAnalyzer(object):
     def save_plots(self):
         self.intragroup_dist_thread.save_plots()
         self.group_energy_thread.save_plots()
-        self.expansiveness_thread.save_plots()
+        self.overlap_thread.save_plots()
         self.env_interaction_thread.save_plots()
 
     def update_plots(self):
@@ -296,7 +296,7 @@ class FeatureAnalyzer(object):
 
         self.intragroup_dist_thread.update_plots(state)
         self.group_energy_thread.update_plots(state)
-        self.expansiveness_thread.update_plots(state)
+        self.overlap_thread.update_plots(state)
         self.env_interaction_thread.update_plots(state)
 
     def open(self, group_feature_path):
@@ -310,19 +310,19 @@ class FeatureAnalyzer(object):
             self.group_energy_thread = PlotThread(2, self.group_plot_path,
                                                   PLOT_GROUP_ENERGY,
                                                   (self.ui.cvs_group_energy, PLOT_GROUP_ENERGY))
-            self.expansiveness_thread = PlotThread(3, self.group_plot_path,
-                                                   PLOT_SUBJECT_EXPANSIVENESS,
-                                                   [(self.ui.cvs_expansiveness_1,
-                                                     PLOT_SUBJECT_EXPANSIVENESS+'_pc1'),
-                                                    (self.ui.cvs_expansiveness_2,
-                                                     PLOT_SUBJECT_EXPANSIVENESS+'_pc2'),
-                                                    (self.ui.cvs_expansiveness_3,
-                                                     PLOT_SUBJECT_EXPANSIVENESS+'_pc3')])
+            self.overlap_thread = PlotThread(3, self.group_plot_path,
+                                                   PLOT_SUBJECT_OVERLAP,
+                                                   [(self.ui.cvs_overlap_1,
+                                                     PLOT_SUBJECT_OVERLAP+'_pc1'),
+                                                    (self.ui.cvs_overlap_2,
+                                                     PLOT_SUBJECT_OVERLAP+'_pc2'),
+                                                    (self.ui.cvs_overlap_3,
+                                                     PLOT_SUBJECT_OVERLAP+'_pc3')])
             self.env_interaction_thread = PlotThread(4, self.group_plot_path,
                                                      PLOT_CENTER_INTERACTION,
                                                      (self.ui.cvs_env_interaction, PLOT_CENTER_INTERACTION))
 
             self.intragroup_dist_thread.start()
             self.group_energy_thread.start()
-            self.expansiveness_thread.start()
+            self.overlap_thread.start()
             self.env_interaction_thread.start()

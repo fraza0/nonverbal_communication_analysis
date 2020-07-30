@@ -106,6 +106,7 @@ class VideoPlayer(QtWidgets.QWidget):
                                   COLOR_MAP[subject_id])
 
             elif key == 'overlap':
+                color = (252, 239, 93, 255)
                 if camera in data:
                     overlap_data = data[camera]
                     vertices = vertices_from_polygon(
@@ -121,7 +122,7 @@ class VideoPlayer(QtWidgets.QWidget):
                         vertices['y']['max'] * VIDEO_RESOLUTION[camera]['y'])
 
                     cv2.rectangle(img_frame, (ovl_xmin, ovl_ymax), (ovl_xmax, ovl_ymin),
-                                (252, 239, 93, 255), 2)
+                                color, 2)
 
             elif key == 'intragroup_distance':
                 color = (163, 32, 219, 255)
@@ -156,6 +157,9 @@ class VideoPlayer(QtWidgets.QWidget):
                         print(self.frame_idx, camera, vertices)
                     cv2.polylines(img_frame, [vertices],
                                   True, color)
+
+            elif key == 'center_interaction':
+                color = (163, 32, 219, 255)
 
         return img_frame
 
@@ -235,6 +239,11 @@ class VideoPlayer(QtWidgets.QWidget):
             if frame_subject_data['openpose']:
                 frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
                                               frame, self.camera)
+
+            # Center Interaction
+            if self.gui_state['overlay_framework_center_interaction']:
+                print(subject['metrics'])
+                # openpose_data['center_interaction'] = subject['metrics']['center_interaction']
 
             # Densepose
 

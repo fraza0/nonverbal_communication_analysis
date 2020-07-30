@@ -148,15 +148,14 @@ class Subject(object):
                 unallocated_subject.confidence = unallocated_subject.identification_confidence[
                     unallocated_subject.quadrant]
 
-                print(unallocated_subject.identification_confidence)
-
                 if unallocated_subject.confidence == 0:
                     if self.verbose:
                         print("No confidence, discard")
                     return allocated_subjects
 
                 if self.verbose:
-                    print("Next quadrant with most confidence value:", unallocated_subject.quadrant, unallocated_subject.confidence)
+                    print("Next quadrant with most confidence value:",
+                          unallocated_subject.quadrant, unallocated_subject.confidence)
 
                 allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
 

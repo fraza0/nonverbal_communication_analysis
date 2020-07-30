@@ -162,7 +162,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QWidget" name="cvs_expansiveness_1" native="true">
+         <widget class="QWidget" name="cvs_overlap_1" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_16">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_15"/>
@@ -171,7 +171,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="cvs_expansiveness_2" native="true">
+         <widget class="QWidget" name="cvs_overlap_2" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_18">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_17"/>
@@ -180,7 +180,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="cvs_expansiveness_3" native="true">
+         <widget class="QWidget" name="cvs_overlap_3" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_2"/>

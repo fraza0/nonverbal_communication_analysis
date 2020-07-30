@@ -286,5 +286,5 @@ SCALE_FACTORS = {
 
 PLOT_INTRAGROUP_DISTANCE = 'intragroup_distance'
 PLOT_GROUP_ENERGY = 'energy'
-PLOT_SUBJECT_EXPANSIVENESS = 'expansiveness'
+PLOT_SUBJECT_OVERLAP = 'overlap'
 PLOT_CENTER_INTERACTION = 'center_interaction'
