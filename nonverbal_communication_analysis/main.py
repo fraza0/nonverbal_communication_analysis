@@ -11,7 +11,7 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, ope
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Data cleaning step')
+        description='Full Pipeline')
     parser.add_argument('group_data', type=str,
                         help='Group data directory')
     parser.add_argument('-op', '--openpose', dest='openpose',
