@@ -21,7 +21,6 @@ def log(_type: str, msg: str):
         exit()
 
 
-
 def list_dirs(_dir):
     return next(walk(_dir))[1]
 
@@ -121,3 +120,16 @@ def person_identification_grid_rescaling(identification_grid, roi_grid, a, b):
         subject_identification_grid[camera] = set_quadrants(center, a, b)
 
     return subject_identification_grid
+
+
+def polygon_vertices_from_2_points(x, y, closed: bool = True):
+    x_min, x_max = min(x), max(x)
+    y_min, y_max = min(y), max(y)
+
+    polygon_vertices = [(x_min, y_min), (x_min, y_max),
+                        (x_max, y_max), (x_max, y_min)]
+
+    if closed:
+        polygon_vertices.append(polygon_vertices[0])
+
+    return polygon_vertices

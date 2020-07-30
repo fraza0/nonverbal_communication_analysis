@@ -1,17 +1,26 @@
-from sympy import Polygon, Point
-from nonverbal_communication_analysis.utils import log
-from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES, SUBJECT_AXES, OPENPOSE_KEYPOINT_MAP, OPENPOSE_KEY, CAMERAS_3D_AXES, SCALE_FACTOR, SCALE_SUBJECTS
-from nonverbal_communication_analysis.m0_Classes.Subject import Subject
-from nonverbal_communication_analysis.m0_Classes.Experiment import get_group_from_file_path, Experiment
-from pathlib import Path
-from math import sqrt
-from statistics import mean
-import numpy as np
-import re
-import os
-import pandas as pd
-import json
 import argparse
+import json
+import os
+import re
+from itertools import permutations, combinations
+from math import sqrt
+from pathlib import Path
+from statistics import mean
+
+import numpy as np
+import pandas as pd
+from sympy import Point, Polygon
+from shapely import geometry as shapely
+
+from nonverbal_communication_analysis.environment import (
+    CAMERAS, CAMERAS_3D_AXES, OPENPOSE_KEY, OPENPOSE_KEYPOINT_MAP,
+    OPENPOSE_OUTPUT_DIR, SCALE_FACTOR, SCALE_SUBJECTS, SUBJECT_AXES,
+    VALID_OUTPUT_FILE_TYPES)
+from nonverbal_communication_analysis.m0_Classes.Experiment import (
+    Experiment, get_group_from_file_path)
+from nonverbal_communication_analysis.m0_Classes.Subject import Subject
+from nonverbal_communication_analysis.utils import (
+    log, polygon_vertices_from_2_points)
 
 
 def distance_between_points(p1: tuple, p2: tuple):
@@ -30,6 +39,7 @@ class OpenposeSubject(Subject):
         self.current_pose = dict()
         self.current_face = dict()
         self.expansiveness = dict()
+        self.overlap = dict()
         self.body_direction = dict()
         self.center_interaction = 0.0
         self.verbose = verbose
@@ -76,10 +86,12 @@ class OpenposeSubject(Subject):
         subject's hands related to the body.
 
         Args:
-            verbose (bool, optional): [description]. Defaults to False.
 
         Returns:
             [type]: [description]
+
+        TODO:
+            Change output to polygon format instead of {'x': [x_min, x_max], 'y': [y_min, y_max]}
         """
         if self.verbose:
             print("Expansiveness on ", self)
@@ -222,6 +234,7 @@ class OpenposeSubject(Subject):
                 "metrics": {
                     "expansiveness": self.expansiveness,
                     "center_interaction": self.center_interaction,
+                    "overlap": self.overlap,
                     # "body_direction": self.body_direction, # Impossible to measure without 3D data
                 },
             },
@@ -373,7 +386,45 @@ class OpenposeProcess(object):
         subject.center_interaction = subject.metric_center_interaction(
             group_data, subject.expansiveness)
 
-    def metric_intragroup_distance(self, subjects):
+    def metric_overlap(self, subjects: dict):
+        """Calculate overlap between subjects.
+        Only considering overlap on side-by-side subjects.
+        Subjects in front of each other can have an almost coincident posture/expansiveness.
+
+        Args:
+            subjects: (dict): subjects dict
+        """
+        # print("Calculating Group Subjects Overlap")
+
+        for camera in CAMERAS:
+            # print(camera)
+            camera_expensiveness = dict()
+            for subject_id, subject in subjects.items():
+                if camera in subject.expansiveness:
+                    camera_expensiveness[subject_id] = subject.expansiveness[camera]
+                    vertices = polygon_vertices_from_2_points(subject.expansiveness[camera]['x'],
+                                                              subject.expansiveness[camera]['y'])
+                    camera_expensiveness[subject_id] = vertices
+
+            overlap_permutations = list(combinations(
+                camera_expensiveness.keys(), 2)).copy()
+
+            for perm in overlap_permutations:
+                s1, s2 = perm[0], perm[1]
+                # print(camera_expensiveness.keys(), s1, s2)
+                vertices1, vertices2 = camera_expensiveness[s1], camera_expensiveness[s2]
+                polygon1, polygon2 = shapely.Polygon(
+                    vertices1), shapely.Polygon(vertices2)
+                intersection = polygon1.intersection(polygon2)
+                if intersection:
+                    subject1, subject2 = self.subjects[s1], self.subjects[s2]
+                    overlap_dict = {'polygon': intersection.exterior.coords[:],
+                                    'area': float(abs(intersection.area))}
+                    subject1.overlap[camera] = subject2.overlap[camera] = overlap_dict
+                    if self.verbose:
+                        print(perm, overlap_dict, subject1.overlap)
+
+    def metric_intragroup_distance(self, subjects: dict):
         subjects_distance = dict()
         for subject_id, subject in subjects.items():
             subject_pose = subject.current_pose
@@ -439,8 +490,7 @@ class OpenposeProcess(object):
                     continue
 
             if is_valid_frame:
-                group_data = self.metric_intragroup_distance(
-                    self.subjects)
+                group_data = self.metric_intragroup_distance(self.subjects)
                 self.intragroup_distance = group_data
                 for _, subject in self.subjects.items():
                     if not self.has_required_cameras(subject):
@@ -450,6 +500,7 @@ class OpenposeProcess(object):
                         self.process_subject_individual_metrics(
                             subject, group_data)
 
+            self.metric_overlap(self.subjects)
             # writting every frame. Indent if invalid frames should not be saved
             self.save_output(output_directory, is_valid_frame)
 

@@ -10,6 +10,8 @@ from nonverbal_communication_analysis.utils import person_identification_grid_re
 TESE_HOME = Path(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
 CONFIG_FILE = TESE_HOME / 'config.yaml'
 
+CAMERAS = ['pc1', 'pc2', 'pc3']
+
 # Table dimensions to calculate scale factor.
 # edge0: closer to the camera point
 # edge1: furthest
@@ -40,6 +42,8 @@ SCALE_SUBJECTS = {
     'pc2': [3, 4],
     'pc3': [1, 2]
 }
+
+SCALE_SUBJECTS
 
 
 #################
@@ -137,9 +141,9 @@ EMOTIONS_ENCONDING = {
 FRAME_THRESHOLD = 5
 HEAD_MOV_VARIANCE_THRESHOLD = .3
 
-######################
+###################
 # DATA FILTERING #
-######################
+##################
 
 QUADRANT_MIN = 0
 QUADRANT_MAX = 1
