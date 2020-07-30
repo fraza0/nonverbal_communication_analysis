@@ -60,8 +60,9 @@ class ExperimentCameraFrame(object):
             found = set()
             for sub in value:
                 found.add(sub.quadrant)
-            log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s. Missing: %s" % (
-                len(value), self.frame, self.camera, total.difference(found)))
+            if self.verbose:
+                log("WARN", "Invalid number of subjects. Found %s out of 4 required in frame %s of camera %s. Missing: %s" % (
+                    len(value), self.frame, self.camera, total.difference(found)))
 
     def parse_subjects_data(self, people_data: pd.Series, key: str):
         """Parse subjects openpose data
@@ -93,7 +94,7 @@ class ExperimentCameraFrame(object):
 
                 # if self.display and self.camera == 'pc2':
                 #     self.vis.show_subjects_frame(self.camera, self.frame, highlighted_subject=unconfirmed_identity_subject,
-                                                #  assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
+                    #  assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
 
             for _, subject in allocated_subjects.copy().items():
                 if not subject.is_person():
