@@ -13,6 +13,7 @@ from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
     OPENPOSE_KEYPOINT_MAP, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
     VIDEO_RESOLUTION)
+from nonverbal_communication_analysis.utils import vertices_from_polygon
 from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
@@ -92,17 +93,35 @@ class VideoPlayer(QtWidgets.QWidget):
             elif key == 'expansiveness':
                 if camera in data:
                     expansiveness_data = data[camera]
-                    xmin = round(
+                    exp_xmin = round(
                         expansiveness_data['x'][0] * VIDEO_RESOLUTION[camera]['x'])
-                    xmax = round(
+                    exp_xmax = round(
                         expansiveness_data['x'][1] * VIDEO_RESOLUTION[camera]['x'])
-                    ymin = round(
+                    exp_ymin = round(
                         expansiveness_data['y'][0] * VIDEO_RESOLUTION[camera]['y'])
-                    ymax = round(
+                    exp_ymax = round(
                         expansiveness_data['y'][1] * VIDEO_RESOLUTION[camera]['y'])
 
-                    cv2.rectangle(img_frame, (xmin, ymax), (xmax, ymin),
+                    cv2.rectangle(img_frame, (exp_xmin, exp_ymax), (exp_xmax, exp_ymin),
                                   COLOR_MAP[subject_id])
+
+            elif key == 'overlap':
+                if camera in data:
+                    overlap_data = data[camera]
+                    vertices = vertices_from_polygon(
+                        overlap_data['polygon'])
+
+                    ovl_xmin = round(
+                        vertices['x']['min'] * VIDEO_RESOLUTION[camera]['x'])
+                    ovl_xmax = round(
+                        vertices['x']['max'] * VIDEO_RESOLUTION[camera]['x'])
+                    ovl_ymin = round(
+                        vertices['y']['min'] * VIDEO_RESOLUTION[camera]['y'])
+                    ovl_ymax = round(
+                        vertices['y']['max'] * VIDEO_RESOLUTION[camera]['y'])
+
+                    cv2.rectangle(img_frame, (ovl_xmin, ovl_ymax), (ovl_xmax, ovl_ymin),
+                                (252, 239, 93, 255), 2)
 
             elif key == 'intragroup_distance':
                 color = (163, 32, 219, 255)
@@ -152,7 +171,7 @@ class VideoPlayer(QtWidgets.QWidget):
         # is_raw_data_valid = frame_data['is_raw_data_valid']
         # is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
         subjects_data = frame_data['subjects']
-    
+
         openpose_data = dict()
         # openface_data = dict()
         # densepose_data = dict()
@@ -190,7 +209,6 @@ class VideoPlayer(QtWidgets.QWidget):
                 openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
                     if self.camera in subject_type_data_pose_openpose else dict()
 
-
                 # print(subject_type_data)
                 # print(subject_type_data_pose_openpose)
 
@@ -204,9 +222,10 @@ class VideoPlayer(QtWidgets.QWidget):
                 openpose_data['face'] = subject_type_data_face_openpose[self.camera] \
                     if self.camera in subject_type_data_face_openpose else dict()
 
-            # Expansiveness
-            if self.gui_state['overlay_framework_expansiveness']:
+            # Expansiveness + Overlap
+            if self.gui_state['overlay_framework_overlap']:
                 openpose_data['expansiveness'] = subject['metrics']['expansiveness']
+                openpose_data['overlap'] = subject['metrics']['overlap']
 
             # Intragroup Distance
             if self.gui_state['overlay_framework_intragroup_distance']:
@@ -215,7 +234,7 @@ class VideoPlayer(QtWidgets.QWidget):
             frame_subject_data['openpose'] = openpose_data
             if frame_subject_data['openpose']:
                 frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
-                                            frame, self.camera)
+                                              frame, self.camera)
 
             # Densepose
 
@@ -387,7 +406,7 @@ class VideoPlayerMonitor(object):
             'overlay_framework': components['cb_framework'],
             'overlay_framework_pose': components['chb_op_pose'].isChecked(),
             'overlay_framework_face': components['chb_op_face'].isChecked(),
-            'overlay_framework_expansiveness': components['chb_op_exp'].isChecked(),
+            'overlay_framework_overlap': components['chb_op_overlap'].isChecked(),
             'overlay_framework_intragroup_distance': components['chb_op_ig_dist'].isChecked(),
             'overlay_framework_center_interaction': components['chb_op_cntr_int'].isChecked(),
             'overlay_openface_face':  components['chb_of_face'].isChecked(),
@@ -522,7 +541,7 @@ class Visualizer(object):
         self.q_components['sld_time'] = self.ui.time_slider
         self.q_components['chb_op_pose'] = self.ui.chb_op_pose
         self.q_components['chb_op_face'] = self.ui.chb_op_face
-        self.q_components['chb_op_exp'] = self.ui.chb_op_exp
+        self.q_components['chb_op_overlap'] = self.ui.chb_op_overlap
         self.q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
         self.q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
         self.q_components['chb_vid_energy_htmp'] = self.ui.chb_vid_energy_htmp

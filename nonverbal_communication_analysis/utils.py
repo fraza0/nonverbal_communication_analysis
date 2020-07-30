@@ -133,3 +133,23 @@ def polygon_vertices_from_2_points(x, y, closed: bool = True):
         polygon_vertices.append(polygon_vertices[0])
 
     return polygon_vertices
+
+
+def vertices_from_polygon(vertices):
+    x, y = list(), list()
+    for vertex in vertices:
+        x.append(vertex[0])
+        y.append(vertex[1])
+
+    vertices_dict = {
+        'x': {
+            'min': min(x),
+            'max': max(x)
+        },
+        'y': {
+            'min': min(y),
+            'max': max(y)
+        }
+    }
+
+    return vertices_dict

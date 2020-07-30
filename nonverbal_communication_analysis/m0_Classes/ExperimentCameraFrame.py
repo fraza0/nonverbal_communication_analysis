@@ -114,7 +114,6 @@ class ExperimentCameraFrame(object):
             print("DP")
 
         if self.display and self.vis is not None:
-            print(self.camera, self.frame, allocated_subjects)
             self.vis.show_subjects_frame(self.camera, self.frame,
                                          assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
 

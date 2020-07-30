@@ -100,7 +100,7 @@ class OpenposeSubject(Subject):
 
         expansiveness = dict()
 
-        print("=====", self, "=====")
+        # print("=====", self, "=====")
         for camera, keypoints in self.current_pose.items():
 
             horizontal = {'min': None, 'max': None}
@@ -397,7 +397,6 @@ class OpenposeProcess(object):
         # print("Calculating Group Subjects Overlap")
 
         for camera in CAMERAS:
-            # print(camera)
             camera_expensiveness = dict()
             for subject_id, subject in subjects.items():
                 if camera in subject.expansiveness:
@@ -411,21 +410,21 @@ class OpenposeProcess(object):
 
             for perm in overlap_permutations:
                 s1, s2 = perm[0], perm[1]
-                # print(camera_expensiveness.keys(), s1, s2)
+                subject1, subject2 = self.subjects[s1], self.subjects[s2]
                 vertices1, vertices2 = camera_expensiveness[s1], camera_expensiveness[s2]
                 polygon1, polygon2 = shapely.Polygon(
                     vertices1), shapely.Polygon(vertices2)
                 intersection = polygon1.intersection(polygon2)
                 if intersection:
-                    subject1, subject2 = self.subjects[s1], self.subjects[s2]
+                    # print(camera, perm, polygon1.exterior.coords[:],
+                    #       polygon2.exterior.coords[:],
+                    #       intersection.exterior.coords[:])
 
                     scale_factor = SCALE_FACTOR[camera]
-
                     overlap_dict = {'polygon': intersection.exterior.coords[:],
                                     'area': float(abs(intersection.area)) * scale_factor}
                     subject1.overlap[camera] = subject2.overlap[camera] = overlap_dict
-                    if self.verbose:
-                        print(perm, overlap_dict, subject1.overlap)
+                    # print(perm, overlap_dict)
 
     def metric_intragroup_distance(self, subjects: dict):
         subjects_distance = dict()

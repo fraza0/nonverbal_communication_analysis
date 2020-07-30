@@ -155,7 +155,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Expansiveness</string>
+         <string>Overlap</string>
         </property>
        </widget>
       </item>
