@@ -418,8 +418,11 @@ class OpenposeProcess(object):
                 intersection = polygon1.intersection(polygon2)
                 if intersection:
                     subject1, subject2 = self.subjects[s1], self.subjects[s2]
+
+                    scale_factor = SCALE_FACTOR[camera]
+
                     overlap_dict = {'polygon': intersection.exterior.coords[:],
-                                    'area': float(abs(intersection.area))}
+                                    'area': float(abs(intersection.area)) * scale_factor}
                     subject1.overlap[camera] = subject2.overlap[camera] = overlap_dict
                     if self.verbose:
                         print(perm, overlap_dict, subject1.overlap)
