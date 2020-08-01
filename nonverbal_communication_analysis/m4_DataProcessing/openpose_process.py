@@ -415,7 +415,7 @@ class OpenposeProcess(object):
                 polygon1, polygon2 = shapely.Polygon(
                     vertices1), shapely.Polygon(vertices2)
                 intersection = polygon1.intersection(polygon2)
-                if intersection:
+                if intersection and intersection.geom_type == 'Polygon':
                     # print(camera, perm, polygon1.exterior.coords[:],
                     #       polygon2.exterior.coords[:],
                     #       intersection.exterior.coords[:])
@@ -446,7 +446,6 @@ class OpenposeProcess(object):
                 polygon_area = float(abs(polygon.area))
             except AttributeError:
                 print(self.current_frame, camera, polygon, polygon_area)
-                exit()
             centroid = (sum([point[0] for point in points]) / len(points),
                         sum([point[1] for point in points]) / len(points))
             polygon_center = [float(centroid[0]), float(centroid[1])]
@@ -456,7 +455,6 @@ class OpenposeProcess(object):
         return intragroup_distance
 
     def save_output(self, output_directory, frame_validity):
-
         frame = self.current_frame
         output_frame_file = output_directory / \
             ("frame_%.12d_processed.json" % (frame))

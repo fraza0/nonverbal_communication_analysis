@@ -229,7 +229,8 @@ class VideoPlayer(QtWidgets.QWidget):
             # Expansiveness + Overlap
             if self.gui_state['overlay_framework_overlap']:
                 openpose_data['expansiveness'] = subject['metrics']['expansiveness']
-                openpose_data['overlap'] = subject['metrics']['overlap']
+                if 'overlap' in subject['metrics']:
+                    openpose_data['overlap'] = subject['metrics']['overlap']
 
             # Intragroup Distance
             if self.gui_state['overlay_framework_intragroup_distance']:
@@ -520,7 +521,9 @@ class Visualizer(object):
         self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
 
         # Group Frame Components
-        self.ui.cb_groupId.addItems(list(self.group_dirs.keys()))
+        group_names = list(self.group_dirs.keys())
+        group_names.sort()
+        self.ui.cb_groupId.addItems(group_names)
 
         # Controls Frame Components
         btn_play = self.ui.btn_play
