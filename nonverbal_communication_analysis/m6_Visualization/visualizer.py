@@ -167,7 +167,21 @@ class VideoPlayer(QtWidgets.QWidget):
                                     img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'center_interaction':
-                color = (163, 32, 219, 255)
+                if camera == 'pc1':
+                    resolution = np.array(list(VIDEO_RESOLUTION[camera].values()))
+
+                    center_point = np.array(data['center'])
+                    center_point = np.rint(np.multiply(
+                        center_point, resolution)).astype(int)
+                    interaction_point = np.array(data['point'])
+                    interaction_point = np.around(np.multiply(
+                        interaction_point, resolution)).astype(int)
+
+                    cv2.drawMarker(img_frame, tuple(interaction_point), COLOR_MAP[subject_id],
+                                markerType=cv2.MARKER_STAR, markerSize=10, thickness=1)
+
+                    cv2.line(img_frame, tuple(interaction_point),
+                            tuple(center_point), COLOR_MAP[subject_id])
 
         return img_frame
 
@@ -244,15 +258,15 @@ class VideoPlayer(QtWidgets.QWidget):
             if self.gui_state['overlay_framework_intragroup_distance']:
                 openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
 
+            # Center Interaction
+            if self.gui_state['overlay_framework_center_interaction']:
+                sideview_camera = 'pc1'
+                openpose_data['center_interaction'] = subject['metrics']['center_interaction']
+
             frame_subject_data['openpose'] = openpose_data
             if frame_subject_data['openpose']:
                 frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
                                               frame, self.camera)
-
-            # Center Interaction
-            if self.gui_state['overlay_framework_center_interaction']:
-                print(subject['metrics'])
-                # openpose_data['center_interaction'] = subject['metrics']['center_interaction']
 
             # Densepose
 
