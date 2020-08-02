@@ -107,6 +107,7 @@ class VideoPlayer(QtWidgets.QWidget):
 
             elif key == 'overlap':
                 color = (252, 239, 93, 255)
+                overlay_alpha = 0.3
                 if camera in data:
                     overlap_data = data[camera]
                     vertices = vertices_from_polygon(
@@ -121,11 +122,15 @@ class VideoPlayer(QtWidgets.QWidget):
                     ovl_ymax = round(
                         vertices['y']['max'] * VIDEO_RESOLUTION[camera]['y'])
 
-                    cv2.rectangle(img_frame, (ovl_xmin, ovl_ymax), (ovl_xmax, ovl_ymin),
-                                color, 2)
+                    overlay = img_frame.copy()
+                    cv2.rectangle(overlay, (ovl_xmin, ovl_ymax), (ovl_xmax, ovl_ymin),
+                                  color, -1)
+                    cv2.addWeighted(overlay, overlay_alpha,
+                                    img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'intragroup_distance':
                 color = (163, 32, 219, 255)
+                overlay_alpha = 0.1
                 if camera in data:
                     intragroup_distance_data = data[camera]
                     intragroup_distance_center = intragroup_distance_data['center']
@@ -136,7 +141,7 @@ class VideoPlayer(QtWidgets.QWidget):
                                      VIDEO_RESOLUTION[camera]['y'])
 
                     cv2.drawMarker(img_frame, (center_x, center_y), color,
-                                   markerType=cv2.MARKER_CROSS, markerSize=8, thickness=1)
+                                   markerType=cv2.MARKER_CROSS, markerSize=10, thickness=1)
 
                     vertices = list()
                     for point in intragroup_distance_polygon:
@@ -155,8 +160,11 @@ class VideoPlayer(QtWidgets.QWidget):
                         vertices = np.array(order_points(vertices), np.int32)
                     except ValueError:
                         print(self.frame_idx, camera, vertices)
-                    cv2.polylines(img_frame, [vertices],
-                                  True, color)
+
+                    overlay = img_frame.copy()
+                    cv2.fillPoly(overlay, [vertices], color)
+                    cv2.addWeighted(overlay, overlay_alpha,
+                                    img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'center_interaction':
                 color = (163, 32, 219, 255)
