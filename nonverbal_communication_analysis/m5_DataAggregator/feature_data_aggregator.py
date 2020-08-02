@@ -575,7 +575,7 @@ class SubjectDataAggregator:
 
             # Center interaction
             if 'center_interaction' in subject.metrics:
-                center_interaction_value = subject.metrics['center_interaction']
+                center_interaction_value = subject.metrics['center_interaction']['value']
                 center_interaction_entry = [frame_idx, subject_id,
                                             center_interaction_value]
                 self.file_center_interaction.writerow(center_interaction_entry)
