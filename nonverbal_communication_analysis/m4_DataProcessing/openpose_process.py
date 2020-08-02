@@ -217,7 +217,13 @@ class OpenposeSubject(Subject):
             scale_factor = SCALE_FACTOR[sideview_camera]
         center_proximity = center_proximity * scale_factor
 
-        return center_proximity
+        interaction = {
+            'value': center_proximity,
+            'center': point_in_center_line,
+            'point': hands_body_deviation
+        }
+
+        return interaction
 
     def to_json(self):
         """Transform Subject object to JSON format.
