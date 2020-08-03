@@ -11,6 +11,7 @@ TESE_HOME = Path(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
 CONFIG_FILE = TESE_HOME / 'config.yaml'
 
 CAMERAS = ['pc1', 'pc2', 'pc3']
+SIDEVIEW_CAMERA = 'pc1'
 
 # Table dimensions to calculate scale factor.
 # edge0: closer to the camera point
@@ -251,20 +252,20 @@ SUBJECT_AXES = {
         },
 }
 
-CAMERAS_3D_AXES = {
-    'pc1': {
-        'x': 'y',
-        'y': 'z'
-    },
-    'pc2': {
-        'x': 'x',
-        'y': 'z'
-    },
-    'pc3': {
-        'x': 'x',
-        'y': 'z'
-    }
-}
+# CAMERAS_3D_AXES = {
+#     'pc1': {
+#         'x': 'y',
+#         'y': 'z'
+#     },
+#     'pc2': {
+#         'x': 'x',
+#         'y': 'z'
+#     },
+#     'pc3': {
+#         'x': 'x',
+#         'y': 'z'
+#     }
+# }
 
 SCALE_FACTORS = {
     'pc1': {

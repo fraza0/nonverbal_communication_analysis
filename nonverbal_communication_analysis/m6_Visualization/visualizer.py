@@ -184,7 +184,7 @@ class VideoPlayer(QtWidgets.QWidget):
                              (center_point[0], center_point[1]+10), color, 2)
 
                     cv2.drawMarker(img_frame, tuple(interaction_point), COLOR_MAP[subject_id],
-                                   markerType=cv2.MARKER_STAR, markerSize=10, thickness=1)
+                                   markerType=cv2.MARKER_DIAMOND, markerSize=10, thickness=1)
 
                     cv2.line(img_frame, tuple(interaction_point),
                              tuple(center_point), COLOR_MAP[subject_id])

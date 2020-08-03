@@ -13,9 +13,9 @@ from sympy import Point, Polygon
 from shapely import geometry as shapely
 
 from nonverbal_communication_analysis.environment import (
-    CAMERAS, CAMERAS_3D_AXES, OPENPOSE_KEY, OPENPOSE_KEYPOINT_MAP,
+    CAMERAS, OPENPOSE_KEY, OPENPOSE_KEYPOINT_MAP,
     OPENPOSE_OUTPUT_DIR, SCALE_FACTOR, SCALE_SUBJECTS, SUBJECT_AXES,
-    VALID_OUTPUT_FILE_TYPES)
+    VALID_OUTPUT_FILE_TYPES, SIDEVIEW_CAMERA)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.m0_Classes.Subject import Subject
@@ -107,6 +107,7 @@ class OpenposeSubject(Subject):
             vertical = {'min': None, 'max': None}
 
             for _, keypoint in keypoints.items():
+
                 if not horizontal['min']:
                     horizontal['min'] = keypoint[0]
                 elif keypoint[0] < horizontal['min']:
@@ -137,13 +138,13 @@ class OpenposeSubject(Subject):
 
             edge_x = float(horizontal['max'] - horizontal['min'])
             edge_y = float(vertical['max'] - vertical['min'])
-            polygon_area = edge_x * edge_y
 
             scale_factor = 1
             if self.id in SCALE_SUBJECTS[camera]:
-                # print("Subject", self.id, "affected in", camera)
                 scale_factor = SCALE_FACTOR[camera]
-            expansiveness[camera]['area'] = polygon_area * scale_factor
+
+            polygon_area = edge_x * scale_factor * edge_y * scale_factor
+            expansiveness[camera]['area'] = np.round(polygon_area, 6)
 
             # if camera == 'pc2':
             #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
@@ -195,32 +196,35 @@ class OpenposeSubject(Subject):
         # print(self.id, camera, np.cross(neck_rshoulder_vector, neck_lshoulder_vector))
 
     def metric_center_interaction(self, group_data, subject_expansiveness):
-        sideview_camera = 'pc1'
-        camera_relative_coordinates = CAMERAS_3D_AXES[sideview_camera]
-        hands_body_deviation_coordinate = list(camera_relative_coordinates.keys())[
-            list(camera_relative_coordinates.values()).index('y')]
+        table_center = group_data[SIDEVIEW_CAMERA]['center']
 
-        table_center = group_data[sideview_camera]['center']
-        hands_body_deviation = subject_expansiveness[sideview_camera][hands_body_deviation_coordinate]
+        hands_body_deviation = subject_expansiveness[SIDEVIEW_CAMERA]['x']
+        subject_half_point_y = float(
+            np.sum(subject_expansiveness[SIDEVIEW_CAMERA]['y']) / 2)
 
         table_center_x = table_center[0]
-        hands_body_deviation_y = hands_body_deviation[1]
 
-        point_in_center_line = [table_center_x, hands_body_deviation_y]
+        if self.id <= 2:
+            hands_body_deviation_x = max(hands_body_deviation)
+        else:
+            hands_body_deviation_x = min(hands_body_deviation)
 
-        center_proximity = distance_between_points(
-            hands_body_deviation, point_in_center_line)
+        subject_point = [hands_body_deviation_x, subject_half_point_y]
+
+        point_in_center_line = [table_center_x, subject_half_point_y]
+
+        center_proximity = distance_between_points(subject_point,
+                                                   point_in_center_line)
 
         scale_factor = 1
-        if self.id in SCALE_SUBJECTS[sideview_camera]:
-            # print("Subject", self.id, "affected in", camera)
-            scale_factor = SCALE_FACTOR[sideview_camera]
+        if self.id in SCALE_SUBJECTS[SIDEVIEW_CAMERA]:
+            scale_factor = SCALE_FACTOR[SIDEVIEW_CAMERA]
         center_proximity = center_proximity * scale_factor
 
         interaction = {
             'value': center_proximity,
-            'center': point_in_center_line,
-            'point': hands_body_deviation
+            'subject_point': subject_point,
+            'center': point_in_center_line
         }
 
         return interaction
@@ -426,9 +430,8 @@ class OpenposeProcess(object):
                     #       polygon2.exterior.coords[:],
                     #       intersection.exterior.coords[:])
 
-                    scale_factor = SCALE_FACTOR[camera]
                     overlap_dict = {'polygon': intersection.exterior.coords[:],
-                                    'area': float(abs(intersection.area)) * scale_factor}
+                                    'area': float(abs(intersection.area))}
                     subject1.overlap[camera] = subject2.overlap[camera] = overlap_dict
                     # print(perm, overlap_dict)
 
