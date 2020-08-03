@@ -136,15 +136,36 @@
       <property name="title">
        <string>Legend</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_11">
+      <layout class="QVBoxLayout" name="verticalLayout_11" stretch="0">
+       <property name="spacing">
+        <number>9</number>
+       </property>
+       <property name="leftMargin">
+        <number>9</number>
+       </property>
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <property name="rightMargin">
+        <number>9</number>
+       </property>
+       <property name="bottomMargin">
+        <number>4</number>
+       </property>
        <item>
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="6">
           <widget class="QLabel" name="leg_subject3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -154,10 +175,16 @@
          </item>
          <item row="0" column="15">
           <widget class="QLabel" name="leg_intragroup_distance">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -186,7 +213,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
@@ -225,17 +252,23 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="leg_subject1">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -271,10 +304,16 @@
          </item>
          <item row="0" column="12">
           <widget class="QLabel" name="leg_overlap">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -303,7 +342,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
@@ -319,7 +358,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>50</width>
-             <height>10</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
@@ -332,7 +371,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
@@ -352,10 +391,16 @@
          </item>
          <item row="0" column="9">
           <widget class="QLabel" name="leg_subject4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -365,10 +410,16 @@
          </item>
          <item row="0" column="3">
           <widget class="QLabel" name="leg_subject2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">
@@ -384,17 +435,23 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>5</height>
             </size>
            </property>
           </spacer>
          </item>
          <item row="0" column="18">
           <widget class="QLabel" name="leg_center_interaction">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
-             <width>25</width>
-             <height>25</height>
+             <width>15</width>
+             <height>15</height>
             </size>
            </property>
            <property name="text">

@@ -299,3 +299,47 @@ COLOR_MAP = {0: (0, 0, 0, 255), # Invalid/debug
              'overlap': (252, 239, 93, 255), # Overlap
              'intragroup_distance': (163, 32, 219, 255), # Intragroup distance
              'center_interaction': (255, 179, 0, 255)} # Center interaction
+
+PLOT_CANVAS_COLOR_ENCODING = {
+        'pc1': 'tab:red',
+        'pc1_splinefit': 'r-',
+        'pc1_polyfit': 'r--',
+        'pc1_rolling_meanfit': 'r:',
+
+        'pc2': 'tab:green',
+        'pc2_splinefit': 'g-',
+        'pc2_polyfit': 'g--',
+        'pc2_rolling_meanfit': 'g:',
+
+        'pc3': 'tab:blue',
+        'pc3_splinefit': 'b-',
+        'pc3_polyfit': 'b--',
+        'pc3_rolling_meanfit': 'b:',
+
+        'energy': 'tab:olive',
+        'energy_splinefit': 'y-',
+        'energy_polyfit': 'y--',
+        'energy_rolling_meanfit': 'y:',
+
+        '1': 'tab:red',
+        '1_splinefit': 'r-',
+        '1_polyfit': 'r--',
+        '1_rolling_meanfit': 'r:',
+
+        '2': 'tab:cyan',
+        '2_splinefit': 'c-',
+        '2_polyfit': 'c--',
+        '2_rolling_meanfit': 'c:',
+
+        '3': 'tab:green',
+        '3_splinefit': 'g-',
+        '3_polyfit': 'g--',
+        '3_rolling_meanfit': 'g:',
+
+        '4': 'tab:blue',
+        '4_splinefit': 'b-',
+        '4_polyfit': 'b--',
+        '4_rolling_meanfit': 'b:',
+    }
+
+ROLLING_WINDOW_SIZE = 900 # 30seg

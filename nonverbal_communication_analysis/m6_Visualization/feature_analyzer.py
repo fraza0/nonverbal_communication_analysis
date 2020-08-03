@@ -19,7 +19,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, PLOT_CENTER_INTERACTION, PLOT_GROUP_ENERGY,
-    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_OVERLAP)
+    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_OVERLAP, ROLLING_WINDOW_SIZE, PLOT_CANVAS_COLOR_ENCODING)
 from nonverbal_communication_analysis.m6_Visualization.feature_analyzer_gui import \
     Ui_FeatureAnalyzer
 
@@ -94,41 +94,7 @@ class PlotThread(QtCore.QThread):
 
 
 class PlotCanvas(QtWidgets.QWidget):
-    # TODO: set xlim and/or ylim if needed
-
-    _color_encoding = {
-        'pc1': 'tab:red',
-        'pc1_splinefit': 'r-',
-        'pc1_polyfit': 'r--',
-
-        'pc2': 'tab:green',
-        'pc2_splinefit': 'g-',
-        'pc2_polyfit': 'g--',
-
-        'pc3': 'tab:blue',
-        'pc3_splinefit': 'b-',
-        'pc3_polyfit': 'b--',
-
-        'energy': 'tab:olive',
-        'energy_splinefit': 'y-',
-        'energy_polyfit': 'y--',
-
-        '1': 'tab:red',
-        '1_splinefit': 'r-',
-        '1_polyfit': 'r--',
-
-        '2': 'tab:cyan',
-        '2_splinefit': 'c-',
-        '2_polyfit': 'c--',
-
-        '3': 'tab:green',
-        '3_splinefit': 'g-',
-        '3_polyfit': 'g--',
-
-        '4': 'tab:blue',
-        '4_splinefit': 'b-',
-        '4_polyfit': 'b--',
-    }
+    _color_encoding = PLOT_CANVAS_COLOR_ENCODING
 
     def __init__(self, parent, name, width=5, height=4, dpi=100):
         QtWidgets.QWidget.__init__(self, parent)
@@ -141,7 +107,8 @@ class PlotCanvas(QtWidgets.QWidget):
 
     def save_plots(self, plot_path):
         self.canvas.figure.set_size_inches(18.5, 10.5, forward=False)
-        self.canvas.figure.savefig(plot_path / ('plot_'+self.name+'.png'), dpi=100)
+        self.canvas.figure.savefig(
+            plot_path / ('plot_'+self.name+'.png'), dpi=100)
         return True
 
     def smoothing_factor(self, number_datapoints):
@@ -190,12 +157,19 @@ class PlotCanvas(QtWidgets.QWidget):
                     self.canvas.axes.plot(x, f(x),
                                           self._color_encoding[subject_index+'_polyfit'],
                                           label=subject_index+'_poly')
+
+                if 'rolling' in line_type:
+                    self.canvas.axes.plot(x, y.rolling(window=ROLLING_WINDOW_SIZE).mean(),
+                                          self._color_encoding[subject_index +
+                                                               '_rolling_meanfit'],
+                                          label=subject_index+'_rolling_mean')
+
         elif 'camera' in data:
             for camera in data['camera'].unique():
                 camera_data = data[data['camera'] == camera]
 
-                x = camera_data['frame'].loc[::5]
-                y = camera_data[data_column].loc[::5]
+                x = camera_data['frame']  # .loc[::5]
+                y = camera_data[data_column]  # .loc[::5]
 
                 if 'raw' in line_type:
                     self.canvas.axes.scatter(camera_data['frame'], camera_data[data_column],
@@ -221,9 +195,15 @@ class PlotCanvas(QtWidgets.QWidget):
                                                                '_polyfit'],
                                           label=camera+'_poly')
 
+                if 'rolling' in line_type:
+                    self.canvas.axes.plot(x, y.rolling(window=ROLLING_WINDOW_SIZE).mean(),
+                                          self._color_encoding[camera +
+                                                               '_rolling_meanfit'],
+                                          label=camera+'_rolling_mean')
+
         else:
-            x = data['frame'].loc[::5]
-            y = data[data_column].loc[::5]
+            x = data['frame']  # .loc[::5]
+            y = data[data_column]  # .loc[::5]
 
             if 'raw' in line_type:
                 self.canvas.axes.scatter(data['frame'], data[data_column],
@@ -247,6 +227,12 @@ class PlotCanvas(QtWidgets.QWidget):
                                       self._color_encoding[data_column+'_polyfit'],
                                       label=data_column+'_poly')
 
+            if 'rolling' in line_type:
+                self.canvas.axes.plot(x, y.rolling(window=ROLLING_WINDOW_SIZE).mean(),
+                                      self._color_encoding[data_column +
+                                                           '_rolling_meanfit'],
+                                      label=data_column+'_rolling_mean')
+
         self.canvas.axes.legend(loc='upper right')
         self.canvas.draw()
         return
@@ -265,6 +251,7 @@ class FeatureAnalyzer(object):
         self.ui.chb_raw.stateChanged.connect(self.update_plots)
         self.ui.chb_spline.stateChanged.connect(self.update_plots)
         self.ui.chb_poly.stateChanged.connect(self.update_plots)
+        self.ui.chb_rolling.stateChanged.connect(self.update_plots)
 
         self.is_active = True  # Check if necessary. Probably not.
         self.has_initial_data = False
@@ -289,10 +276,12 @@ class FeatureAnalyzer(object):
         state = []
         if self.ui.chb_raw.isChecked():
             state.append('raw')
-        if self.ui.chb_spline.isChecked():
-            state.append('spline')
         if self.ui.chb_poly.isChecked():
             state.append('poly')
+        if self.ui.chb_rolling.isChecked():
+            state.append('rolling')
+        if self.ui.chb_spline.isChecked():
+            state.append('spline')
 
         self.intragroup_dist_thread.update_plots(state)
         self.group_energy_thread.update_plots(state)
@@ -311,13 +300,13 @@ class FeatureAnalyzer(object):
                                                   PLOT_GROUP_ENERGY,
                                                   (self.ui.cvs_group_energy, PLOT_GROUP_ENERGY))
             self.overlap_thread = PlotThread(3, self.group_plot_path,
-                                                   PLOT_SUBJECT_OVERLAP,
-                                                   [(self.ui.cvs_overlap_1,
-                                                     PLOT_SUBJECT_OVERLAP+'_pc1'),
-                                                    (self.ui.cvs_overlap_2,
-                                                     PLOT_SUBJECT_OVERLAP+'_pc2'),
-                                                    (self.ui.cvs_overlap_3,
-                                                     PLOT_SUBJECT_OVERLAP+'_pc3')])
+                                             PLOT_SUBJECT_OVERLAP,
+                                             [(self.ui.cvs_overlap_1,
+                                               PLOT_SUBJECT_OVERLAP+'_pc1'),
+                                              (self.ui.cvs_overlap_2,
+                                               PLOT_SUBJECT_OVERLAP+'_pc2'),
+                                              (self.ui.cvs_overlap_3,
+                                               PLOT_SUBJECT_OVERLAP+'_pc3')])
             self.env_interaction_thread = PlotThread(4, self.group_plot_path,
                                                      PLOT_CENTER_INTERACTION,
                                                      (self.ui.cvs_env_interaction, PLOT_CENTER_INTERACTION))
