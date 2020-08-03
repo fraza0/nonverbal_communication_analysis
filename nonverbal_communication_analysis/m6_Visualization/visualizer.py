@@ -589,6 +589,22 @@ class Visualizer(object):
         btn_skip.setIcon(visualizer.style().standardIcon(
             QtWidgets.QStyle.SP_MediaSeekForward))
 
+        # Legend
+        self.ui.leg_subject1.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP[1]))
+        self.ui.leg_subject2.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP[2]))
+        self.ui.leg_subject3.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP[3]))
+        self.ui.leg_subject4.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP[4]))
+        self.ui.leg_overlap.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP['overlap']))
+        self.ui.leg_intragroup_distance.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP['intragroup_distance']))
+        self.ui.leg_center_interaction.setStyleSheet(
+            'background-color: rgba'+str(COLOR_MAP['center_interaction']))
+
         sld_transparency = self.ui.sld_transparency
 
         sld_transparency.setMinimum(0)
