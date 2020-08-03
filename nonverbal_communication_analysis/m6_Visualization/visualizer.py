@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
     OPENPOSE_KEYPOINT_MAP, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
-    VIDEO_RESOLUTION)
+    VIDEO_RESOLUTION, SIDEVIEW_CAMERA)
 from nonverbal_communication_analysis.utils import vertices_from_polygon
 from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
@@ -167,21 +167,27 @@ class VideoPlayer(QtWidgets.QWidget):
                                     img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'center_interaction':
-                if camera == 'pc1':
-                    resolution = np.array(list(VIDEO_RESOLUTION[camera].values()))
-
+                color = (255, 179, 0, 255)
+                if camera == SIDEVIEW_CAMERA:
+                    resolution = np.array(
+                        list(VIDEO_RESOLUTION[camera].values()))
+                    print(data)
                     center_point = np.array(data['center'])
                     center_point = np.rint(np.multiply(
                         center_point, resolution)).astype(int)
-                    interaction_point = np.array(data['point'])
+
+                    interaction_point = np.array(data['subject_point'])
                     interaction_point = np.around(np.multiply(
                         interaction_point, resolution)).astype(int)
 
+                    cv2.line(img_frame, (center_point[0], center_point[1]-10),
+                             (center_point[0], center_point[1]+10), color, 2)
+
                     cv2.drawMarker(img_frame, tuple(interaction_point), COLOR_MAP[subject_id],
-                                markerType=cv2.MARKER_STAR, markerSize=10, thickness=1)
+                                   markerType=cv2.MARKER_STAR, markerSize=10, thickness=1)
 
                     cv2.line(img_frame, tuple(interaction_point),
-                            tuple(center_point), COLOR_MAP[subject_id])
+                             tuple(center_point), COLOR_MAP[subject_id])
 
         return img_frame
 
@@ -260,7 +266,6 @@ class VideoPlayer(QtWidgets.QWidget):
 
             # Center Interaction
             if self.gui_state['overlay_framework_center_interaction']:
-                sideview_camera = 'pc1'
                 openpose_data['center_interaction'] = subject['metrics']['center_interaction']
 
             frame_subject_data['openpose'] = openpose_data
