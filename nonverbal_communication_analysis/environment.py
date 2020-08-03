@@ -289,3 +289,13 @@ PLOT_INTRAGROUP_DISTANCE = 'intragroup_distance'
 PLOT_GROUP_ENERGY = 'energy'
 PLOT_SUBJECT_OVERLAP = 'overlap'
 PLOT_CENTER_INTERACTION = 'center_interaction'
+
+# Visualization
+COLOR_MAP = {0: (0, 0, 0, 255), # Invalid/debug
+             1: (255, 0, 0, 255), # Subject 1
+             2: (0, 255, 255, 255), # 2
+             3: (0, 255, 0, 255), # 3
+             4: (0, 0, 255, 255), # 4
+             'overlap': (252, 239, 93, 255), # Overlap
+             'intragroup_distance': (163, 32, 219, 255), # Intragroup distance
+             'center_interaction': (255, 179, 0, 255)} # Center interaction

@@ -12,9 +12,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, OPENPOSE_KEYPOINT_LINKS,
     OPENPOSE_KEYPOINT_MAP, VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES,
-    VIDEO_RESOLUTION, SIDEVIEW_CAMERA)
+    VIDEO_RESOLUTION, SIDEVIEW_CAMERA, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY)
 from nonverbal_communication_analysis.utils import vertices_from_polygon
-from nonverbal_communication_analysis.m0_Classes.Subject import COLOR_MAP
+from nonverbal_communication_analysis.environment import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
 from nonverbal_communication_analysis.m6_Visualization.feature_analyzer import FeatureAnalyzer
@@ -58,7 +58,6 @@ class VideoPlayer(QtWidgets.QWidget):
             self.video_frame.setPixmap(pix)
 
     def openpose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
-        # print(subject_data)
         for key, data in subject_data.items():
             if key == 'pose' or key == 'face':
                 for keypoint_idx, keypoint_values in data.items():
@@ -106,7 +105,6 @@ class VideoPlayer(QtWidgets.QWidget):
                                   COLOR_MAP[subject_id])
 
             elif key == 'overlap':
-                color = (252, 239, 93, 255)
                 overlay_alpha = 0.3
                 if camera in data:
                     overlap_data = data[camera]
@@ -124,12 +122,11 @@ class VideoPlayer(QtWidgets.QWidget):
 
                     overlay = img_frame.copy()
                     cv2.rectangle(overlay, (ovl_xmin, ovl_ymax), (ovl_xmax, ovl_ymin),
-                                  color, -1)
+                                  COLOR_MAP['overlap'], -1)
                     cv2.addWeighted(overlay, overlay_alpha,
                                     img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'intragroup_distance':
-                color = (163, 32, 219, 255)
                 overlay_alpha = 0.1
                 if camera in data:
                     intragroup_distance_data = data[camera]
@@ -140,7 +137,7 @@ class VideoPlayer(QtWidgets.QWidget):
                     center_y = round(intragroup_distance_center[1] *
                                      VIDEO_RESOLUTION[camera]['y'])
 
-                    cv2.drawMarker(img_frame, (center_x, center_y), color,
+                    cv2.drawMarker(img_frame, (center_x, center_y), COLOR_MAP['intragroup_distance'],
                                    markerType=cv2.MARKER_CROSS, markerSize=10, thickness=1)
 
                     vertices = list()
@@ -162,12 +159,12 @@ class VideoPlayer(QtWidgets.QWidget):
                         print(self.frame_idx, camera, vertices)
 
                     overlay = img_frame.copy()
-                    cv2.fillPoly(overlay, [vertices], color)
+                    cv2.fillPoly(overlay, [vertices],
+                                 COLOR_MAP['intragroup_distance'])
                     cv2.addWeighted(overlay, overlay_alpha,
                                     img_frame, 1-overlay_alpha, 0, img_frame)
 
             elif key == 'center_interaction':
-                color = (255, 179, 0, 255)
                 if camera == SIDEVIEW_CAMERA:
                     resolution = np.array(
                         list(VIDEO_RESOLUTION[camera].values()))
@@ -180,7 +177,7 @@ class VideoPlayer(QtWidgets.QWidget):
                         interaction_point, resolution)).astype(int)
 
                     cv2.line(img_frame, (center_point[0], center_point[1]-10),
-                             (center_point[0], center_point[1]+10), color, 2)
+                             (center_point[0], center_point[1]+10), COLOR_MAP['center_interaction'], 2)
 
                     cv2.drawMarker(img_frame, tuple(interaction_point), COLOR_MAP[subject_id],
                                    markerType=cv2.MARKER_DIAMOND, markerSize=10, thickness=1)
@@ -202,10 +199,11 @@ class VideoPlayer(QtWidgets.QWidget):
         # is_raw_data_valid = frame_data['is_raw_data_valid']
         # is_enhanced_data_valid = frame_data['is_enhanced_data_valid']
         subjects_data = frame_data['subjects']
+        group_data = frame_data['group']
 
         openpose_data = dict()
-        # openface_data = dict()
-        # densepose_data = dict()
+        openface_data = dict()
+        densepose_data = dict()
 
         frame_subject_data = {
             'openpose': dict(),
@@ -226,55 +224,75 @@ class VideoPlayer(QtWidgets.QWidget):
             exit()
 
         for subject in subjects_data:
-            # Openpose
             subject_id = subject['id']
             frame_subject_data['id'] = subject_id
-            # print(self.camera)
+
+            pose_framework = self.gui_state['overlay_pose_framework'].currentText(
+            ).lower()
+
+            face_framework = self.gui_state['overlay_face_framework'].currentText(
+            ).lower()
+
             # Pose
-            if self.gui_state['overlay_framework_pose']:
+            if self.gui_state['overlay_pose']:
                 subject_type_data = subject[data_type]
                 subject_type_data_pose = subject_type_data['pose'] \
                     if 'pose' in subject_type_data else dict()
-                subject_type_data_pose_openpose = subject_type_data_pose['openpose'] \
-                    if 'openpose' in subject_type_data_pose else dict()
-                openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
-                    if self.camera in subject_type_data_pose_openpose else dict()
+                subject_type_data_pose_openpose = subject_type_data_pose[pose_framework] \
+                    if pose_framework in subject_type_data_pose else dict()
 
-                # print(subject_type_data)
-                # print(subject_type_data_pose_openpose)
+                if pose_framework == OPENPOSE_KEY.lower():
+                    openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
+                        if self.camera in subject_type_data_pose_openpose else dict()
+                elif pose_framework == DENSEPOSE_KEY.lower():
+                    pass
 
             # Face
-            if self.gui_state['overlay_framework_face']:
+            if self.gui_state['overlay_face']:
                 subject_type_data = subject[data_type]
                 subject_type_data_face = subject_type_data['face'] \
                     if 'face' in subject_type_data else dict()
-                subject_type_data_face_openpose = subject_type_data_face['openpose'] \
-                    if 'openpose' in subject_type_data_face else dict()
-                openpose_data['face'] = subject_type_data_face_openpose[self.camera] \
-                    if self.camera in subject_type_data_face_openpose else dict()
+                subject_type_data_face_openpose = subject_type_data_face[face_framework] \
+                    if face_framework in subject_type_data_face else dict()
+                if face_framework == OPENPOSE_KEY.lower():
+                    openpose_data['face'] = subject_type_data_face_openpose[self.camera] \
+                        if self.camera in subject_type_data_face_openpose else dict()
+                elif face_framework == OPENFACE_KEY.lower():
+                    pass
 
             # Expansiveness + Overlap
-            if self.gui_state['overlay_framework_overlap']:
-                openpose_data['expansiveness'] = subject['metrics']['expansiveness']
-                if 'overlap' in subject['metrics']:
-                    openpose_data['overlap'] = subject['metrics']['overlap']
+            if self.gui_state['overlay_overlap']:
+                if pose_framework == OPENPOSE_KEY.lower():
+                    openpose_data['expansiveness'] = subject['metrics']['expansiveness'] \
+                        if 'expansiveness' in subject['metrics'] else dict()
+                    openpose_data['overlap'] = subject['metrics']['overlap'] \
+                        if 'overlap' in subject['metrics'] else dict()
+                elif pose_framework == DENSEPOSE_KEY.lower():
+                    pass
 
             # Intragroup Distance
-            if self.gui_state['overlay_framework_intragroup_distance']:
-                openpose_data['intragroup_distance'] = frame_data['group']['intragroup_distance']
+            if self.gui_state['overlay_intragroup_distance']:
+                if pose_framework == OPENPOSE_KEY.lower():
+                    openpose_data['intragroup_distance'] = group_data['intragroup_distance']
+                elif pose_framework == DENSEPOSE_KEY.lower():
+                    pass
 
             # Center Interaction
-            if self.gui_state['overlay_framework_center_interaction']:
-                openpose_data['center_interaction'] = subject['metrics']['center_interaction']
+            if self.gui_state['overlay_center_interaction']:
+                if pose_framework == OPENPOSE_KEY.lower():
+                    openpose_data['center_interaction'] = subject['metrics']['center_interaction']
+                elif pose_framework == DENSEPOSE_KEY.lower():
+                    pass
 
-            frame_subject_data['openpose'] = openpose_data
-            if frame_subject_data['openpose']:
-                frame = self.openpose_overlay(subject_id, frame_subject_data['openpose'],
+            frame_subject_data[OPENPOSE_KEY] = openpose_data
+            if frame_subject_data[OPENPOSE_KEY]:
+                frame = self.openpose_overlay(subject_id, frame_subject_data[OPENPOSE_KEY],
                                               frame, self.camera)
 
-            # Densepose
-
-            # Openface
+            frame_subject_data[OPENFACE_KEY] = openface_data
+            # if frame_subject_data[OPENFACE_KEY]:
+            #     frame = self.openface_overlay(subject_id, frame_subject_data[OPENFACE_KEY],
+            #                                   frame, self.camera)
 
         # Video
         if self.gui_state['overlay_video_energy_heatmap']:
@@ -282,11 +300,11 @@ class VideoPlayer(QtWidgets.QWidget):
 
         return frame
 
-    def densepose_overlay(self):
-        print("Densepose Overlay")
-
     def openface_overlay(self):
         print("Openface Overlay")
+
+    def densepose_overlay(self):
+        print("Densepose Overlay")
 
     def video_overlay(self, frame):
         heatmap_file = [str(x) for x in self.group_data_path.iterdir()
@@ -445,14 +463,16 @@ class VideoPlayerMonitor(object):
         state = {
             'overlay_data_raw': components['radbtn_raw'].isChecked(),
             'overlay_data_enhanced': components['radbtn_enhanced'].isChecked(),
-            'overlay_framework': components['cb_framework'],
-            'overlay_framework_pose': components['chb_op_pose'].isChecked(),
-            'overlay_framework_face': components['chb_op_face'].isChecked(),
-            'overlay_framework_overlap': components['chb_op_overlap'].isChecked(),
-            'overlay_framework_intragroup_distance': components['chb_op_ig_dist'].isChecked(),
-            'overlay_framework_center_interaction': components['chb_op_cntr_int'].isChecked(),
-            'overlay_openface_face':  components['chb_of_face'].isChecked(),
-            # 'overlay_openface_aus':  components['chb_of_aus'].isChecked(),
+
+            'overlay_pose_framework': components['cb_pose_framework'],
+            'overlay_pose': components['chb_pose'].isChecked(),
+            'overlay_overlap': components['chb_overlap'].isChecked(),
+            'overlay_intragroup_distance': components['chb_ig_dist'].isChecked(),
+            'overlay_center_interaction': components['chb_cntr_int'].isChecked(),
+
+            'overlay_face_framework': components['cb_face_framework'],
+            'overlay_face':  components['chb_face'].isChecked(),
+
             'overlay_video_energy_heatmap': components['chb_vid_energy_htmp'].isChecked(),
             'overlay_heatmap_transparency': self.overlay_heatmap_transparency,
         }
@@ -583,18 +603,18 @@ class Visualizer(object):
         self.q_components['btn_back'] = self.ui.btn_back
         self.q_components['btn_forward'] = self.ui.btn_skip
         self.q_components['sld_time'] = self.ui.time_slider
-        self.q_components['chb_op_pose'] = self.ui.chb_op_pose
-        self.q_components['chb_op_face'] = self.ui.chb_op_face
-        self.q_components['chb_op_overlap'] = self.ui.chb_op_overlap
-        self.q_components['chb_op_cntr_int'] = self.ui.chb_op_cntr_int
-        self.q_components['chb_op_ig_dist'] = self.ui.chb_op_ig_dist
+        self.q_components['chb_pose'] = self.ui.chb_pose
+        self.q_components['chb_overlap'] = self.ui.chb_overlap
+        self.q_components['chb_cntr_int'] = self.ui.chb_cntr_int
+        self.q_components['chb_ig_dist'] = self.ui.chb_ig_dist
+        self.q_components['cb_pose_framework'] = self.ui.cb_pose_framework
+        self.q_components['chb_face'] = self.ui.chb_face
         self.q_components['chb_vid_energy_htmp'] = self.ui.chb_vid_energy_htmp
         self.q_components['spn_frame_idx'] = self.ui.spn_frame_idx
         self.q_components['frame_goto_btn'] = self.ui.btn_frame_go
-        self.q_components['cb_framework'] = self.ui.cb_framework
+        self.q_components['cb_face_framework'] = self.ui.cb_face_framework
         self.q_components['radbtn_raw'] = self.ui.radbtn_raw
         self.q_components['radbtn_enhanced'] = self.ui.radbtn_enh
-        self.q_components['chb_of_face'] = self.ui.chb_op_face
         self.q_components['sld_overlay_transp'] = self.ui.sld_transparency
 
         monitor_GUI = VideoPlayerMonitor(

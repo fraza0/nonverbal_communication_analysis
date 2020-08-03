@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1420</width>
-    <height>720</height>
+    <height>840</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,6 +119,297 @@
             </spacer>
            </item>
           </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="legend_frame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Legend</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_11">
+       <item>
+        <layout class="QGridLayout" name="gridLayout_6">
+         <item row="0" column="11">
+          <spacer name="horizontalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLabel" name="label_5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Subject 2</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="13">
+          <widget class="QLabel" name="label_8">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Overlap</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="14">
+          <spacer name="horizontalSpacer_9">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="leg_subject1">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>5</width>
+             <height>5</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QPushButton" name="leg_subject2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="8">
+          <spacer name="horizontalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="9">
+          <widget class="QPushButton" name="leg_subject4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QPushButton" name="leg_subject3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="16">
+          <widget class="QLabel" name="label_9">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Intragroup Dist.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="7">
+          <widget class="QLabel" name="label_6">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Subject 3</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Expanding</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>50</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="19">
+          <widget class="QLabel" name="label_10">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Center Interaction</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Subject 1</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="10">
+          <widget class="QLabel" name="label_7">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Subject 4</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="18">
+          <widget class="QPushButton" name="leg_center_interaction">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="12">
+          <widget class="QPushButton" name="leg_overlap">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="15">
+          <widget class="QPushButton" name="leg_intragroup_distance">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="17">
+          <spacer name="horizontalSpacer_10">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -400,7 +691,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="fr1_openpose">
+          <widget class="QGroupBox" name="fr1_pose">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -408,13 +699,13 @@
             </sizepolicy>
            </property>
            <property name="title">
-            <string>Openpose / Densepose</string>
+            <string>Pose-Related Features</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <layout class="QGridLayout" name="gridLayout_2">
               <item row="0" column="0">
-               <widget class="QCheckBox" name="chb_op_pose">
+               <widget class="QCheckBox" name="chb_pose">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
                   <horstretch>0</horstretch>
@@ -422,54 +713,63 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>Pose Lmks</string>
+                 <string>Pose Landmarks</string>
+                </property>
+                <property name="shortcut">
+                 <string>P</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="0">
-               <widget class="QCheckBox" name="chb_op_overlap">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Overlap</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QCheckBox" name="chb_op_ig_dist">
-                <property name="text">
-                 <string>Intragroup Distance</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QCheckBox" name="chb_op_cntr_int">
+               <widget class="QCheckBox" name="chb_cntr_int">
                 <property name="text">
                  <string>Center Interaction</string>
+                </property>
+                <property name="shortcut">
+                 <string>C</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QCheckBox" name="chb_op_face">
-                <property name="text">
-                 <string>Face Lmks</string>
-                </property>
-               </widget>
+               <layout class="QHBoxLayout" name="horizontalLayout_6">
+                <item>
+                 <widget class="QCheckBox" name="chb_ig_dist">
+                  <property name="text">
+                   <string>Intragroup Distance</string>
+                  </property>
+                  <property name="shortcut">
+                   <string>I</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="chb_overlap">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Overlap</string>
+                  </property>
+                  <property name="shortcut">
+                   <string>O</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
-              <item row="3" column="1">
-               <widget class="QComboBox" name="cb_framework">
+              <item row="2" column="1">
+               <widget class="QComboBox" name="cb_pose_framework">
                 <item>
                  <property name="text">
-                  <string>Openpose</string>
+                  <string>OpenPose</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>Densepose</string>
+                  <string>DensePose</string>
                  </property>
                 </item>
                </widget>
@@ -480,7 +780,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="fr2_openface">
+          <widget class="QGroupBox" name="fr2_face">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -488,23 +788,33 @@
             </sizepolicy>
            </property>
            <property name="title">
-            <string>Openface</string>
+            <string>Facial Features</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox_3">
+               <widget class="QCheckBox" name="chb_face">
                 <property name="text">
-                 <string>Face Lmks</string>
+                 <string>Face Landmarks</string>
+                </property>
+                <property name="shortcut">
+                 <string>F</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="checkBox_4">
-                <property name="text">
-                 <string>AUs</string>
-                </property>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="cb_face_framework">
+                <item>
+                 <property name="text">
+                  <string>OpenPose</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>OpenFace</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
@@ -521,25 +831,11 @@
             </sizepolicy>
            </property>
            <property name="title">
-            <string>Video</string>
+            <string>Video Features</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
             <item>
              <layout class="QGridLayout" name="gridLayout_4">
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_3">
-                <property name="text">
-                 <string>Overlay Transparency</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="chb_vid_energy_htmp">
-                <property name="text">
-                 <string>Energy Heatmap Overlay</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="1">
                <widget class="QSlider" name="sld_transparency">
                 <property name="sizePolicy">
@@ -550,6 +846,23 @@
                 </property>
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="chb_vid_energy_htmp">
+                <property name="text">
+                 <string>Energy Heatmap Overlay</string>
+                </property>
+                <property name="shortcut">
+                 <string>V</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Overlay Transparency</string>
                 </property>
                </widget>
               </item>
