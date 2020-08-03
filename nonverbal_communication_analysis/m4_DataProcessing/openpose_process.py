@@ -222,7 +222,7 @@ class OpenposeSubject(Subject):
         center_proximity = center_proximity * scale_factor
 
         interaction = {
-            'value': center_proximity,
+            'value': np.round(center_proximity, 6),
             'subject_point': subject_point,
             'center': point_in_center_line
         }
