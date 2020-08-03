@@ -171,7 +171,6 @@ class VideoPlayer(QtWidgets.QWidget):
                 if camera == SIDEVIEW_CAMERA:
                     resolution = np.array(
                         list(VIDEO_RESOLUTION[camera].values()))
-                    print(data)
                     center_point = np.array(data['center'])
                     center_point = np.rint(np.multiply(
                         center_point, resolution)).astype(int)
@@ -389,14 +388,20 @@ class VideoPlayerMonitor(object):
             if 'pc1' in video.name:
                 self.ui.video_1 = VideoPlayer(1, video, self.ui.video_1, self.timer,
                                               feature_data_path, self.group_feature_data)
+                self.ui.video_1.setMinimumSize(QtCore.QSize(VIDEO_RESOLUTION['pc1']['x'],
+                                                            VIDEO_RESOLUTION['pc1']['y']))
 
             elif 'pc2' in video.name:
                 self.ui.video_2 = VideoPlayer(2, video, self.ui.video_2, self.timer,
                                               feature_data_path, self.group_feature_data)
+                self.ui.video_2.setMinimumSize(QtCore.QSize(VIDEO_RESOLUTION['pc2']['x'],
+                                                            VIDEO_RESOLUTION['pc2']['y']))
 
             elif 'pc3' in video.name:
                 self.ui.video_3 = VideoPlayer(3, video, self.ui.video_3, self.timer,
                                               feature_data_path, self.group_feature_data)
+                self.ui.video_3.setMinimumSize(QtCore.QSize(VIDEO_RESOLUTION['pc3']['x'],
+                                                            VIDEO_RESOLUTION['pc3']['y']))
 
         self.ui.btn_play.setEnabled(True)
         self.ui.btn_back.setEnabled(True)
