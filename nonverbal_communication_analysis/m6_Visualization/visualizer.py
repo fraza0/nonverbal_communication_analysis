@@ -187,6 +187,23 @@ class VideoPlayer(QtWidgets.QWidget):
 
         return img_frame
 
+    def openface_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
+        print("Openface Overlay")
+
+        for _, face_data in subject_data.items():
+            for key, data in face_data.items():
+                if key == 'eye' or key == 'face':
+                    for keypoint_idx, keypoint_values in data.items():
+                        keypoint_x = round(
+                            keypoint_values[0] * VIDEO_RESOLUTION[camera]['x'])
+                        keypoint_y = round(
+                            keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
+
+                        cv2.circle(img_frame, (keypoint_x, keypoint_y),
+                                   1, COLOR_MAP[subject_id], -1)
+
+        return img_frame
+
     def frame_transform(self, frame):
 
         # Read FEATURE_DATA
@@ -205,12 +222,7 @@ class VideoPlayer(QtWidgets.QWidget):
         openface_data = dict()
         densepose_data = dict()
 
-        frame_subject_data = {
-            'openpose': dict(),
-            'densepose': dict(),
-            'openface': dict(),
-            'video': dict()
-        }
+        frame_subject_data = dict()
 
         data_type = None
 
@@ -238,12 +250,12 @@ class VideoPlayer(QtWidgets.QWidget):
                 subject_type_data = subject[data_type]
                 subject_type_data_pose = subject_type_data['pose'] \
                     if 'pose' in subject_type_data else dict()
-                subject_type_data_pose_openpose = subject_type_data_pose[pose_framework] \
+                subject_type_data_pose = subject_type_data_pose[pose_framework] \
                     if pose_framework in subject_type_data_pose else dict()
 
                 if pose_framework == OPENPOSE_KEY.lower():
-                    openpose_data['pose'] = subject_type_data_pose_openpose[self.camera] \
-                        if self.camera in subject_type_data_pose_openpose else dict()
+                    openpose_data['pose'] = subject_type_data_pose[self.camera] \
+                        if self.camera in subject_type_data_pose else dict()
                 elif pose_framework == DENSEPOSE_KEY.lower():
                     pass
 
@@ -252,13 +264,14 @@ class VideoPlayer(QtWidgets.QWidget):
                 subject_type_data = subject[data_type]
                 subject_type_data_face = subject_type_data['face'] \
                     if 'face' in subject_type_data else dict()
-                subject_type_data_face_openpose = subject_type_data_face[face_framework] \
+                subject_type_data_face = subject_type_data_face[face_framework] \
                     if face_framework in subject_type_data_face else dict()
                 if face_framework == OPENPOSE_KEY.lower():
-                    openpose_data['face'] = subject_type_data_face_openpose[self.camera] \
-                        if self.camera in subject_type_data_face_openpose else dict()
+                    openpose_data['face'] = subject_type_data_face[self.camera] \
+                        if self.camera in subject_type_data_face else dict()
                 elif face_framework == OPENFACE_KEY.lower():
-                    pass
+                    openface_data['face'] = subject_type_data_face[self.camera] \
+                        if self.camera in subject_type_data_face else dict()
 
             # Expansiveness + Overlap
             if self.gui_state['overlay_overlap']:
@@ -290,18 +303,15 @@ class VideoPlayer(QtWidgets.QWidget):
                                               frame, self.camera)
 
             frame_subject_data[OPENFACE_KEY] = openface_data
-            # if frame_subject_data[OPENFACE_KEY]:
-            #     frame = self.openface_overlay(subject_id, frame_subject_data[OPENFACE_KEY],
-            #                                   frame, self.camera)
+            if frame_subject_data[OPENFACE_KEY]:
+                frame = self.openface_overlay(subject_id, frame_subject_data[OPENFACE_KEY],
+                                              frame, self.camera)
 
         # Video
         if self.gui_state['overlay_video_energy_heatmap']:
             frame = self.video_overlay(frame)
 
         return frame
-
-    def openface_overlay(self):
-        print("Openface Overlay")
 
     def densepose_overlay(self):
         print("Densepose Overlay")
@@ -316,7 +326,6 @@ class VideoPlayer(QtWidgets.QWidget):
 
         frame = cv2.addWeighted(frame, 1, heatmap,
                                 self.overlay_heatmap_transparency, 0)
-
         return frame
 
 
