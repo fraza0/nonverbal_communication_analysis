@@ -19,7 +19,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, PLOT_CENTER_INTERACTION, PLOT_GROUP_ENERGY,
-    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_OVERLAP, ROLLING_WINDOW_SIZE, PLOT_CANVAS_COLOR_ENCODING)
+    PLOT_INTRAGROUP_DISTANCE, PLOT_SUBJECT_OVERLAP, ROLLING_WINDOW_SIZE,
+    PLOT_CANVAS_COLOR_ENCODING, PLOTS_LIB)
 from nonverbal_communication_analysis.m6_Visualization.feature_analyzer_gui import \
     Ui_FeatureAnalyzer
 
@@ -85,8 +86,12 @@ class PlotThread(QtCore.QThread):
 
     def run(self):
         # print("Print plot", self.thread_id)
+        plot_type = self.plot_type
+        lib = PLOTS_LIB[plot_type].lower()
+        ext = '.csv'
+        file_name = lib + '_' + plot_type + ext
 
-        data = pd.read_csv(str(self.plot_path / (self.plot_type+'.csv')))
+        data = pd.read_csv(str(self.plot_path / file_name))
         data = data.sort_values(by=['frame'])
         self.data = data
 
@@ -113,7 +118,6 @@ class PlotCanvas(QtWidgets.QWidget):
 
     def smoothing_factor(self, number_datapoints):
         return number_datapoints+sqrt(2*number_datapoints)-1
-        # return number_datapoints
 
     def draw_plot(self, data: pd.DataFrame, data_column: str, line_type: list = ['spline'], update: bool = False, save: bool = True):
         """[summary]

@@ -263,24 +263,24 @@ class VideoPlayer(QtWidgets.QWidget):
             # Expansiveness + Overlap
             if self.gui_state['overlay_overlap']:
                 if pose_framework == OPENPOSE_KEY.lower():
-                    openpose_data['expansiveness'] = subject['metrics']['expansiveness'] \
-                        if 'expansiveness' in subject['metrics'] else dict()
-                    openpose_data['overlap'] = subject['metrics']['overlap'] \
-                        if 'overlap' in subject['metrics'] else dict()
+                    openpose_data['expansiveness'] = subject['metrics'][pose_framework]['expansiveness'] \
+                        if 'expansiveness' in subject['metrics'][pose_framework] else dict()
+                    openpose_data['overlap'] = subject['metrics'][pose_framework]['overlap'] \
+                        if 'overlap' in subject['metrics'][pose_framework] else dict()
                 elif pose_framework == DENSEPOSE_KEY.lower():
                     pass
 
             # Intragroup Distance
             if self.gui_state['overlay_intragroup_distance']:
                 if pose_framework == OPENPOSE_KEY.lower():
-                    openpose_data['intragroup_distance'] = group_data['intragroup_distance']
+                    openpose_data['intragroup_distance'] = group_data[pose_framework]['intragroup_distance']
                 elif pose_framework == DENSEPOSE_KEY.lower():
                     pass
 
             # Center Interaction
             if self.gui_state['overlay_center_interaction']:
                 if pose_framework == OPENPOSE_KEY.lower():
-                    openpose_data['center_interaction'] = subject['metrics']['center_interaction']
+                    openpose_data['center_interaction'] = subject['metrics'][pose_framework]['center_interaction']
                 elif pose_framework == DENSEPOSE_KEY.lower():
                     pass
 
