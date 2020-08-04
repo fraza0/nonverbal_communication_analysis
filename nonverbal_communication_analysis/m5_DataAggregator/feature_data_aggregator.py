@@ -9,7 +9,7 @@ from pathlib import Path
 from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
-    VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY,
+    VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, OPENCV_KEY,
     VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
@@ -65,7 +65,7 @@ class AggregateFrame(object):
         is_raw_data_valid,
         is_enhanced_data_valid,
         group: {
-            intragroup_distance,
+            framework: {intragroup_distance},
         }
         subjects: {
             id,
@@ -89,7 +89,9 @@ class AggregateFrame(object):
                     openface: {cams}
                 }
             }
-            metrics: {cams}
+            metrics: {
+                framework: {cams}
+            }
         }
     """
 
@@ -134,6 +136,8 @@ class SubjectDataAggregator:
 
         self.specific_task = specific_task
         self.specific_frame = specific_frame
+
+        self.framework_being_processed = None
 
         self.openpose_data = dict()
         self.openface_data = dict()
@@ -312,7 +316,9 @@ class SubjectDataAggregator:
         for framework, data in frame_data.items():
 
             if framework == 'metrics':
-                subject_framework_metrics = data
+                subject_framework_metrics = {
+                    self.framework_being_processed.lower(): data
+                }
                 continue
 
             if framework not in agg_subject_data:
@@ -342,7 +348,9 @@ class SubjectDataAggregator:
             frame_data_type = 'processed'
 
         if 'group' in frame_data:
-            agg_frame.group.update(frame_data['group'])
+            agg_frame.group.update({
+                self.framework_being_processed.lower(): frame_data['group']
+            })
 
         if 'subjects' in frame_data:
             frame_subjects = frame_data['subjects']
@@ -385,9 +393,6 @@ class SubjectDataAggregator:
                         agg_subject.processed_pose_data = processed_pose_data
                         if processed_pose_metrics:
                             agg_subject.metrics.update(processed_pose_metrics)
-
-                # if 'group' in frame_data:
-                #     agg_frame.group = frame_data['group']
 
                 agg_frame.subjects[subject_id] = agg_subject
 
@@ -442,6 +447,7 @@ class SubjectDataAggregator:
                 # OPENPOSE
                 if self.verbose:
                     print("Cleaned OpenPose")
+                self.framework_being_processed = OPENPOSE_KEY
                 for camera in cleaned_openpose[task]:
                     cleaned_openpose_files = cleaned_openpose[task][camera]
                     openpose_clean_frame_data = json.load(
@@ -464,6 +470,7 @@ class SubjectDataAggregator:
                 if openface_data:
                     if self.verbose:
                         print("Cleaned OpenFace")
+                    self.framework_being_processed = OPENFACE_KEY
                     cleaned_task_openface = cleaned_openface[task]
                     for camera in cleaned_task_openface:
                         cleaned_openface_files = cleaned_task_openface[camera]
@@ -489,8 +496,11 @@ class SubjectDataAggregator:
                                                                    camera=camera,
                                                                    frame_data_type='processed')
 
+                # DENSEPOSE
+
                 # VIDEO
                 if video_data:
+                    self.framework_being_processed = OPENCV_KEY
                     processed_video_data = video_data['processed']
                     if task in processed_video_data:
                         processed_video_data_task = processed_video_data[task]
@@ -527,58 +537,65 @@ class SubjectDataAggregator:
 
         # Group metrics
         # Intragroup Distance
-        if 'intragroup_distance' in aggregate_frame.group:
-            if self.reset_files:
-                # print(output_directory / (PLOT_INTRAGROUP_DISTANCE+'.csv'))
-                file_ig = open(output_directory /
-                               (PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
-                file_ig.flush()
-                self.file_ig = csv.writer(file_ig)
-                self.file_ig.writerow(['frame', 'camera', 'intragroup_distance'])
-            for camera, value in aggregate_frame.group['intragroup_distance'].items():
-                intragroup_entry = [frame_idx, camera, value['area']]
-                self.file_ig.writerow(intragroup_entry)
+        for lib in aggregate_frame.group:
+            lib_group_data = aggregate_frame.group[lib]
+            if 'intragroup_distance' in lib_group_data:
+                if self.reset_files:
+                    file_ig = open(output_directory /
+                                   (lib+'_'+PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
+                    file_ig.flush()
+                    self.file_ig = csv.writer(file_ig)
+                    self.file_ig.writerow(
+                        ['frame', 'camera', 'intragroup_distance'])
 
-        # Group Energy
-        if 'energy' in aggregate_frame.group:
-            if self.reset_files:
-                file_energy = open(
-                    output_directory/(PLOT_GROUP_ENERGY+'.csv'), 'w')
-                file_energy.flush()
-                self.file_energy = csv.writer(file_energy)
-                self.file_energy.writerow(['frame', 'energy'])
-            energy_value = aggregate_frame.group['energy']
-            energy_entry = [frame_idx, energy_value]
-            self.file_energy.writerow(energy_entry)
+                for camera, value in lib_group_data['intragroup_distance'].items():
+                    intragroup_entry = [frame_idx, camera, value['area']]
+                    self.file_ig.writerow(intragroup_entry)
+
+            # Group Energy
+            if 'energy' in lib_group_data:
+                if self.reset_files:
+                    file_energy = open(
+                        output_directory/(lib+'_'+PLOT_GROUP_ENERGY+'.csv'), 'w')
+                    file_energy.flush()
+                    self.file_energy = csv.writer(file_energy)
+                    self.file_energy.writerow(['frame', 'energy'])
+                energy_value = lib_group_data['energy']
+                energy_entry = [frame_idx, energy_value]
+                self.file_energy.writerow(energy_entry)
 
         # Subject metrics
-        if self.reset_files:
-            file_overlap = open(
-                output_directory/(PLOT_SUBJECT_OVERLAP+'.csv'), 'w')
-            file_overlap.flush()
-            self.file_overlap = csv.writer(file_overlap)
-            self.file_overlap.writerow(['frame', 'camera',
-                                              'subject', 'overlap'])
-            file_center_interaction = open(
-                output_directory/(PLOT_CENTER_INTERACTION+'.csv'), 'w')
-            file_center_interaction.flush()
-            self.file_center_interaction = csv.writer(file_center_interaction)
-            self.file_center_interaction.writerow(['frame', 'subject',
-                                                   'center_interaction'])
         for subject_id, subject in aggregate_frame.subjects.items():
-            # overlap
-            if 'overlap' in subject.metrics:
-                for camera, value in subject.metrics['overlap'].items():
-                    overlap_entry = [frame_idx,  camera,
-                                           subject_id, value['area']]
-                    self.file_overlap.writerow(overlap_entry)
+            for lib in subject.metrics:
+                lib_subjects_data = subject.metrics[lib]
 
-            # Center interaction
-            if 'center_interaction' in subject.metrics:
-                center_interaction_value = subject.metrics['center_interaction']['value']
-                center_interaction_entry = [frame_idx, subject_id,
-                                            center_interaction_value]
-                self.file_center_interaction.writerow(center_interaction_entry)
+                if self.reset_files:
+                    file_overlap = open(
+                        output_directory/(lib+'_'+PLOT_SUBJECT_OVERLAP+'.csv'), 'w')
+                    file_overlap.flush()
+                    self.file_overlap = csv.writer(file_overlap)
+                    self.file_overlap.writerow(['frame', 'camera',
+                                                'subject', 'overlap'])
+                    file_center_interaction = open(
+                        output_directory/(lib+'_'+PLOT_CENTER_INTERACTION+'.csv'), 'w')
+                    file_center_interaction.flush()
+                    self.file_center_interaction = csv.writer(file_center_interaction)
+                    self.file_center_interaction.writerow(['frame', 'subject',
+                                                        'center_interaction'])
+
+                # overlap
+                if 'overlap' in lib_subjects_data:
+                    for camera, value in lib_subjects_data['overlap'].items():
+                        overlap_entry = [frame_idx,  camera,
+                                        subject_id, value['area']]
+                        self.file_overlap.writerow(overlap_entry)
+
+                # Center interaction
+                if 'center_interaction' in lib_subjects_data:
+                    center_interaction_value = lib_subjects_data['center_interaction']['value']
+                    center_interaction_entry = [frame_idx, subject_id,
+                                                center_interaction_value]
+                    self.file_center_interaction.writerow(center_interaction_entry)
 
         self.reset_files = False
 
