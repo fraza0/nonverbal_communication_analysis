@@ -18,6 +18,7 @@ from nonverbal_communication_analysis.environment import COLOR_MAP
 from nonverbal_communication_analysis.m6_Visualization.visualizer_gui import \
     Ui_Visualizer
 from nonverbal_communication_analysis.m6_Visualization.feature_analyzer import FeatureAnalyzer
+from nonverbal_communication_analysis.m6_Visualization.feature_comparator import FeatureComparator
 
 
 class VideoPlayer(QtWidgets.QWidget):
@@ -188,7 +189,6 @@ class VideoPlayer(QtWidgets.QWidget):
         return img_frame
 
     def openface_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
-        print("Openface Overlay")
 
         for _, face_data in subject_data.items():
             for key, data in face_data.items():
@@ -330,12 +330,13 @@ class VideoPlayer(QtWidgets.QWidget):
 
 
 class VideoPlayerMonitor(object):
-    def __init__(self, visualizer: QtWidgets.QMainWindow, ui: Ui_Visualizer, groups_directories: dict, q_components: dict, feature_analyzer: FeatureAnalyzer):
+    def __init__(self, visualizer: QtWidgets.QMainWindow, ui: Ui_Visualizer, groups_directories: dict, q_components: dict, feature_analyzer: FeatureAnalyzer, feature_comparator: FeatureComparator):
         self.visualizer = visualizer
         self.ui = ui
         self.groups_directories = groups_directories
         self.q_components = q_components
         self.feature_analyzer = feature_analyzer
+        self.feature_comparator = feature_comparator
 
         group_select_disable = [self.ui.cb_groupId,
                                 self.ui.cb_task,
@@ -579,6 +580,11 @@ class Visualizer(object):
         self.feature_analyzer = FeatureAnalyzer()
         self.ui.action_feature_analyzer.triggered.connect(
             self.feature_analyzer.open)
+
+        self.feature_comparator = FeatureComparator()
+        self.ui.action_feature_comparator.triggered.connect(
+            self.feature_comparator.open)
+
         self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
 
         # Group Frame Components
@@ -642,8 +648,9 @@ class Visualizer(object):
         self.q_components['radbtn_enhanced'] = self.ui.radbtn_enh
         self.q_components['sld_overlay_transp'] = self.ui.sld_transparency
 
-        monitor_GUI = VideoPlayerMonitor(
-            visualizer, self.ui, self.group_dirs, self.q_components, self.feature_analyzer)
+        monitor_GUI = VideoPlayerMonitor(visualizer, self.ui, self.group_dirs,
+                                         self.q_components, self.feature_analyzer,
+                                         self.feature_comparator)
 
         btn_play.clicked.connect(monitor_GUI.playing_loop)
         btn_back.clicked.connect(lambda: monitor_GUI.jump_frames(-10))
