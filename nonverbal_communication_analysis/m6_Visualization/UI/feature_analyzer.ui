@@ -25,13 +25,6 @@
      <layout class="QVBoxLayout" name="verticalLayout_10">
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="5">
-         <widget class="QCheckBox" name="chb_poly">
-          <property name="text">
-           <string>Poly</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QPushButton" name="btn_save">
           <property name="sizePolicy">
@@ -45,10 +38,13 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QLabel" name="label_3">
+        <item row="0" column="9">
+         <widget class="QCheckBox" name="chb_spline">
           <property name="text">
-           <string>Line Type:</string>
+           <string>Spline</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -65,6 +61,20 @@
           </property>
          </spacer>
         </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Line Type:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="5">
+         <widget class="QCheckBox" name="chb_rolling">
+          <property name="text">
+           <string>Moving Average</string>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="3">
          <widget class="QCheckBox" name="chb_raw">
           <property name="text">
@@ -72,20 +82,10 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="8">
-         <widget class="QCheckBox" name="chb_spline">
-          <property name="text">
-           <string>Spline</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="4">
-         <widget class="QCheckBox" name="chb_rolling">
+         <widget class="QCheckBox" name="chb_poly">
           <property name="text">
-           <string>Moving Average</string>
+           <string>Poly</string>
           </property>
          </widget>
         </item>

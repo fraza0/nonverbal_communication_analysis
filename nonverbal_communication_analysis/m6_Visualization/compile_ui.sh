@@ -1,2 +1,3 @@
 pyuic5 nonverbal_communication_analysis/m6_Visualization/UI/mainwindow.ui -o nonverbal_communication_analysis/m6_Visualization/visualizer_gui.py
 pyuic5 nonverbal_communication_analysis/m6_Visualization/UI/feature_analyzer.ui -o nonverbal_communication_analysis/m6_Visualization/feature_analyzer_gui.py
+pyuic5 nonverbal_communication_analysis/m6_Visualization/UI/feature_comparator.ui -o nonverbal_communication_analysis/m6_Visualization/feature_comparator_gui.py
