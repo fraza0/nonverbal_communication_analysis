@@ -10,7 +10,8 @@ from nonverbal_communication_analysis.environment import (
     DENSEPOSE_KEY, DENSEPOSE_OUTPUT_DIR, FEATURE_AGGREGATE_DIR, OPENFACE_KEY,
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
     VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, OPENCV_KEY,
-    VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP, PLOT_CENTER_INTERACTION)
+    VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP,
+    PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -579,15 +580,24 @@ class SubjectDataAggregator:
                     file_center_interaction = open(
                         output_directory/(lib+'_'+PLOT_CENTER_INTERACTION+'.csv'), 'w')
                     file_center_interaction.flush()
-                    self.file_center_interaction = csv.writer(file_center_interaction)
+                    self.file_center_interaction = csv.writer(
+                        file_center_interaction)
                     self.file_center_interaction.writerow(['frame', 'subject',
-                                                        'center_interaction'])
+                                                           'center_interaction'])
+
+                    file_keypoint_energy = open(
+                        output_directory/(lib+'_'+PLOT_KEYPOINT_ENERGY+'.csv'), 'w')
+                    file_keypoint_energy.flush()
+                    self.file_keypoint_energy = csv.writer(
+                        file_keypoint_energy)
+                    self.file_keypoint_energy.writerow(['frame', 'camera',
+                                                        'subject', 'energy'])
 
                 # overlap
                 if 'overlap' in lib_subjects_data:
                     for camera, value in lib_subjects_data['overlap'].items():
                         overlap_entry = [frame_idx,  camera,
-                                        subject_id, value['area']]
+                                         subject_id, value['area']]
                         self.file_overlap.writerow(overlap_entry)
 
                 # Center interaction
@@ -595,7 +605,15 @@ class SubjectDataAggregator:
                     center_interaction_value = lib_subjects_data['center_interaction']['value']
                     center_interaction_entry = [frame_idx, subject_id,
                                                 center_interaction_value]
-                    self.file_center_interaction.writerow(center_interaction_entry)
+                    self.file_center_interaction.writerow(
+                        center_interaction_entry)
+
+                if 'keypoint_energy' in lib_subjects_data:
+                    for camera, value in lib_subjects_data['keypoint_energy'].items():
+                        keypoint_energy_entry = [frame_idx,  camera,
+                                                 subject_id, value]
+                        self.file_keypoint_energy.writerow(
+                            keypoint_energy_entry)
 
         self.reset_files = False
 

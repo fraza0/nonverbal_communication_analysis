@@ -41,6 +41,7 @@ class OpenposeSubject(Subject):
         self.expansiveness = dict()
         self.overlap = dict()
         self.body_direction = dict()
+        self.energy = 0
         self.center_interaction = 0.0
         self.verbose = verbose
         self.prettify = prettify
@@ -55,7 +56,7 @@ class OpenposeSubject(Subject):
             print("Subject", self.id,
                   "\nPrev.: ", self.previous_pose.keys())
 
-        self.previous_pose = self.current_pose
+        self.previous_pose = self.current_pose.copy()
 
         shoulder_distance = distance_between_points(current_pose[str(OPENPOSE_KEYPOINT_MAP['R_SHOULDER'])][:2],
                                                     current_pose[str(OPENPOSE_KEYPOINT_MAP['L_SHOULDER'])][:2])
@@ -69,9 +70,12 @@ class OpenposeSubject(Subject):
         mean_max = mean_shoulder_distance+mean_shoulder_distance*self._distance_threshold
 
         if mean_min <= shoulder_distance <= mean_max:
-            # this is only updated when valid current pose so it doesn't push the mean value towards a more solid value
+            # this is only updated when valid current pose so it doesn't push
+            # the mean value towards a more solid value
             self.subject_shoulder_distances[camera].append(shoulder_distance)
             self.current_pose[camera] = current_pose
+            # print('Prev.', self.previous_pose, '\n\nCurr.', self.current_pose,
+            #       '\n')
 
         if verbose:
             print("Current:", self.current_pose.keys())
@@ -150,6 +154,47 @@ class OpenposeSubject(Subject):
             #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
 
         return expansiveness
+
+    def metric_body_energy(self, verbose: bool = False):
+        previous_pose = self.previous_pose
+        current_pose = self.current_pose
+
+        previous_pose_cameras = set(previous_pose.keys())
+        current_pose_cameras = set(current_pose.keys())
+        intersection_cameras = previous_pose_cameras & current_pose_cameras
+
+        # keypoint_variability contains the variation of each individual keypoint.
+        # If this is needed, just return it.
+        keypoint_variability = dict()
+        keypoints_energy = {'pc1': 0,
+                            'pc2': 0,
+                            'pc3': 0}
+
+        for camera in intersection_cameras:
+            previous_pose_camera = previous_pose[camera]
+            current_pose_camera = current_pose[camera]
+            previous_pose_camera_keypoints = set(previous_pose_camera.keys())
+            current_pose_camera_keypoints = set(current_pose_camera.keys())
+            intersection_keypoints = previous_pose_camera_keypoints & current_pose_camera_keypoints
+
+            if camera not in keypoint_variability:
+                keypoint_variability[camera] = dict()
+
+            for keypoint_idx in intersection_keypoints:
+                previous_keypoint = previous_pose_camera[keypoint_idx][:2]
+                current_keypoint = current_pose_camera[keypoint_idx][:2]
+
+                if keypoint_idx not in keypoint_variability[camera]:
+                    keypoint_variability[camera][keypoint_idx] = 0
+
+                if not previous_keypoint == current_keypoint:
+                    variation = distance_between_points(
+                        previous_keypoint, current_keypoint)
+
+                    keypoint_variability[camera][keypoint_idx] += variation
+                    keypoints_energy[camera] += variation
+
+        return keypoints_energy
 
     def metric_body_direction(self, verbose: bool = False):
         """
@@ -245,6 +290,7 @@ class OpenposeSubject(Subject):
                     "expansiveness": self.expansiveness,
                     "center_interaction": self.center_interaction,
                     "overlap": self.overlap,
+                    "keypoint_energy": self.energy,
                     # "body_direction": self.body_direction, # Impossible to measure without 3D data
                 },
             },
@@ -387,14 +433,14 @@ class OpenposeProcess(object):
             if subject_id in frame_subject_face:
                 subject_data = frame_subject_face[subject_id]
                 subject.current_face[camera] = subject_data
-
         return True
 
     def process_subject_individual_metrics(self, subject, group_data):
         subject.expansiveness = subject.metric_expansiveness()
+        subject.energy = subject.metric_body_energy()
         # subject.body_direction = subject.metric_body_direction() # SEE COMMENTS ON METHOD ABOVE
-        subject.center_interaction = subject.metric_center_interaction(
-            group_data, subject.expansiveness)
+        subject.center_interaction = subject.metric_center_interaction(group_data,
+                                                                       subject.expansiveness)
 
     def metric_overlap(self, subjects: dict):
         """Calculate overlap between subjects.
@@ -404,8 +450,6 @@ class OpenposeProcess(object):
         Args:
             subjects: (dict): subjects dict
         """
-        # print("Calculating Group Subjects Overlap")
-
         for camera in CAMERAS:
             camera_expensiveness = dict()
             for subject_id, subject in subjects.items():
@@ -426,14 +470,9 @@ class OpenposeProcess(object):
                     vertices1), shapely.Polygon(vertices2)
                 intersection = polygon1.intersection(polygon2)
                 if intersection and intersection.geom_type == 'Polygon':
-                    # print(camera, perm, polygon1.exterior.coords[:],
-                    #       polygon2.exterior.coords[:],
-                    #       intersection.exterior.coords[:])
-
                     overlap_dict = {'polygon': intersection.exterior.coords[:],
                                     'area': float(abs(intersection.area))}
                     subject1.overlap[camera] = subject2.overlap[camera] = overlap_dict
-                    # print(perm, overlap_dict)
 
     def metric_intragroup_distance(self, subjects: dict):
         subjects_distance = dict()
@@ -451,6 +490,7 @@ class OpenposeProcess(object):
             points = list(subjects.values())
             points.append(points[0])
             polygon = Polygon(*points)
+            polygon_area = None
             try:
                 polygon_area = float(abs(polygon.area))
             except AttributeError:
@@ -506,8 +546,8 @@ class OpenposeProcess(object):
                         log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
                             'Not enough information to process frame (%s)' % frame_idx)
                     else:
-                        self.process_subject_individual_metrics(
-                            subject, group_data)
+                        self.process_subject_individual_metrics(subject,
+                                                                group_data)
 
             self.metric_overlap(self.subjects)
             # writting every frame. Indent if invalid frames should not be saved
