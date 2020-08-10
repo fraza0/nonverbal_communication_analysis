@@ -350,5 +350,5 @@ PLOT_CANVAS_COLOR_ENCODING = {
         '4_rolling_meanfit': 'b:',
     }
 
-ROLLING_WINDOW_SIZE = 90 # 900 = 30frames * 30seg - (30seg)
+ROLLING_WINDOW_SIZE = 900 # 900 = 30frames * 30seg - (30seg)
 LINESTYLES = ['-', '--', ':']

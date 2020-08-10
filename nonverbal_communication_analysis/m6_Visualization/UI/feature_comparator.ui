@@ -458,28 +458,28 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="chb_raw">
+         <widget class="QRadioButton" name="rad_raw">
           <property name="text">
            <string>Raw</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="chb_poly">
+         <widget class="QRadioButton" name="rad_poly">
           <property name="text">
            <string>Poly</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="chb_moving_avg">
+         <widget class="QRadioButton" name="rad_moving_avg">
           <property name="text">
            <string>Moving Average</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="chb_spline">
+         <widget class="QRadioButton" name="rad_spline">
           <property name="text">
            <string>Spline</string>
           </property>

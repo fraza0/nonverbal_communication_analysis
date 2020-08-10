@@ -3,6 +3,7 @@ import warnings
 from math import sqrt
 
 import matplotlib
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 import scipy.interpolate as I
@@ -10,12 +11,11 @@ from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QVBoxLayout
 
 from nonverbal_communication_analysis.environment import (
-    DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE,
+    DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE, LINESTYLES,
     PLOT_CANVAS_COLOR_ENCODING, PLOTS_LIB, ROLLING_WINDOW_SIZE,
-    VALID_OUTPUT_FILE_TYPES, LINESTYLES)
+    VALID_OUTPUT_FILE_TYPES)
 from nonverbal_communication_analysis.m6_Visualization.feature_comparator_gui import \
     Ui_FeatureComparator
 
@@ -47,81 +47,74 @@ class PlotCanvas(QtWidgets.QWidget):
     def smoothing_factor(self, number_datapoints):
         return number_datapoints+sqrt(2*number_datapoints)-1
 
-    def draw_plot(self, data: pd.DataFrame, group: str, metric: str, linestyle: str, linetype: list = ['spline']):
+    def draw_plot(self, data: pd.DataFrame, gid_group: tuple, metric: str, linetype: str = 'spline'):
         data = data.sort_values(by=['frame'])
+        group_id, group = gid_group
 
         data_size = len(data)
         _roling_window_size = ROLLING_WINDOW_SIZE \
-            if data_size > ROLLING_WINDOW_SIZE else round(data_size/5)
+            if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
 
         x = data['frame']
         y = data[metric]
 
         if 'subject' in data:
-            pass
-            # for subject_index in data['subject'].unique():
-            #     subject_data = data[data['subject'] == subject_index]
-            #     subject_data = subject_data.sort_values(
-            #         by=['frame', 'subject'])
+            subjects = sorted(data['subject'].unique())
+            for subject_index in subjects:
+                subject_data = data[data['subject'] == subject_index]
+                subject_data = subject_data.sort_values(
+                    by=['frame', 'subject'])
 
-            #     subject_index = str(subject_index)
-            #     x = subject_data['frame']
-            #     y = subject_data[metric]
+                subject_index = str(subject_index)
+                x = subject_data['frame'].astype('int64')
+                y = subject_data[metric]
 
-            #     if 'raw' in line_type:
-            #         self.canvas.axes.scatter(subject_data['frame'], subject_data[metric],
-            #                                  color=self._color_encoding[subject_index],
-            #                                  label=subject_index,
-            #                                  marker='.')
+                label = 'sub_'+subject_index+'_'+group
 
-            #     if 'spline' in line_type:
-            #         print("Spline")
-            #         # s_value = self.smoothing_factor(len(x))
-            #         # bspl = I.splrep(x, y, s=s_value)
-            #         # bspl_y = I.splev(x, bspl)
-            #         # self.canvas.axes.plot(x, bspl_y,
-            #         #                       self._color_encoding[subject_index +
-            #         #                                            '_splinefit'],
-            #         #                       label=subject_index+'_spline')
-
-            #     if 'poly' in line_type:
-            #         print("Poly")
-            #         # z = np.polyfit(x, y, 50)
-            #         # f = np.poly1d(z)
-            #         # self.canvas.axes.plot(x, f(x),
-            #         #                       self._color_encoding[subject_index+'_polyfit'],
-            #         #                       label=subject_index+'_poly')
-
-            #     if 'rolling' in line_type:
-            #         self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
-            #                               self._color_encoding[subject_index +
-            #                                                    '_rolling_meanfit'],
-            #                               label=subject_index+'_rolling_mean')
+                if 'raw' in linetype:
+                    self.canvas.axes.scatter(x, y,
+                                             #  color=self._color_encoding[subject_index],
+                                             label=label,
+                                             marker='.')
+                elif 'spline' in linetype:
+                    s_value = self.smoothing_factor(len(x))
+                    bspl = I.splrep(x, y, s=s_value)
+                    bspl_y = I.splev(x, bspl)
+                    self.canvas.axes.plot(x, bspl_y,
+                                          self._color_encoding[subject_index],
+                                          linestyle=LINESTYLES[group_id],
+                                          label=label)
+                elif 'poly' in linetype:
+                    z = np.polyfit(x, y, 50)
+                    f = np.poly1d(z)
+                    self.canvas.axes.plot(x, f(x),
+                                          self._color_encoding[subject_index],
+                                          linestyle=LINESTYLES[group_id],
+                                          label=label)
+                elif 'rolling' in linetype:
+                    self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
+                                          self._color_encoding[subject_index],
+                                          linestyle=LINESTYLES[group_id],
+                                          label=label)
         else:
             if 'raw' in linetype:
                 self.canvas.axes.scatter(x, y,
                                          label=group,
                                          marker='.')
-
-            if 'spline' in linetype:
+            elif 'spline' in linetype:
                 s_value = self.smoothing_factor(len(x))
                 bspl = I.splrep(x, y, s=s_value)
                 bspl_y = I.splev(x, bspl)
                 self.canvas.axes.plot(x, bspl_y,
-                                      linestyle=linestyle,
-                                      label=group+'_spline')
-
-            if 'poly' in linetype:
+                                      label=group)
+            elif 'poly' in linetype:
                 z = np.polyfit(x, y, 50)
                 p = np.poly1d(z)
                 self.canvas.axes.plot(x, p(x),
-                                      linestyle=linestyle,
-                                      label=group+'_poly')
-
-            if 'rolling' in linetype:
+                                      label=group)
+            elif 'rolling' in linetype:
                 self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
-                                      linestyle=linestyle,
-                                      label=group+'_rolling_mean')
+                                      label=group)
 
         self.canvas.axes.set_title(metric)
         self.canvas.axes.legend(loc='upper right')
@@ -155,10 +148,10 @@ class FeatureComparator(object):
         self.subjects_cb = [self.ui.chb_subject1, self.ui.chb_subject2,
                             self.ui.chb_subject3, self.ui.chb_subject4]
 
-        self.line_types_chb = {'raw': self.ui.chb_raw,
-                               'poly': self.ui.chb_poly,
-                               'rolling': self.ui.chb_moving_avg,
-                               'spline': self.ui.chb_spline}
+        self.linetype_rad = {'raw': self.ui.rad_raw,
+                             'poly': self.ui.rad_poly,
+                             'rolling': self.ui.rad_moving_avg,
+                             'spline': self.ui.rad_spline}
 
         self.compare_groups_state = [(self.ui.cb_group1, self.ui.cb_task1),
                                      (self.ui.cb_group2, self.ui.cb_task2),
@@ -192,8 +185,8 @@ class FeatureComparator(object):
 
         camera = self.ui.cb_camera.currentText().lower()
         metric = self.ui.cb_metric.currentText().lower()
-        line_types = [k for k, v in self.line_types_chb.items()
-                      if v.isChecked()]
+        linetype = [k for k, v in self.linetype_rad.items()
+                    if v.isChecked()]
 
         plot_name = 'compare_' + \
             '_'.join(['_'.join(group_tuple) for group_tuple in groups])
@@ -228,7 +221,6 @@ class FeatureComparator(object):
 
                 camera = self.ui.cb_camera.currentText().lower()
                 data = data[data['camera'] == camera]
-                data = data.drop(columns=['camera'])
 
             if 'subject' not in data.columns:
                 self.ui.chb_subject1.setChecked(True)
@@ -242,8 +234,8 @@ class FeatureComparator(object):
                         data[data['subject'] == subject], ignore_index=True)
                 data = subjects_data
 
-            self.canvas.draw_plot(data, group, metric_name,
-                                  linetype=line_types, linestyle=self.linestyles[idx])
+            self.canvas.draw_plot(data, (idx, group), metric_name,
+                                  linetype=linetype)
 
     def compare(self):
         self.groups_to_compare = set()
