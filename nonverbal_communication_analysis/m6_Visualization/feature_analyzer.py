@@ -275,7 +275,6 @@ class FeatureAnalyzer(object):
         self.env_interaction_thread.save_plots()
 
     def update_plots(self):
-
         state = []
         if self.ui.chb_raw.isChecked():
             state.append('raw')

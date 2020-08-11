@@ -73,6 +73,7 @@ class PlotCanvas(QtWidgets.QWidget):
 
                 if 'raw' in linetype:
                     self.canvas.axes.scatter(x, y,
+                                             self._color_encoding[subject_index],
                                              label=label,
                                              marker='.')
                 elif 'spline' in linetype:
