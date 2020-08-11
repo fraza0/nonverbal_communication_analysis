@@ -11,7 +11,7 @@ from nonverbal_communication_analysis.environment import (
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
     VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, OPENCV_KEY,
     VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP,
-    PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION)
+    PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION, GROUP_ENERGY_PLOT_CAMERA)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
@@ -349,9 +349,24 @@ class SubjectDataAggregator:
             frame_data_type = 'processed'
 
         if 'group' in frame_data:
-            agg_frame.group.update({
-                self.framework_being_processed.lower(): frame_data['group']
-            })
+            updated_value = frame_data['group']
+            framework_being_processed = self.framework_being_processed.lower()
+
+            if camera:
+                if framework_being_processed not in agg_frame.group:
+                    agg_frame.group[framework_being_processed] = dict()
+
+                for key, value in updated_value.items():
+                    if key not in agg_frame.group[framework_being_processed]:
+                        agg_frame.group[framework_being_processed][key] = dict()
+
+                    agg_frame.group[framework_being_processed][key].update({
+                        camera: value
+                    })
+            else:
+                agg_frame.group.update({
+                    framework_being_processed: updated_value
+                })
 
         if 'subjects' in frame_data:
             frame_subjects = frame_data['subjects']
