@@ -575,10 +575,11 @@ class SubjectDataAggregator:
                         output_directory/(lib+'_'+PLOT_GROUP_ENERGY+'.csv'), 'w')
                     file_energy.flush()
                     self.file_energy = csv.writer(file_energy)
-                    self.file_energy.writerow(['frame', PLOT_GROUP_ENERGY])
-                energy_value = lib_group_data[PLOT_GROUP_ENERGY]
-                energy_entry = [frame_idx, energy_value]
-                self.file_energy.writerow(energy_entry)
+                    self.file_energy.writerow(
+                        ['frame', 'camera', PLOT_GROUP_ENERGY])
+                for camera, value in lib_group_data[PLOT_GROUP_ENERGY].items():
+                    energy_entry = [frame_idx, camera, value]
+                    self.file_energy.writerow(energy_entry)
 
         # Subject metrics
         for subject_id, subject in aggregate_frame.subjects.items():
