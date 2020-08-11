@@ -540,28 +540,28 @@ class SubjectDataAggregator:
         # Intragroup Distance
         for lib in aggregate_frame.group:
             lib_group_data = aggregate_frame.group[lib]
-            if 'intragroup_distance' in lib_group_data:
+            if PLOT_INTRAGROUP_DISTANCE in lib_group_data:
                 if self.reset_files:
                     file_ig = open(output_directory /
                                    (lib+'_'+PLOT_INTRAGROUP_DISTANCE+'.csv'), 'w')
                     file_ig.flush()
                     self.file_ig = csv.writer(file_ig)
                     self.file_ig.writerow(
-                        ['frame', 'camera', 'intragroup_distance'])
+                        ['frame', 'camera', PLOT_INTRAGROUP_DISTANCE])
 
-                for camera, value in lib_group_data['intragroup_distance'].items():
+                for camera, value in lib_group_data[PLOT_INTRAGROUP_DISTANCE].items():
                     intragroup_entry = [frame_idx, camera, value['area']]
                     self.file_ig.writerow(intragroup_entry)
 
             # Group Energy
-            if 'energy' in lib_group_data:
+            if PLOT_GROUP_ENERGY in lib_group_data:
                 if self.reset_files:
                     file_energy = open(
                         output_directory/(lib+'_'+PLOT_GROUP_ENERGY+'.csv'), 'w')
                     file_energy.flush()
                     self.file_energy = csv.writer(file_energy)
-                    self.file_energy.writerow(['frame', 'energy'])
-                energy_value = lib_group_data['energy']
+                    self.file_energy.writerow(['frame', PLOT_GROUP_ENERGY])
+                energy_value = lib_group_data[PLOT_GROUP_ENERGY]
                 energy_entry = [frame_idx, energy_value]
                 self.file_energy.writerow(energy_entry)
 
@@ -576,14 +576,14 @@ class SubjectDataAggregator:
                     file_overlap.flush()
                     self.file_overlap = csv.writer(file_overlap)
                     self.file_overlap.writerow(['frame', 'camera',
-                                                'subject', 'overlap'])
+                                                'subject', PLOT_SUBJECT_OVERLAP])
                     file_center_interaction = open(
                         output_directory/(lib+'_'+PLOT_CENTER_INTERACTION+'.csv'), 'w')
                     file_center_interaction.flush()
                     self.file_center_interaction = csv.writer(
                         file_center_interaction)
                     self.file_center_interaction.writerow(['frame', 'subject',
-                                                           'center_interaction'])
+                                                           PLOT_CENTER_INTERACTION])
 
                     file_keypoint_energy = open(
                         output_directory/(lib+'_'+PLOT_KEYPOINT_ENERGY+'.csv'), 'w')
@@ -591,24 +591,24 @@ class SubjectDataAggregator:
                     self.file_keypoint_energy = csv.writer(
                         file_keypoint_energy)
                     self.file_keypoint_energy.writerow(['frame', 'camera',
-                                                        'subject', 'energy'])
+                                                        'subject', PLOT_KEYPOINT_ENERGY])
 
                 # overlap
-                if 'overlap' in lib_subjects_data:
+                if PLOT_SUBJECT_OVERLAP in lib_subjects_data:
                     for camera, value in lib_subjects_data['overlap'].items():
                         overlap_entry = [frame_idx,  camera,
                                          subject_id, value['area']]
                         self.file_overlap.writerow(overlap_entry)
 
                 # Center interaction
-                if 'center_interaction' in lib_subjects_data:
+                if PLOT_CENTER_INTERACTION in lib_subjects_data:
                     center_interaction_value = lib_subjects_data['center_interaction']['value']
                     center_interaction_entry = [frame_idx, subject_id,
                                                 center_interaction_value]
                     self.file_center_interaction.writerow(
                         center_interaction_entry)
 
-                if 'keypoint_energy' in lib_subjects_data:
+                if PLOT_KEYPOINT_ENERGY in lib_subjects_data:
                     for camera, value in lib_subjects_data['keypoint_energy'].items():
                         keypoint_energy_entry = [frame_idx,  camera,
                                                  subject_id, value]
