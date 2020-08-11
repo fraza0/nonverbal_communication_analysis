@@ -73,27 +73,27 @@ class PlotCanvas(QtWidgets.QWidget):
 
                 if 'raw' in linetype:
                     self.canvas.axes.scatter(x, y,
-                                             self._color_encoding[subject_index],
-                                             label=label,
-                                             marker='.')
+                                             color=self._color_encoding[subject_index],
+                                             marker='.',
+                                             label=label)
                 elif 'spline' in linetype:
                     s_value = self.smoothing_factor(len(x))
                     bspl = I.splrep(x, y, s=s_value)
                     bspl_y = I.splev(x, bspl)
                     self.canvas.axes.plot(x, bspl_y,
-                                          self._color_encoding[subject_index],
+                                          color=self._color_encoding[subject_index],
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
                 elif 'poly' in linetype:
                     z = np.polyfit(x, y, 50)
                     f = np.poly1d(z)
                     self.canvas.axes.plot(x, f(x),
-                                          self._color_encoding[subject_index],
+                                          color=self._color_encoding[subject_index],
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
                 elif 'rolling' in linetype:
                     self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
-                                          self._color_encoding[subject_index],
+                                          color=self._color_encoding[subject_index],
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
         else:
