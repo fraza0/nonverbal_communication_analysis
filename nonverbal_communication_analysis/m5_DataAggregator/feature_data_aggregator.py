@@ -11,7 +11,7 @@ from nonverbal_communication_analysis.environment import (
     OPENFACE_OUTPUT_DIR, OPENPOSE_KEY, OPENPOSE_OUTPUT_DIR,
     VALID_OUTPUT_FILE_TYPES, VALID_OUTPUT_IMG_TYPES, VIDEO_KEY, OPENCV_KEY,
     VIDEO_OUTPUT_DIR, PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY, PLOT_SUBJECT_OVERLAP,
-    PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION, GROUP_ENERGY_PLOT_CAMERA)
+    PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
 from nonverbal_communication_analysis.utils import log
