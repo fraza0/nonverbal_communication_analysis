@@ -429,6 +429,11 @@
           </item>
           <item>
            <property name="text">
+            <string>Keypoint Energy</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>Overlap</string>
            </property>
           </item>

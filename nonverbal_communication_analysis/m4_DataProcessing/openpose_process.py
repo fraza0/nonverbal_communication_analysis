@@ -150,9 +150,6 @@ class OpenposeSubject(Subject):
             polygon_area = edge_x * scale_factor * edge_y * scale_factor
             expansiveness[camera]['area'] = np.round(polygon_area, 6)
 
-            # if camera == 'pc2':
-            #     print(camera, '\n', keypoints, '\n', expansiveness[camera])
-
         return expansiveness
 
     def metric_body_energy(self, verbose: bool = False):
