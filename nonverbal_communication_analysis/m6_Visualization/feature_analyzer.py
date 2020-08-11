@@ -161,7 +161,10 @@ class PlotCanvas(QtWidgets.QWidget):
                                           label=subject_index+'_poly')
 
                 if 'rolling' in line_type:
-                    self.canvas.axes.plot(x, y.rolling(window=ROLLING_WINDOW_SIZE).mean(),
+                    data_size = len(x)
+                    roling_window_size = ROLLING_WINDOW_SIZE \
+                        if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
+                    self.canvas.axes.plot(x, y.rolling(window=roling_window_size).mean(),
                                           self._color_encoding[subject_index +
                                                                '_rolling_meanfit'],
                                           label=subject_index+'_rolling_mean')
@@ -198,7 +201,10 @@ class PlotCanvas(QtWidgets.QWidget):
                                           label=camera+'_poly')
 
                 if 'rolling' in line_type:
-                    self.canvas.axes.plot(x, y.rolling(window=ROLLING_WINDOW_SIZE).mean(),
+                    data_size = len(x)
+                    roling_window_size = ROLLING_WINDOW_SIZE \
+                        if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
+                    self.canvas.axes.plot(x, y.rolling(window=roling_window_size).mean(),
                                           self._color_encoding[camera +
                                                                '_rolling_meanfit'],
                                           label=camera+'_rolling_mean')

@@ -55,7 +55,7 @@ class PlotCanvas(QtWidgets.QWidget):
         _roling_window_size = ROLLING_WINDOW_SIZE \
             if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
 
-        x = data['frame']
+        x = data['frame'].astype('int64')
         y = data[metric]
 
         if 'subject' in data:
