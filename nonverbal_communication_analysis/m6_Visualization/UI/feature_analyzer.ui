@@ -115,6 +115,12 @@
       </item>
       <item>
        <widget class="QWidget" name="cvs_intragroup_dist" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
         <layout class="QVBoxLayout" name="verticalLayout_11">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_6"/>
@@ -137,6 +143,12 @@
       </item>
       <item>
        <widget class="QWidget" name="cvs_group_energy" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
         <layout class="QVBoxLayout" name="verticalLayout_12">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_8"/>
