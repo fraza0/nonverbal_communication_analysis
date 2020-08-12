@@ -301,6 +301,7 @@ class Ui_FeatureComparator(object):
         self.rad_moving_avg.setText(_translate("FeatureComparator", "Moving Average"))
         self.rad_spline.setText(_translate("FeatureComparator", "Spline"))
         self.btn_compare.setText(_translate("FeatureComparator", "Compare Group Data"))
+        self.btn_compare.setShortcut(_translate("FeatureComparator", "Return"))
         self.btn_save.setText(_translate("FeatureComparator", "Save Plot"))
         self.btn_save.setShortcut(_translate("FeatureComparator", "Ctrl+S"))
         self.btn_close.setText(_translate("FeatureComparator", "Close"))

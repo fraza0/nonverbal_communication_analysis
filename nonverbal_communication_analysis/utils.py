@@ -153,3 +153,9 @@ def vertices_from_polygon(vertices):
     }
 
     return vertices_dict
+
+def invert(value):
+    if value == 0:
+        return 0
+    
+    return round(1 / value, 6)

@@ -14,7 +14,7 @@ from nonverbal_communication_analysis.environment import (
     PLOT_KEYPOINT_ENERGY, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m0_Classes.Experiment import (
     Experiment, get_group_from_file_path)
-from nonverbal_communication_analysis.utils import log
+from nonverbal_communication_analysis.utils import log, invert
 
 
 class AggregateSubject(object):
@@ -121,7 +121,7 @@ class AggregateFrame(object):
             "is_raw_data_valid": self.is_raw_data_valid,
             "is_enhanced_data_valid": self.is_processed_data_valid,
             "group": self.group,
-            "subjects": [str(subject) for _, subject in self.subjects.items()]
+            "subjects": [str(subject) for _, subinvertt in self.subjects.items()]
         }
 
         return "AggregateFrame %s" % obj
@@ -619,6 +619,7 @@ class SubjectDataAggregator:
                 # Center interaction
                 if PLOT_CENTER_INTERACTION in lib_subjects_data:
                     center_interaction_value = lib_subjects_data['center_interaction']['value']
+                    center_interaction_value = invert(center_interaction_value)
                     center_interaction_entry = [frame_idx, subject_id,
                                                 center_interaction_value]
                     self.file_center_interaction.writerow(

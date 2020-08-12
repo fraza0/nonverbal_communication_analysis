@@ -511,6 +511,9 @@
           <property name="text">
            <string>Compare Group Data</string>
           </property>
+          <property name="shortcut">
+           <string>Return</string>
+          </property>
          </widget>
         </item>
        </layout>

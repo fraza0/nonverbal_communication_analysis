@@ -15,7 +15,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE, LINESTYLES,
     PLOT_CANVAS_COLOR_ENCODING, PLOTS_LIB, ROLLING_WINDOW_SIZE,
-    VALID_OUTPUT_FILE_TYPES)
+    VALID_OUTPUT_FILE_TYPES, PLOT_CENTER_INTERACTION)
 from nonverbal_communication_analysis.m6_Visualization.feature_comparator_gui import \
     Ui_FeatureComparator
 
@@ -69,7 +69,11 @@ class PlotCanvas(QtWidgets.QWidget):
                 x = subject_data['frame'].astype('int64')
                 y = subject_data[metric]
 
-                label = 'sub_'+subject_index+'_'+group
+                # Applied on 
+                # if metric == PLOT_CENTER_INTERACTION:
+                #     y = np.divide(1, y, where=y!=.0)
+
+                label = 'S'+subject_index+'_'+group
 
                 if 'raw' in linetype:
                     self.canvas.axes.scatter(x, y,
