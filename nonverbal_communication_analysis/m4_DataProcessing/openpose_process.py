@@ -168,7 +168,6 @@ class OpenposeSubject(Subject):
                             'pc3': 0}
 
         if previous_pose == current_pose:
-            print("Same, so skip")
             return keypoints_energy
 
         previous_pose_cameras = set(previous_pose.keys())

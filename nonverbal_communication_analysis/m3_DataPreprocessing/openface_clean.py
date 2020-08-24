@@ -232,7 +232,8 @@ class OpenfaceClean(object):
                     camera_id = re.search(r'(?<=Video)(pc\d{1})(?=\d{14})',
                                           openface_output_file.name).group(0)
                     openface_file_df = pd.read_csv(openface_output_file)
-
+                    
+                    openface_file_df = openface_file_df.rename(columns=lambda x: x.strip())
                     tmp_df = openface_file_df
                     if specific_frame is not None:
                         tmp_df = openface_file_df.loc[openface_file_df.frame ==
@@ -242,6 +243,7 @@ class OpenfaceClean(object):
                     # Scaling
                     to_normalize_cols_x = self.columns_2d_facial_lmks_x + self.columns_2d_eye_lmks_x
                     to_normalize_cols_y = self.columns_2d_facial_lmks_y + self.columns_2d_eye_lmks_y
+
                     to_normalize_df_x = tmp_df[to_normalize_cols_x]
                     to_normalize_df_y = tmp_df[to_normalize_cols_y]
 
