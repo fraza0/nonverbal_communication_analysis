@@ -121,7 +121,7 @@ class AggregateFrame(object):
             "is_raw_data_valid": self.is_raw_data_valid,
             "is_enhanced_data_valid": self.is_processed_data_valid,
             "group": self.group,
-            "subjects": [str(subject) for _, subinvertt in self.subjects.items()]
+            "subjects": [str(subject) for _, subject in self.subjects.items()]
         }
 
         return "AggregateFrame %s" % obj
