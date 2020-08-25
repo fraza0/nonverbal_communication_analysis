@@ -128,6 +128,8 @@ class PlotCanvas(QtWidgets.QWidget):
         """
         self.canvas.axes.clear()
         data = data.sort_values(by=['frame'])
+        poly_degree = 50
+
         if 'subject' in data:
             for subject_index in data['subject'].unique():
                 subject_data = data[data['subject'] == subject_index]
@@ -154,7 +156,7 @@ class PlotCanvas(QtWidgets.QWidget):
                                           label=subject_index+'_spline')
 
                 if 'poly' in line_type:
-                    z = np.polyfit(x, y, 50)
+                    z = np.polyfit(x, y, poly_degree)
                     f = np.poly1d(z)
                     self.canvas.axes.plot(x, f(x),
                                           self._color_encoding[subject_index+'_polyfit'],
@@ -193,7 +195,7 @@ class PlotCanvas(QtWidgets.QWidget):
 
                 if 'poly' in line_type:
 
-                    z = np.polyfit(x, y, 50)
+                    z = np.polyfit(x, y, poly_degree)
                     p = np.poly1d(z)
                     self.canvas.axes.plot(x, p(x),
                                           self._color_encoding[camera +
@@ -229,7 +231,7 @@ class PlotCanvas(QtWidgets.QWidget):
                                       label=data_column+'_spline')
 
             if 'poly' in line_type:
-                z = np.polyfit(x, y, 50)
+                z = np.polyfit(x, y, poly_degree)
                 p = np.poly1d(z)
                 self.canvas.axes.plot(x, p(x),
                                       self._color_encoding[data_column+'_polyfit'],

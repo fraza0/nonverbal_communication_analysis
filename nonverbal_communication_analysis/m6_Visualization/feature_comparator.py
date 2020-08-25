@@ -45,13 +45,16 @@ class PlotCanvas(QtWidgets.QWidget):
         return True
 
     def smoothing_factor(self, number_datapoints):
-        return number_datapoints+sqrt(2*number_datapoints)-1
+        _max = number_datapoints+sqrt(2*number_datapoints)
+        _min = number_datapoints-sqrt(2*number_datapoints)
+        return (_max + _min) / 2
 
     def draw_plot(self, data: pd.DataFrame, gid_group: tuple, metric: str, linetype: str = 'spline'):
         data = data.sort_values(by=['frame'])
         group_id, group = gid_group
 
         data_size = len(data)
+        poly_degree = 50
         _roling_window_size = ROLLING_WINDOW_SIZE \
             if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
 
@@ -69,10 +72,6 @@ class PlotCanvas(QtWidgets.QWidget):
                 x = subject_data['frame'].astype('int64')
                 y = subject_data[metric]
 
-                # Applied on 
-                # if metric == PLOT_CENTER_INTERACTION:
-                #     y = np.divide(1, y, where=y!=.0)
-
                 label = 'S'+subject_index+'_'+group
 
                 if 'raw' in linetype:
@@ -89,7 +88,7 @@ class PlotCanvas(QtWidgets.QWidget):
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
                 elif 'poly' in linetype:
-                    z = np.polyfit(x, y, 50)
+                    z = np.polyfit(x, y, poly_degree)
                     f = np.poly1d(z)
                     self.canvas.axes.plot(x, f(x),
                                           color=self._color_encoding[subject_index],
@@ -112,7 +111,7 @@ class PlotCanvas(QtWidgets.QWidget):
                 self.canvas.axes.plot(x, bspl_y,
                                       label=group)
             elif 'poly' in linetype:
-                z = np.polyfit(x, y, 50)
+                z = np.polyfit(x, y, poly_degree)
                 p = np.poly1d(z)
                 self.canvas.axes.plot(x, p(x),
                                       label=group)
