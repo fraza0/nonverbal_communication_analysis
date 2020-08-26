@@ -38,15 +38,27 @@ class PlotCanvas(QtWidgets.QWidget):
 
         self.name = name
 
-    def save_plots(self, plot_path):
-        self.canvas.figure.set_size_inches(18.5, 10.5, forward=False)
-        self.canvas.figure.savefig(
-            plot_path / (self.name+'.png'), dpi=100)
+    def save_plots(self, metric, camera, linetype):
+        # self.canvas.figure.set_size_inches(12.5, 9.5, forward=True)
+        name_parts = self.name.split('_')[1:]
+        for n_group in range(0, len(name_parts)//3):
+            group_name = name_parts[n_group*3]
+            group_task = name_parts[n_group*3+1] + \
+                '_' + name_parts[n_group*3+2]
+
+            save_dir = DATASET_SYNC/group_name/FEATURE_AGGREGATE_DIR/group_task/'PLOTS'
+            save_name = self.name + '_' + metric + '_'
+            if camera is not None:
+                save_name += camera + '_'
+            save_name += linetype + '.png'
+            self.canvas.figure.savefig(save_dir / save_name, dpi=100)
+
         return True
 
     def smoothing_factor(self, number_datapoints):
-        _max = number_datapoints+sqrt(2*number_datapoints)
-        _min = number_datapoints-sqrt(2*number_datapoints)
+        _sqrt_value = sqrt(2*number_datapoints)
+        _max = number_datapoints+_sqrt_value
+        _min = number_datapoints-_sqrt_value
         return (_max + _min) / 2
 
     def draw_plot(self, data: pd.DataFrame, gid_group: tuple, metric: str, linetype: str = 'spline'):
@@ -138,6 +150,8 @@ class FeatureComparator(object):
 
         self.groups_info = pd.read_csv(GROUPS_INFO_FILE)
 
+        self.canvas = None
+
         # Initial state
         group_names = list(self.group_dirs.keys())
         group_names.sort()
@@ -170,6 +184,8 @@ class FeatureComparator(object):
         self.ui.cb_group3.currentIndexChanged.connect(
             lambda: self.on_change_cb_group(self.ui.cb_group3, self.ui.cb_task3, self.ui.tb_type3))
 
+        self.ui.btn_save.clicked.connect(self.save)
+
     def open(self):
         self.widget.show()
 
@@ -177,7 +193,8 @@ class FeatureComparator(object):
         self.widget.close()
 
     def save(self):
-        print("Save")
+        if self.canvas:
+            self.canvas.save_plots(self.metric, self.camera, self.linetype)
 
     def load_data(self, groups):
         subjects = list()
@@ -187,14 +204,21 @@ class FeatureComparator(object):
                 subjects.append(idx+1)
 
         camera = self.ui.cb_camera.currentText().lower()
+        self.camera = camera
         metric = self.ui.cb_metric.currentText().lower()
+        self.metric = metric
         linetype = [k for k, v in self.linetype_rad.items()
                     if v.isChecked()]
+        self.linetype = linetype[0]
 
-        plot_name = 'compare_' + \
+        plot_name = 'comparison_' + \
             '_'.join(['_'.join(group_tuple) for group_tuple in groups])
 
         self.canvas = PlotCanvas(parent=self.ui.cvs_plot, name=plot_name)
+
+        fixed_columns = ['frame', 'group_idx', 'group']
+
+        data = None
 
         groups = sorted(groups)
         for idx, (group, task) in enumerate(groups):
@@ -211,10 +235,16 @@ class FeatureComparator(object):
                 break
 
             metric_file = metric_file[0]
-            data = pd.read_csv(metric_file)
+            group_metric_data = pd.read_csv(metric_file)
 
-            if 'camera' not in data.columns:
-                self.ui.cb_camera.setCurrentIndex(0)
+            group_metric_data['group_idx'] = idx
+            group_metric_data['group'] = group
+
+            if data is None:
+                data = pd.DataFrame(columns = group_metric_data.columns)
+
+            if 'camera' not in group_metric_data.columns:
+                self.ui.cb_camera.setCurrentIndex(1)
                 self.ui.cb_camera.setEnabled(False)
                 camera = self.ui.cb_camera.currentText().lower()
             else:
@@ -223,9 +253,10 @@ class FeatureComparator(object):
                     self.ui.cb_camera.setCurrentIndex(1)
 
                 camera = self.ui.cb_camera.currentText().lower()
-                data = data[data['camera'] == camera]
+                group_metric_data = group_metric_data[group_metric_data['camera'] == camera]
+                fixed_columns.append('camera')
 
-            if 'subject' not in data.columns:
+            if 'subject' not in group_metric_data.columns:
                 self.ui.chb_subject1.setChecked(True)
                 self.ui.chb_subject2.setChecked(True)
                 self.ui.chb_subject3.setChecked(True)
@@ -234,10 +265,26 @@ class FeatureComparator(object):
                 subjects_data = pd.DataFrame(columns=data.columns)
                 for subject in subjects:
                     subjects_data = subjects_data.append(
-                        data[data['subject'] == subject], ignore_index=True)
-                data = subjects_data
+                        group_metric_data[group_metric_data['subject'] == subject], ignore_index=True)
+                group_metric_data = subjects_data
+                fixed_columns.append('subject')
 
-            self.canvas.draw_plot(data, (idx, group), metric_name,
+            data = data.append(group_metric_data, ignore_index=True)
+                
+        to_normalize_column = set(
+            data.columns).symmetric_difference(fixed_columns)
+        normalized_data = data[to_normalize_column]
+        normalized_min = normalized_data.min()
+        normalized_df = (normalized_data-normalized_min) / \
+            (normalized_data.max()-normalized_min)
+
+        data[list(to_normalize_column)] = normalized_df
+
+        for group in data['group'].unique():
+            group_data = data[data['group'] == group]
+            group_idx = group_data['group_idx'].unique()[0]
+            group_data = group_data.drop(columns=['group', 'group_idx'])
+            self.canvas.draw_plot(group_data, (group_idx, group), metric_name,
                                   linetype=linetype)
 
     def compare(self):
