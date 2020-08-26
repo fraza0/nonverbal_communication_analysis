@@ -156,6 +156,6 @@ def vertices_from_polygon(vertices):
 
 def invert(value):
     if value == 0:
-        return 0
+        return 1
     
     return round(1 / value, 6)
