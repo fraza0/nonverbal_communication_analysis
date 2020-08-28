@@ -41,8 +41,8 @@ class OpenposeSubject(Subject):
         self.expansiveness = dict()
         self.overlap = dict()
         self.body_direction = dict()
-        self.energy = 0
-        self.center_interaction = 0.0
+        self.energy = dict()
+        self.center_interaction = dict()
         self.verbose = verbose
         self.prettify = prettify
         self.subject_shoulder_distances = dict()
@@ -564,7 +564,7 @@ class OpenposeProcess(object):
                 self.intragroup_distance = group_data
                 for _, subject in self.subjects.items():
                     if not self.has_required_cameras(subject):
-                        log('ERROR', 'Subject (%s) does not have data from required cameras. ' % subject.id +
+                        log('WARN', 'Subject (%s) does not have data from required cameras. ' % subject.id +
                             'Not enough information to process frame (%s)' % frame_idx)
                     else:
                         self.process_subject_individual_metrics(subject,

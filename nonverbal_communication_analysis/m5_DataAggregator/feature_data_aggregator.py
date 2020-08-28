@@ -565,6 +565,8 @@ class SubjectDataAggregator:
                         ['frame', 'camera', PLOT_INTRAGROUP_DISTANCE])
 
                 for camera, value in lib_group_data[PLOT_INTRAGROUP_DISTANCE].items():
+                    if not value['area']:
+                        value['area'] = 0
                     intragroup_entry = [frame_idx, camera, value['area']]
                     self.file_ig.writerow(intragroup_entry)
 
@@ -618,8 +620,11 @@ class SubjectDataAggregator:
 
                 # Center interaction
                 if PLOT_CENTER_INTERACTION in lib_subjects_data:
-                    center_interaction_value = lib_subjects_data['center_interaction']['value']
-                    center_interaction_value = invert(center_interaction_value)
+                    center_interaction_value = 0.0
+                    if 'value' in lib_subjects_data['center_interaction']:
+                        center_interaction_value = lib_subjects_data['center_interaction']['value']
+                        center_interaction_value = invert(center_interaction_value)
+                    
                     center_interaction_entry = [frame_idx, subject_id,
                                                 center_interaction_value]
                     self.file_center_interaction.writerow(
