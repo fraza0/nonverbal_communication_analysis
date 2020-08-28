@@ -71,7 +71,7 @@ class PlotCanvas(QtWidgets.QWidget):
             if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
 
         x = data['frame'].astype('int64')
-        y = data[metric]
+        y = data[metric].astype('float64')
 
         if 'subject' in data:
             subjects = sorted(data['subject'].unique())
@@ -120,6 +120,7 @@ class PlotCanvas(QtWidgets.QWidget):
                 s_value = self.smoothing_factor(len(x))
                 bspl = I.splrep(x, y, s=s_value)
                 bspl_y = I.splev(x, bspl)
+
                 self.canvas.axes.plot(x, bspl_y,
                                       label=group)
             elif 'poly' in linetype:
@@ -241,7 +242,7 @@ class FeatureComparator(object):
             group_metric_data['group'] = group
 
             if data is None:
-                data = pd.DataFrame(columns = group_metric_data.columns)
+                data = pd.DataFrame(columns=group_metric_data.columns)
 
             if 'camera' not in group_metric_data.columns:
                 self.ui.cb_camera.setCurrentIndex(1)
@@ -270,15 +271,15 @@ class FeatureComparator(object):
                 fixed_columns.append('subject')
 
             data = data.append(group_metric_data, ignore_index=True)
-                
+
         to_normalize_column = set(
             data.columns).symmetric_difference(fixed_columns)
-        normalized_data = data[to_normalize_column]
-        normalized_min = normalized_data.min()
-        normalized_df = (normalized_data-normalized_min) / \
-            (normalized_data.max()-normalized_min)
+        to_normalize_data = data[to_normalize_column]
+        normalized_min = to_normalize_data.min()
+        normalized_data = (to_normalize_data-normalized_min) / \
+            (to_normalize_data.max()-normalized_min)
 
-        data[list(to_normalize_column)] = normalized_df
+        data[list(to_normalize_column)] = normalized_data
 
         for group in data['group'].unique():
             group_data = data[data['group'] == group]
