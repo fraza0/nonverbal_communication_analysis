@@ -188,8 +188,10 @@ class SubjectDataAggregator:
             tasks = [x for x in processed_path.iterdir() if x.is_dir()
                      and 'task' in x.name]
             for task in tasks:
-                self.video_data['heatmap'] = {task.name: [x for x in task.iterdir() if not x.is_dir()
-                                                          and x.suffix in VALID_OUTPUT_IMG_TYPES]}
+                if 'heatmap' not in self.video_data:
+                    self.video_data['heatmap'] = dict()
+                self.video_data['heatmap'][task.name] = [x for x in task.iterdir() if not x.is_dir()
+                                                         and x.suffix in VALID_OUTPUT_IMG_TYPES]
 
         experiment_data_output = self.group_directory / \
             (self.group_id + '.json')
@@ -623,8 +625,9 @@ class SubjectDataAggregator:
                     center_interaction_value = 0.0
                     if 'value' in lib_subjects_data['center_interaction']:
                         center_interaction_value = lib_subjects_data['center_interaction']['value']
-                        center_interaction_value = invert(center_interaction_value)
-                    
+                        center_interaction_value = invert(
+                            center_interaction_value)
+
                     center_interaction_entry = [frame_idx, subject_id,
                                                 center_interaction_value]
                     self.file_center_interaction.writerow(
