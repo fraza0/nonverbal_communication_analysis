@@ -25,13 +25,15 @@ class ExperimentCameraFrame(object):
     Identify users based on their position in the experiment room.
     """
 
-    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, library: str, verbose: bool = False, display: bool = False):
+    def __init__(self, camera: str, frame: int, people_data: pd.DataFrame, library: str, verbose: bool = False, display: bool = False, metadata: dict = None):
         self.frame_data_validity = False
         self.verbose = verbose
+        self.vis = None
         self.display = display
-        self.vis = SimpleVisualizer('3CLC9VWRSAMPLE')
         self.camera = camera
         self.frame = frame
+        self.metadata = metadata
+        
         if library == OPENPOSE_KEY:
             self.subjects = self.parse_subjects_data(
                 people_data, key=OPENPOSE_KEY)
@@ -112,11 +114,21 @@ class ExperimentCameraFrame(object):
                 allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
                     allocated_subjects, self.frame, self.vis)
         elif key == DENSEPOSE_KEY:
-            print("DP")
+            people_data = people_data.sort_values(
+                by=['score'], ascending=False)
+            people_data = people_data.drop('score', axis=1)
+            # people_data = people_data[:4]  # Get top 4 scored people
+            for _, person in people_data.iterrows():
+                unconfirmed_identity_subject = Subject(
+                    self.camera, densepose_pose_features=person,
+                    verbose=self.verbose, display=self.display, metadata=self.metadata)
+                unconfirmed_identity_subject.assign_quadrant(key=DENSEPOSE_KEY)
 
-        if self.display and self.vis is not None:
-            self.vis.show_subjects_frame(self.camera, self.frame,
-                                         assigned_subjects=allocated_subjects, key=OPENPOSE_KEY)
+                allocated_subjects = unconfirmed_identity_subject.allocate_subjects(
+                    allocated_subjects, self.frame, self.vis, key=DENSEPOSE_KEY)
+
+                if self.verbose:
+                    print("Allocated subject", allocated_subjects.keys())
 
         return list(dict(sorted(allocated_subjects.items())).values())
 

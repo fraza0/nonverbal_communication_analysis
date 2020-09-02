@@ -44,8 +44,6 @@ SCALE_SUBJECTS = {
     'pc3': [1, 2]
 }
 
-SCALE_SUBJECTS
-
 
 #################
 # DATASET PATHS #
@@ -179,6 +177,29 @@ OPENPOSE_KEYPOINT_MAP = {
     'R_SMALLTOE': 23,
     'R_HEEL': 24,
     'BACKGROUND': 25,
+}
+
+# Densepose keypoints adapted to BODY_25 (openpose keypoint mapping)
+DENSEPOSE_KEYPOINT_MAP = {
+    'nose': 0,
+    'neck': 1,
+    'right_shoulder': 2,
+    'right_elbow': 3,
+    'right_wrist': 4,
+    'left_shoulder': 5,
+    'left_elbow': 6,
+    'left_wrist': 7,
+    'mid_hip': 8,
+    'right_hip': 9,
+    'right_knee': 10,
+    'right_ankle': 11,
+    'left_hip': 12,
+    'left_knee': 13,
+    'left_ankle': 14,
+    'right_eye': 15,
+    'left_eye': 16,
+    'right_ear': 17,
+    'left_ear': 18,
 }
 
 KEYPOINT_CONFIDENCE_THRESHOLD = 0.10

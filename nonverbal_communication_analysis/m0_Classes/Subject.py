@@ -14,7 +14,7 @@ from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
     VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY,
-    QUADRANT_MIN, KEYPOINT_CONFIDENCE_THRESHOLD, SUBJECT_CONFIDENCE_THRESHOLD)
+    QUADRANT_MIN, KEYPOINT_CONFIDENCE_THRESHOLD, SUBJECT_CONFIDENCE_THRESHOLD, DENSEPOSE_KEYPOINT_MAP)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     SimpleVisualizer
 from nonverbal_communication_analysis.utils import log
@@ -56,8 +56,9 @@ class Subject(object):
     From now on, every person in the experiment is called a Subject
     """
 
-    def __init__(self, camera: str, openpose_pose_features: list = None, openpose_face_features: list = None, openface_face_features: list = None, densepose_pose_features: list = None, verbose: bool = False, display: bool = False):
+    def __init__(self, camera: str, openpose_pose_features: list = None, openpose_face_features: list = None, openface_face_features: list = None, densepose_pose_features: list = None, verbose: bool = False, display: bool = False, metadata: dict = None):
         self.camera = camera
+        self.metadata = metadata
         self.pose = {
             "openpose": self.parse_features(openpose_pose_features, key=OPENPOSE_KEY, sub_key='POSE'),
             "densepose": self.parse_features(densepose_pose_features, key=DENSEPOSE_KEY),
@@ -85,7 +86,7 @@ class Subject(object):
         assert value < 5, "Invalid quadrant property value"
         self.__quadrant = value
 
-    def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: SimpleVisualizer = None):
+    def allocate_subjects(self, allocated_subjects: dict, frame: int, vis: SimpleVisualizer = None, key: str = OPENPOSE_KEY):
         """Allocate subject to quadrant
 
         Args:
@@ -111,7 +112,7 @@ class Subject(object):
                 print("Assign Subject to Quadrant")
             allocated_subjects[quadrant] = unallocated_subject
             return allocated_subjects
-        elif unallocated_subject.is_person():
+        elif unallocated_subject.is_person(key=key):
             if self.verbose:
                 print("Is a person!")
                 print("Allocated Sub confidence:",
@@ -123,7 +124,7 @@ class Subject(object):
 
                 replace_subject = allocated_subjects[quadrant]
                 allocated_subjects[unallocated_subject.quadrant] = unallocated_subject
-                return replace_subject.allocate_subjects(allocated_subjects, frame)
+                return replace_subject.allocate_subjects(allocated_subjects, frame, key=key)
             else:
                 quadrant_confidence = unallocated_subject.identification_confidence
                 quadrant_confidence[quadrant] = 0
@@ -154,8 +155,10 @@ class Subject(object):
             if unallocated_subject.confidence > 0:
                 if self.verbose:
                     print("Join part to subject in quadrant")
+                
+                # print(unallocated_subject.pose)
                 allocated_subjects[quadrant].attach_keypoints(
-                    unallocated_subject.get_valid_keypoints())
+                    unallocated_subject.get_valid_keypoints(key=key), key=key)
                 return allocated_subjects
             else:
                 if self.verbose:
@@ -214,7 +217,23 @@ class Subject(object):
             return identification_confidence
 
         elif key == DENSEPOSE_KEY:
-            print("DP")
+            densepose_pose_featues = self.pose[DENSEPOSE_KEY.lower()]
+
+            for keypoint in densepose_pose_featues.values():
+                keypoint_x, keypoint_y, keypoint_confidence = keypoint[0], keypoint[1], keypoint[2]
+                point = Point(keypoint_x, keypoint_y)
+                for quadrant, polygon in CAMERA_ROOM_GEOMETRY[self.camera].items():
+                    if point.intersects(polygon):
+                        id_weighing[quadrant] += keypoint_confidence
+            identification_confidence = dict(
+                sorted(id_weighing.items(), key=operator.itemgetter(1), reverse=True))
+            self.identification_confidence = identification_confidence
+            self.quadrant = list(identification_confidence.keys())[0]
+            self.confidence = identification_confidence[self.quadrant]
+            if self.verbose:
+                print(identification_confidence)
+
+            return identification_confidence
         else:
             return None
 
@@ -229,7 +248,7 @@ class Subject(object):
         """
         return keypoint != [QUADRANT_MIN, QUADRANT_MIN, 0]
 
-    def is_person(self, key='openpose'):
+    def is_person(self, key=OPENPOSE_KEY):
         """Check if subject is a person. If it's not, might be a loose part.
         Person is considered a subject with upper trunk keypoints
 
@@ -239,13 +258,14 @@ class Subject(object):
         Returns:
             bool: True if subject is a person. False otherwise
         """
+        key = key.lower()
         subject_keypoints = self.pose[key]
         for keypoint in VALID_SUBJECT_POSE_KEYPOINTS:
             if not (keypoint in subject_keypoints and self.is_valid_keypoint(subject_keypoints[keypoint])):
                 return False
         return True
 
-    def get_valid_keypoints(self, key: str = 'openpose'):
+    def get_valid_keypoints(self, key: str = OPENPOSE_KEY):
         """Get valid keypoints
 
         Args:
@@ -254,7 +274,9 @@ class Subject(object):
         Returns:
             dict: Valid index and keypoints's value
         """
+        key = key.lower()
         valid_keypoints = dict()
+        print(key, self.pose[key])
         for keypoint_index, keypoint_value in self.pose[key].items():
             if self.is_valid_keypoint(keypoint_value):
                 valid_keypoints[keypoint_index] = keypoint_value
@@ -281,7 +303,7 @@ class Subject(object):
 
         return has_keypoints
 
-    def attach_keypoints(self, features: list, key: str = 'openpose'):
+    def attach_keypoints(self, features: list, key: str = OPENPOSE_KEY):
         """Attach Subject keypoints.
         This might happen when subject instance is not a person, but instead is a loose part.
 
@@ -292,6 +314,7 @@ class Subject(object):
         Returns:
             bool: True for attachment confirmation
         """
+        key = key.lower()
         merged_keypoints = {**self.pose[key], **features}
         self.pose[key] = merged_keypoints
         return True
@@ -359,11 +382,45 @@ class Subject(object):
             return openface_data
 
         elif key == DENSEPOSE_KEY:
-            pass
+            keypoints_filtered = dict()
+
+            for key, keypoint in features_list.iteritems():
+                keypoints_filtered[DENSEPOSE_KEYPOINT_MAP[key]
+                                   ] = self.normalize_keypoints(keypoint)
+
+            return keypoints_filtered
         else:
             return None
 
         return keypoints
+
+    def normalize_keypoints(self, keypoint: list):
+        """Feature scaling
+
+        x' = (x - min(x)) / (max(x) - min(x))
+
+        Args:
+            keypoint (list): Keypoint coordinates
+
+        Returns:
+            list: Scaled keypoints coordinates
+        """
+        if len(keypoint) < 2:
+            return None
+
+        if self.metadata:
+            image_shape = self.metadata['im_shape'][:2]
+            min_x, max_x = 0, image_shape[0]
+            min_y, max_y = 0, image_shape[1]
+            
+            kp_x = keypoint[0]
+            kp_y = keypoint[1]
+            kp_c = keypoint[2]
+
+            kp_x = round((kp_x - min_x) / (max_x - min_x), 6)
+            kp_y = round((kp_y - min_y) / (max_y - min_y), 6)
+           
+            return [kp_x, kp_y, kp_c]
 
     def to_json(self):
         """Transform Subject object to JSON format.
