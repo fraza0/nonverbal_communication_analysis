@@ -14,7 +14,8 @@ from nonverbal_communication_analysis.environment import (
     CAMERA_ROOM_GEOMETRY, PEOPLE_FIELDS, RELEVANT_FACE_KEYPOINTS,
     RELEVANT_POSE_KEYPOINTS, SUBJECT_IDENTIFICATION_GRID,
     VALID_SUBJECT_POSE_KEYPOINTS, OPENPOSE_KEY, OPENFACE_KEY, DENSEPOSE_KEY,
-    QUADRANT_MIN, KEYPOINT_CONFIDENCE_THRESHOLD, SUBJECT_CONFIDENCE_THRESHOLD, DENSEPOSE_KEYPOINT_MAP)
+    QUADRANT_MIN, KEYPOINT_CONFIDENCE_THRESHOLD, SUBJECT_CONFIDENCE_THRESHOLD, 
+    DENSEPOSE_KEYPOINT_MAP, VIDEO_RESOLUTION)
 from nonverbal_communication_analysis.m6_Visualization.simple_visualization import \
     SimpleVisualizer
 from nonverbal_communication_analysis.utils import log
@@ -409,7 +410,7 @@ class Subject(object):
             return None
 
         if self.metadata:
-            image_shape = self.metadata['im_shape'][:2]
+            image_shape = list(VIDEO_RESOLUTION[self.camera].values()) # self.metadata['im_shape'][:2]
             min_x, max_x = 0, image_shape[0]
             min_y, max_y = 0, image_shape[1]
             
