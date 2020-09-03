@@ -169,12 +169,14 @@ class SubjectDataAggregator:
             self.openface_data['processed'] = self.get_processed_data(
                 openface_group_directory)
 
-        # if densepose:
-        #     densepose_group_directory = DENSEPOSE_OUTPUT_DIR / self.group_id
-        #     experiment_data[DENSEPOSE_KEY] = self.get_experiment_data(
-        #         densepose_group_directory)
-        #     self.densepose_data = self.get_densepose_data(
-        #         densepose_group_directory)
+        if densepose:
+            densepose_group_directory = DENSEPOSE_OUTPUT_DIR / self.group_id
+            experiment_data[DENSEPOSE_KEY] = self.get_experiment_data(
+                densepose_group_directory)
+            self.densepose_data['cleaned'] = self.get_clean_data(
+                densepose_group_directory)
+            self.densepose_data['processed'] = self.get_processed_data(
+                densepose_group_directory)
 
         if video:
             video_data_group_directory = VIDEO_OUTPUT_DIR / self.group_id
@@ -424,12 +426,9 @@ class SubjectDataAggregator:
             prettify (bool, optional): Pretty JSON print. Defaults to False.
         """
         openpose_data = self.openpose_data
+        densepose_data = self.densepose_data
         openface_data = self.openface_data
         video_data = self.video_data
-
-        # TODO: CHECK DENSEPOSE IMPLEMENTATION AFTER
-        # IMPLEMENTING DENSEPOSE EXTRACTION
-        # densepose_data = self.densepose_data
 
         if not openpose_data:
             log('ERROR', 'Nothing to Aggregate. Use -op -of and -dp to include openpose, openface and densepose data. The use of Openpose data is mandatory.')
@@ -437,6 +436,10 @@ class SubjectDataAggregator:
         if openface_data:
             cleaned_openface = openface_data['cleaned']
             processed_openface = openface_data['processed']
+
+        if densepose_data:
+            cleaned_densepose = densepose_data['cleaned']
+            processed_densepose = densepose_data['processed']
 
         cleaned_openpose = openpose_data['cleaned']
         processed_openpose = openpose_data['processed']
@@ -515,6 +518,29 @@ class SubjectDataAggregator:
                                                                    frame_data_type='processed')
 
                 # DENSEPOSE
+                if densepose_data:
+                    if self.verbose:
+                        print("Cleaned Densepose")
+                    
+                    self.framework_being_processed = DENSEPOSE_KEY
+                    for camera in cleaned_densepose[task]:
+                        cleaned_densepose_files = cleaned_densepose[task][camera]
+                        densepose_clean_frame_data = json.load(
+                            open(cleaned_densepose_files[frame_idx], 'r'))
+                        aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                            densepose_clean_frame_data,
+                                                            camera=camera,
+                                                            frame_data_type='raw')
+
+                    if self.verbose:
+                        print("Processed Densepose")
+                    
+                    densepose_processed_frame_data = json.load(
+                        open(processed_densepose[task][frame_idx], 'r'))
+
+                    aggregate_frame = self.read_frame_data(aggregate_frame,
+                                                        densepose_processed_frame_data,
+                                                        frame_data_type='processed')
 
                 # VIDEO
                 if video_data:

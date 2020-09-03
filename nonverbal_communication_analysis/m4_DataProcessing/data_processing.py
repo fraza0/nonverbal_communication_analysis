@@ -16,6 +16,8 @@ from nonverbal_communication_analysis.m4_DataProcessing.openpose_process import 
     OpenposeProcess
 from nonverbal_communication_analysis.m4_DataProcessing.openface_process import \
     OpenfaceProcess
+from nonverbal_communication_analysis.m4_DataProcessing.densepose_process import \
+    DenseposeProcess
 
 
 def main(group_directory: str, task: int = None, specific_frame: int = None, video: bool = False, openpose: bool = False, openface: bool = False, densepose: bool = False, prettify: bool = False, display: bool = False, verbose: bool = False,):
@@ -52,6 +54,9 @@ def main(group_directory: str, task: int = None, specific_frame: int = None, vid
     if densepose:
         if verbose:
             print("Processing Densepose data")
+        dpp = DenseposeProcess(group_id, prettify=prettify, verbose=verbose)
+        dpp.process(tasks_directories,
+                    specific_frame=specific_frame, display=display)
 
 
 if __name__ == "__main__":

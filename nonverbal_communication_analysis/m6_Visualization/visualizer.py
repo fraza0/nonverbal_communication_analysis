@@ -193,7 +193,7 @@ class VideoPlayer(QtWidgets.QWidget):
         for _, face_data in subject_data.items():
             for key, data in face_data.items():
                 if key == 'eye' or key == 'face':
-                    for keypoint_idx, keypoint_values in data.items():
+                    for _, keypoint_values in data.items():
                         keypoint_x = round(
                             keypoint_values[0] * VIDEO_RESOLUTION[camera]['x'])
                         keypoint_y = round(
@@ -201,6 +201,42 @@ class VideoPlayer(QtWidgets.QWidget):
 
                         cv2.circle(img_frame, (keypoint_x, keypoint_y),
                                    1, COLOR_MAP[subject_id], -1)
+
+        return img_frame
+
+    def densepose_overlay(self, subject_id: int, subject_data: dict, img_frame: np.ndarray, camera: str):
+        for key, data in subject_data.items():
+            if key == 'pose':
+                for keypoint_idx, keypoint_values in data.items():
+                    keypoint_x = round(
+                        keypoint_values[0] * VIDEO_RESOLUTION[camera]['x'])
+                    keypoint_y = round(
+                        keypoint_values[1] * VIDEO_RESOLUTION[camera]['y'])
+                    keypoint_c = round(keypoint_values[2] * 5)
+
+                    cv2.circle(img_frame, (keypoint_x, keypoint_y),
+                               2, COLOR_MAP[subject_id], -1)
+
+                    # Connected joints
+                    if key == 'pose':
+                        keypoint_idx = int(keypoint_idx)
+                        if keypoint_idx in OPENPOSE_KEYPOINT_LINKS:
+                            for keypoint_link_idx in OPENPOSE_KEYPOINT_LINKS[keypoint_idx]:
+                                pose_keypoints = subject_data['pose']
+                                if str(keypoint_link_idx) in pose_keypoints:
+                                    keypoint = pose_keypoints[str(
+                                        keypoint_link_idx)]
+                                    keypoint_link_x = round(
+                                        keypoint[0] * VIDEO_RESOLUTION[camera]['x'])
+                                    keypoint_link_y = round(
+                                        keypoint[1] * VIDEO_RESOLUTION[camera]['y'])
+
+                                    if keypoint_x == 0 or keypoint_y == 0 or keypoint_link_x == 0 or keypoint_link_y == 0:
+                                        break
+
+                                    cv2.line(img_frame, (keypoint_x, keypoint_y),
+                                             (keypoint_link_x, keypoint_link_y), COLOR_MAP[subject_id], 1)
+
 
         return img_frame
 
@@ -257,7 +293,8 @@ class VideoPlayer(QtWidgets.QWidget):
                     openpose_data['pose'] = subject_type_data_pose[self.camera] \
                         if self.camera in subject_type_data_pose else dict()
                 elif pose_framework == DENSEPOSE_KEY.lower():
-                    pass
+                    densepose_data['pose'] = subject_type_data_pose[self.camera] \
+                        if self.camera in subject_type_data_pose else dict()
 
             # Face
             if self.gui_state['overlay_face']:
@@ -307,14 +344,16 @@ class VideoPlayer(QtWidgets.QWidget):
                 frame = self.openface_overlay(subject_id, frame_subject_data[OPENFACE_KEY],
                                               frame, self.camera)
 
+            frame_subject_data[DENSEPOSE_KEY] = densepose_data
+            if frame_subject_data[DENSEPOSE_KEY]:
+                frame = self.densepose_overlay(subject_id, frame_subject_data[DENSEPOSE_KEY],
+                                               frame, self.camera)
+
         # Video
         if self.gui_state['overlay_video_energy_heatmap']:
             frame = self.video_overlay(frame)
 
         return frame
-
-    def densepose_overlay(self):
-        print("Densepose Overlay")
 
     def video_overlay(self, frame):
         heatmap_file = [str(x) for x in self.group_data_path.iterdir()
