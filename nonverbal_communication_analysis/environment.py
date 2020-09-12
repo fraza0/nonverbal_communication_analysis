@@ -375,3 +375,6 @@ PLOT_CANVAS_COLOR_ENCODING = {
 
 ROLLING_WINDOW_SIZE = 900 # 900 = 30frames * 30seg - (30seg)
 LINESTYLES = ['-', '--', ':']
+
+
+TASK_2_MARK = 9000

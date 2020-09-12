@@ -15,7 +15,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from nonverbal_communication_analysis.environment import (
     DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE, LINESTYLES,
     PLOT_CANVAS_COLOR_ENCODING, PLOTS_LIB, ROLLING_WINDOW_SIZE,
-    VALID_OUTPUT_FILE_TYPES, PLOT_CENTER_INTERACTION)
+    VALID_OUTPUT_FILE_TYPES, PLOT_CENTER_INTERACTION, TASK_2_MARK)
 from nonverbal_communication_analysis.m6_Visualization.feature_comparator_gui import \
     Ui_FeatureComparator
 
@@ -28,7 +28,7 @@ warnings.simplefilter('ignore', FutureWarning)
 class PlotCanvas(QtWidgets.QWidget):
     _color_encoding = PLOT_CANVAS_COLOR_ENCODING
 
-    def __init__(self, parent, name, width=5, height=4, dpi=100):
+    def __init__(self, parent, name, camera, width=5, height=4, dpi=100):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.canvas = FigureCanvas(Figure())
@@ -37,6 +37,7 @@ class PlotCanvas(QtWidgets.QWidget):
         parent.layout().addWidget(self.canvas)
 
         self.name = name
+        self.camera = camera
 
     def save_plots(self, metric, camera, linetype):
         # self.canvas.figure.set_size_inches(12.5, 9.5, forward=True)
@@ -47,12 +48,11 @@ class PlotCanvas(QtWidgets.QWidget):
                 '_' + name_parts[n_group*3+2]
 
             save_dir = DATASET_SYNC/group_name/FEATURE_AGGREGATE_DIR/group_task/'PLOTS'
-            save_name = self.name + '_' + metric + '_'
+            save_name = metric + '_' + self.name
             if camera is not None:
-                save_name += camera + '_'
+                save_name += '_' + camera + '_'
             save_name += linetype + '.png'
             self.canvas.figure.savefig(save_dir / save_name, dpi=100)
-
         return True
 
     def smoothing_factor(self, number_datapoints):
@@ -63,14 +63,35 @@ class PlotCanvas(QtWidgets.QWidget):
 
     def draw_plot(self, data: pd.DataFrame, gid_group: tuple, metric: str, linetype: str = 'spline'):
         data = data.sort_values(by=['frame'])
-        group_id, group = gid_group
+        group_id, group, (task_name, num_tasks), conflict_type = gid_group
 
         data_size = len(data)
         poly_degree = 50
         _roling_window_size = ROLLING_WINDOW_SIZE \
             if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
 
+        # self.canvas.axes.scatter(x, y,
+        #                                      color=self._color_encoding[subject_index],
+        #                                      marker='.',
+        #                                      label=label)
+
+        x_data = pd.DataFrame(columns=['raw', 'norm'])
+        
         x = data['frame'].astype('int64')
+        x_data['raw'] = x
+        
+        x_min, x_max = x.min(), x.max()
+        x_norm = (x-x_min) / \
+            (x_max-x_min)
+        x_data['norm'] = x_norm
+
+        if task_name == 'task_2':
+            five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
+            five_min_mark = float(five_min_mark['norm'])
+
+            self.canvas.axes.axvline(x=five_min_mark, color='r')
+
+        x = x_data['norm']
         y = data[metric].astype('float64')
 
         if 'subject' in data:
@@ -112,9 +133,13 @@ class PlotCanvas(QtWidgets.QWidget):
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
         else:
+            label = group + ' (%s)' % conflict_type
+            if num_tasks > 1:
+                label = group + '_' + task_name + ' (%s)' % conflict_type
+
             if 'raw' in linetype:
                 self.canvas.axes.scatter(x, y,
-                                         label=group,
+                                         label=label,
                                          marker='.')
             elif 'spline' in linetype:
                 s_value = self.smoothing_factor(len(x))
@@ -122,17 +147,17 @@ class PlotCanvas(QtWidgets.QWidget):
                 bspl_y = I.splev(x, bspl)
 
                 self.canvas.axes.plot(x, bspl_y,
-                                      label=group)
+                                      label=label)
             elif 'poly' in linetype:
                 z = np.polyfit(x, y, poly_degree)
                 p = np.poly1d(z)
                 self.canvas.axes.plot(x, p(x),
-                                      label=group)
+                                      label=label)
             elif 'rolling' in linetype:
                 self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
-                                      label=group)
+                                      label=label)
 
-        self.canvas.axes.set_title(metric)
+        self.canvas.axes.set_title(metric+'_'+self.camera)
         self.canvas.axes.legend(loc='upper right')
         self.canvas.draw()
         return
@@ -215,9 +240,10 @@ class FeatureComparator(object):
         plot_name = 'comparison_' + \
             '_'.join(['_'.join(group_tuple) for group_tuple in groups])
 
-        self.canvas = PlotCanvas(parent=self.ui.cvs_plot, name=plot_name)
+        self.canvas = PlotCanvas(
+            parent=self.ui.cvs_plot, name=plot_name, camera=camera)
 
-        fixed_columns = ['frame', 'group_idx', 'group']
+        fixed_columns = ['frame', 'group_idx', 'group', 'task']
 
         data = None
 
@@ -240,6 +266,7 @@ class FeatureComparator(object):
 
             group_metric_data['group_idx'] = idx
             group_metric_data['group'] = group
+            group_metric_data['task'] = task
 
             if data is None:
                 data = pd.DataFrame(columns=group_metric_data.columns)
@@ -282,11 +309,19 @@ class FeatureComparator(object):
         data[list(to_normalize_column)] = normalized_data
 
         for group in data['group'].unique():
-            group_data = data[data['group'] == group]
-            group_idx = group_data['group_idx'].unique()[0]
-            group_data = group_data.drop(columns=['group', 'group_idx'])
-            self.canvas.draw_plot(group_data, (group_idx, group), metric_name,
-                                  linetype=linetype)
+            group_conflict_type = self.groups_info[self.groups_info['Group ID']
+                                             == group]['Conflict Type'].values[0]
+            tasks = data['task'].unique()
+            for task in tasks:
+                task_info = (task, len(tasks))
+                group_data = data[data['group'] == group]
+                group_idx = group_data['group_idx'].unique()[0]
+                group_data = group_data[data['task'] == task]
+                group_data = group_data.drop(
+                    columns=['group', 'group_idx', 'task'])
+
+                self.canvas.draw_plot(group_data, (group_idx, group, task_info, group_conflict_type),
+                                      metric_name, linetype=linetype)
 
     def compare(self):
         self.groups_to_compare = set()
