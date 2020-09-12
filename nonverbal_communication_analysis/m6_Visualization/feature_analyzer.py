@@ -33,7 +33,7 @@ warnings.simplefilter('ignore', FutureWarning)
 
 
 class PlotThread(QtCore.QThread):
-    def __init__(self, thread_id, group_path, plot_type, parent_info):
+    def __init__(self, thread_id, group_path, plot_type, parent_info, group):
         QtCore.QThread.__init__(self)
         self.thread_id = thread_id
         self.parent_info = parent_info
@@ -42,12 +42,12 @@ class PlotThread(QtCore.QThread):
 
         if not isinstance(self.parent_info, list):
             self.canvas = PlotCanvas(
-                parent=self.parent_info[0], name=self.parent_info[1])
+                parent=self.parent_info[0], name=self.parent_info[1], group=group)
         else:
-            self.canvas = [PlotCanvas(parent=self.parent_info[0][0], name=self.parent_info[0][1]),
+            self.canvas = [PlotCanvas(parent=self.parent_info[0][0], name=self.parent_info[0][1], group=group),
                            PlotCanvas(
-                               parent=self.parent_info[1][0], name=self.parent_info[1][1]),
-                           PlotCanvas(parent=self.parent_info[2][0], name=self.parent_info[2][1])]
+                               parent=self.parent_info[1][0], name=self.parent_info[1][1], group=group),
+                           PlotCanvas(parent=self.parent_info[2][0], name=self.parent_info[2][1], group=group)]
 
         plot_types = [PLOT_INTRAGROUP_DISTANCE, PLOT_GROUP_ENERGY,
                       PLOT_SUBJECT_OVERLAP, PLOT_CENTER_INTERACTION, PLOT_KEYPOINT_ENERGY]
@@ -99,17 +99,18 @@ class PlotThread(QtCore.QThread):
 class PlotCanvas(QtWidgets.QWidget):
     _color_encoding = PLOT_CANVAS_COLOR_ENCODING
 
-    def __init__(self, parent, name, width=5, height=4, dpi=100):
+    def __init__(self, parent, name, group, width=5, height=4, dpi=100):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.canvas = FigureCanvas(Figure())
         self.canvas.axes = self.canvas.figure.add_subplot()
         parent.layout().addWidget(self.canvas)
+        self.group = group
 
         self.name = name
 
     def save_plots(self, plot_path):
-        self.canvas.figure.set_size_inches(18.5, 10.5, forward=False)
+        self.canvas.figure.set_size_inches(12, 7, forward=False)
         self.canvas.figure.savefig(
             plot_path / ('plot_'+self.name+'.png'), dpi=100)
         return True
@@ -129,6 +130,7 @@ class PlotCanvas(QtWidgets.QWidget):
         self.canvas.axes.clear()
         data = data.sort_values(by=['frame'])
         poly_degree = 50
+        self.canvas.axes.set_title(self.group + ' ' + self.name)
 
         if 'subject' in data:
             for subject_index in data['subject'].unique():
@@ -172,7 +174,7 @@ class PlotCanvas(QtWidgets.QWidget):
                                           label=subject_index+'_rolling_mean')
 
         elif 'camera' in data:
-            for camera in data['camera'].unique():
+            for camera in sorted(data['camera'].unique()):
                 camera_data = data[data['camera'] == camera]
 
                 x = camera_data['frame']  # .loc[::5]
@@ -306,10 +308,10 @@ class FeatureAnalyzer(object):
 
             self.intragroup_dist_thread = PlotThread(1, self.group_plot_path,
                                                      PLOT_INTRAGROUP_DISTANCE,
-                                                     (self.ui.cvs_intragroup_dist, PLOT_INTRAGROUP_DISTANCE))
+                                                     (self.ui.cvs_intragroup_dist, PLOT_INTRAGROUP_DISTANCE), self.group_id+'_'+self.group_task)
             self.group_energy_thread = PlotThread(2, self.group_plot_path,
                                                   PLOT_GROUP_ENERGY,
-                                                  (self.ui.cvs_group_energy, PLOT_GROUP_ENERGY))
+                                                  (self.ui.cvs_group_energy, PLOT_GROUP_ENERGY), self.group_id+'_'+self.group_task)
             self.subject_energy_thread = PlotThread(3, self.group_plot_path,
                                                     PLOT_KEYPOINT_ENERGY,
                                                     ([(self.ui.cvs_kp_energy_1,
@@ -317,7 +319,7 @@ class FeatureAnalyzer(object):
                                                       (self.ui.cvs_kp_energy_2,
                                                        PLOT_KEYPOINT_ENERGY+'_pc2'),
                                                       (self.ui.cvs_kp_energy_3,
-                                                       PLOT_KEYPOINT_ENERGY+'_pc3')]))
+                                                       PLOT_KEYPOINT_ENERGY+'_pc3')]), self.group_id+'_'+self.group_task)
             self.overlap_thread = PlotThread(4, self.group_plot_path,
                                              PLOT_SUBJECT_OVERLAP,
                                              [(self.ui.cvs_overlap_1,
@@ -325,10 +327,10 @@ class FeatureAnalyzer(object):
                                               (self.ui.cvs_overlap_2,
                                                PLOT_SUBJECT_OVERLAP+'_pc2'),
                                               (self.ui.cvs_overlap_3,
-                                               PLOT_SUBJECT_OVERLAP+'_pc3')])
+                                               PLOT_SUBJECT_OVERLAP+'_pc3')], self.group_id+'_'+self.group_task)
             self.env_interaction_thread = PlotThread(5, self.group_plot_path,
                                                      PLOT_CENTER_INTERACTION,
-                                                     (self.ui.cvs_env_interaction, PLOT_CENTER_INTERACTION))
+                                                     (self.ui.cvs_env_interaction, PLOT_CENTER_INTERACTION), self.group_id+'_'+self.group_task)
 
             self.intragroup_dist_thread.start()
             self.group_energy_thread.start()
