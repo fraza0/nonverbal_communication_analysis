@@ -3,6 +3,7 @@ import warnings
 from math import sqrt
 
 import matplotlib
+import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
@@ -69,31 +70,7 @@ class PlotCanvas(QtWidgets.QWidget):
         poly_degree = 50
         _roling_window_size = ROLLING_WINDOW_SIZE \
             if data_size > ROLLING_WINDOW_SIZE*3 else round(data_size/5)
-
-        # self.canvas.axes.scatter(x, y,
-        #                                      color=self._color_encoding[subject_index],
-        #                                      marker='.',
-        #                                      label=label)
-
-        x_data = pd.DataFrame(columns=['raw', 'norm'])
         
-        x = data['frame'].astype('int64')
-        x_data['raw'] = x
-        
-        x_min, x_max = x.min(), x.max()
-        x_norm = (x-x_min) / \
-            (x_max-x_min)
-        x_data['norm'] = x_norm
-
-        if task_name == 'task_2':
-            five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
-            five_min_mark = float(five_min_mark['norm'])
-
-            self.canvas.axes.axvline(x=five_min_mark, color='r')
-
-        x = x_data['norm']
-        y = data[metric].astype('float64')
-
         if 'subject' in data:
             subjects = sorted(data['subject'].unique())
             for subject_index in subjects:
@@ -104,6 +81,20 @@ class PlotCanvas(QtWidgets.QWidget):
                 subject_index = str(subject_index)
                 x = subject_data['frame'].astype('int64')
                 y = subject_data[metric]
+                
+                x_data = pd.DataFrame(columns=['raw', 'norm'])
+                
+                x = subject_data['frame'].astype('int64')
+                x_data['raw'] = x
+                
+                x_min, x_max = x.min(), x.max()
+                x_norm = (x-x_min) / \
+                    (x_max-x_min)
+                x_data['norm'] = x_norm
+
+                x = x_data['norm']
+                y = subject_data[metric].astype('float64')
+                y_pos = y.max()
 
                 label = 'S'+subject_index+'_'+group
 
@@ -132,7 +123,34 @@ class PlotCanvas(QtWidgets.QWidget):
                                           color=self._color_encoding[subject_index],
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
+                    
+            if task_name == 'task_2' and group_id == 0:
+                vertical_line_drawn = True
+                five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
+                five_min_mark = float(five_min_mark['norm'].unique()[0])
+                self.canvas.axes.axvline(x=five_min_mark, color='k', linestyle='--', alpha=0.3)
+                
         else:
+            x_data = pd.DataFrame(columns=['raw', 'norm'])
+            
+            x = data['frame'].astype('int64')
+            x_data['raw'] = x
+            
+            x_min, x_max = x.min(), x.max()
+            x_norm = (x-x_min) / \
+                (x_max-x_min)
+            x_data['norm'] = x_norm
+
+            x = x_data['norm']
+            y = data[metric].astype('float64')
+            y_pos = y.max()
+            
+            if task_name == 'task_2' and group_id == 0:
+                vertical_line_drawn = True
+                five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
+                five_min_mark = float(five_min_mark['norm'].unique()[0])
+                self.canvas.axes.axvline(x=five_min_mark, color='k', linestyle='--', alpha=0.3)
+            
             label = group + ' (%s)' % conflict_type
             if num_tasks > 1:
                 label = group + '_' + task_name + ' (%s)' % conflict_type
@@ -307,6 +325,8 @@ class FeatureComparator(object):
             (to_normalize_data.max()-normalized_min)
 
         data[list(to_normalize_column)] = normalized_data
+        
+        group_idx = -1
 
         for group in data['group'].unique():
             group_conflict_type = self.groups_info[self.groups_info['Group ID']
@@ -315,11 +335,11 @@ class FeatureComparator(object):
             for task in tasks:
                 task_info = (task, len(tasks))
                 group_data = data[data['group'] == group]
-                group_idx = group_data['group_idx'].unique()[0]
+                group_idx += 1 #group_data['group_idx'].unique()[0]
                 group_data = group_data[data['task'] == task]
                 group_data = group_data.drop(
                     columns=['group', 'group_idx', 'task'])
-
+                
                 self.canvas.draw_plot(group_data, (group_idx, group, task_info, group_conflict_type),
                                       metric_name, linetype=linetype)
 
