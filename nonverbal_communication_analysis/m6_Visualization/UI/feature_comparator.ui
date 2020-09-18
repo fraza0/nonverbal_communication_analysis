@@ -494,6 +494,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="chb_trend">
+          <property name="text">
+           <string>Trendline</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
