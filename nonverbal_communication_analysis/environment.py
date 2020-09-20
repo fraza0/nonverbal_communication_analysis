@@ -373,8 +373,8 @@ PLOT_CANVAS_COLOR_ENCODING = {
         '4_rolling_meanfit': 'b:',
     }
 
-ROLLING_WINDOW_SIZE = 900 # 900 = 30frames * 30seg - (30seg)
+ROLLING_WINDOW_SIZE = 1800 # 1800 = 30fps * 60seg <=> 60seg = 1min
 LINESTYLES = ['-', '--', ':']
-
+CMP_PLOT_COLORS = ['tab:blue', 'tab:orange', 'tab:green']
 
 TASK_2_MARK = 9000

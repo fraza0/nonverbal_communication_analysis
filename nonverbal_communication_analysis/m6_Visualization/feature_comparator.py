@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from nonverbal_communication_analysis.environment import (
-    DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE, LINESTYLES,
+    DATASET_SYNC, FEATURE_AGGREGATE_DIR, GROUPS_INFO_FILE, LINESTYLES, CMP_PLOT_COLORS,
     PLOT_CANVAS_COLOR_ENCODING, PLOTS_LIB, ROLLING_WINDOW_SIZE,
     VALID_OUTPUT_FILE_TYPES, PLOT_CENTER_INTERACTION, TASK_2_MARK)
 from nonverbal_communication_analysis.m6_Visualization.feature_comparator_gui import \
@@ -49,7 +49,6 @@ class PlotCanvas(QtWidgets.QWidget):
         self.camera = camera
 
     def save_plots(self, metric, camera, linetype):
-        # self.canvas.figure.set_size_inches(12.5, 9.5, forward=True)
         name_parts = self.name.split('_')[1:]
         for n_group in range(0, len(name_parts)//3):
             group_name = name_parts[n_group*3]
@@ -60,7 +59,7 @@ class PlotCanvas(QtWidgets.QWidget):
             save_name = metric + '_' + self.name
             if camera is not None:
                 save_name += '_' + camera + '_'
-            save_name += linetype + '.png'
+            save_name += '_'.join(linetype) + '.png'
             self.canvas.figure.savefig(save_dir / save_name, dpi=100)
         return True
 
@@ -81,8 +80,6 @@ class PlotCanvas(QtWidgets.QWidget):
 
         self.canvas.axes.set_xlabel('Time')
         self.canvas.axes.set_ylabel(METRICS_UNITS[metric])
-
-        print(linetype)
 
         if 'subject' in data:
             subjects = sorted(data['subject'].unique())
@@ -107,20 +104,13 @@ class PlotCanvas(QtWidgets.QWidget):
 
                 x = x_data['norm']
                 y = subject_data[metric].astype('float64')
-                label = 'S'+subject_index+'_'+group
+                label = 'S'+subject_index+'_'+group+"(%s)" % conflict_type
 
                 if 'raw' in linetype:
                     self.canvas.axes.scatter(x, y,
                                              color=self._color_encoding[subject_index],
                                              marker='.',
                                              label=label)
-
-                    z = np.polyfit(x, y, 1)
-                    f = np.poly1d(z)
-                    self.canvas.axes.plot(x, f(x),
-                                          color=self._color_encoding[subject_index],
-                                          linestyle='--')
-
                 elif 'spline' in linetype:
                     s_value = self.smoothing_factor(len(x))
                     bspl = I.splrep(x, y, s=s_value)
@@ -142,6 +132,12 @@ class PlotCanvas(QtWidgets.QWidget):
                                           linestyle=LINESTYLES[group_id],
                                           label=label)
 
+                if 'trend' in linetype:
+                    z = np.polyfit(x, y, 1)
+                    f = np.poly1d(z)
+                    self.canvas.axes.plot(x, f(x),
+                                          color=self._color_encoding[subject_index],
+                                          linestyle=':')
             if task_name == 'task_2' and group_id == 0:
                 five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
                 five_min_mark = float(five_min_mark['norm'].unique()[0])
@@ -162,19 +158,23 @@ class PlotCanvas(QtWidgets.QWidget):
             x = x_data['norm']
             y = data[metric].astype('float64')
 
+            print(group_id)
             if task_name == 'task_2' and group_id == 0:
                 five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
                 five_min_mark = float(five_min_mark['norm'].unique()[0])
-                self.canvas.axes.axvline(
-                    x=five_min_mark, color='k', linestyle='--', alpha=0.3)
+                self.canvas.axes.axvline(x=five_min_mark, color='k',
+                                         linestyle='--', alpha=0.3)
 
             label = group + ' (%s)' % conflict_type
             if num_tasks > 1:
                 label = group + '_' + task_name + ' (%s)' % conflict_type
 
             if 'raw' in linetype:
-                self.canvas.axes.scatter(x, y, marker='.',
-                                         alpha=0.02)
+                self.canvas.axes.scatter(x, y,
+                                         color=CMP_PLOT_COLORS[group_id],
+                                         marker='.',
+                                         label=label,
+                                         alpha=0.05)
 
             elif 'spline' in linetype:
                 s_value = self.smoothing_factor(len(x))
@@ -182,20 +182,23 @@ class PlotCanvas(QtWidgets.QWidget):
                 bspl_y = I.splev(x, bspl)
 
                 self.canvas.axes.plot(x, bspl_y,
+                                      color=CMP_PLOT_COLORS[group_id],
                                       label=label)
             elif 'poly' in linetype:
                 z = np.polyfit(x, y, poly_degree)
                 p = np.poly1d(z)
                 self.canvas.axes.plot(x, p(x),
+                                      color=CMP_PLOT_COLORS[group_id],
                                       label=label)
             elif 'rolling' in linetype:
                 self.canvas.axes.plot(x, y.rolling(window=_roling_window_size).mean(),
+                                      color=CMP_PLOT_COLORS[group_id],
                                       label=label)
-
             if 'trend' in linetype:
                 z = np.polyfit(x, y, 1)
                 f = np.poly1d(z)
-                self.canvas.axes.plot(x, f(x), label=label+' trend',
+                self.canvas.axes.plot(x, f(x), #label=label+' trend',
+                                      color=CMP_PLOT_COLORS[group_id],
                                       linestyle=':', linewidth=3.0)
 
         self.canvas.axes.set_title(metric+'_'+self.camera)
