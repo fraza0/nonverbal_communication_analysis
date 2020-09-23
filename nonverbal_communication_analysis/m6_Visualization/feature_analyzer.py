@@ -133,7 +133,8 @@ class PlotCanvas(QtWidgets.QWidget):
         self.canvas.axes.set_title(self.group + ' ' + self.name)
 
         if 'subject' in data:
-            for subject_index in data['subject'].unique():
+            sorted_subject_data = sorted(list(data['subject'].unique()))
+            for subject_index in sorted_subject_data:
                 subject_data = data[data['subject'] == subject_index]
                 subject_data = subject_data.sort_values(
                     by=['frame', 'subject'])

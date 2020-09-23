@@ -104,7 +104,7 @@ class PlotCanvas(QtWidgets.QWidget):
 
                 x = x_data['norm']
                 y = subject_data[metric].astype('float64')
-                label = 'S'+subject_index+'_'+group+"(%s)" % conflict_type
+                label = 'S'+subject_index+'_'+group+"_%s (%s)" % (task_name, conflict_type)
 
                 if 'raw' in linetype:
                     self.canvas.axes.scatter(x, y,
@@ -137,7 +137,7 @@ class PlotCanvas(QtWidgets.QWidget):
                     f = np.poly1d(z)
                     self.canvas.axes.plot(x, f(x),
                                           color=self._color_encoding[subject_index],
-                                          linestyle=':')
+                                          linestyle='-.')
             if task_name == 'task_2' and group_id == 0:
                 five_min_mark = x_data[x_data['raw'] == TASK_2_MARK]
                 five_min_mark = float(five_min_mark['norm'].unique()[0])
@@ -199,7 +199,7 @@ class PlotCanvas(QtWidgets.QWidget):
                 f = np.poly1d(z)
                 self.canvas.axes.plot(x, f(x), #label=label+' trend',
                                       color=CMP_PLOT_COLORS[group_id],
-                                      linestyle=':', linewidth=3.0)
+                                      linestyle='-.', linewidth=3.0)
 
         self.canvas.axes.set_title(metric+'_'+self.camera)
         self.canvas.axes.legend(loc='upper right')

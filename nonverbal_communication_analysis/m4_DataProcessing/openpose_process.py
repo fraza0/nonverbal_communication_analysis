@@ -261,14 +261,17 @@ class OpenposeSubject(Subject):
         subject_point = [hands_body_deviation_x, subject_half_point_y]
 
         point_in_center_line = [table_center_x, subject_half_point_y]
-
-        center_proximity = distance_between_points(subject_point,
+        
+        if hands_body_deviation_x > table_center_x:
+            center_proximity = 1
+        else:
+            center_proximity = distance_between_points(subject_point,
                                                    point_in_center_line)
 
-        scale_factor = 1
-        if self.id in SCALE_SUBJECTS[SIDEVIEW_CAMERA]:
-            scale_factor = SCALE_FACTOR[SIDEVIEW_CAMERA]
-        center_proximity = center_proximity * scale_factor
+            scale_factor = 1
+            if self.id in SCALE_SUBJECTS[SIDEVIEW_CAMERA]:
+                scale_factor = SCALE_FACTOR[SIDEVIEW_CAMERA]
+            center_proximity = center_proximity * scale_factor
 
         interaction = {
             'value': np.round(center_proximity, 6),
