@@ -4,5 +4,6 @@ opencv-python
 shapely
 PyQt5
 sympy
+scipy
 imutils
 cmapy
