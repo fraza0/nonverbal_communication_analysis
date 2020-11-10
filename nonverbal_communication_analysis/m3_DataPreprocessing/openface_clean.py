@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from nonverbal_communication_analysis.environment import (
     NUM_EYE_LANDMARKS, NUM_FACE_LANDMARKS, OPENFACE_KEY, OPENFACE_OUTPUT_DIR,
