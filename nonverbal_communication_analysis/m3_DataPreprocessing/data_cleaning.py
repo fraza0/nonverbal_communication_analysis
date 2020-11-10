@@ -5,7 +5,6 @@ import re
 import os
 
 import pandas as pd
-import yaml
 
 from nonverbal_communication_analysis.environment import OPENPOSE_OUTPUT_DIR, OPENFACE_OUTPUT_DIR, DENSEPOSE_OUTPUT_DIR, VALID_OUTPUT_FILE_TYPES
 from nonverbal_communication_analysis.utils import filter_files, fetch_files_from_directory
