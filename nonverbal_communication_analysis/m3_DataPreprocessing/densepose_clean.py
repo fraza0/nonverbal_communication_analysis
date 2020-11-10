@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from nonverbal_communication_analysis.environment import (DENSEPOSE_KEY,
                                                           DENSEPOSE_OUTPUT_DIR,
