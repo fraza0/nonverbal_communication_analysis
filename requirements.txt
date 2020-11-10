@@ -7,4 +7,3 @@ sympy
 scipy
 imutils
 cmapy
-yaml
