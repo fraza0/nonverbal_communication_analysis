@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from nonverbal_communication_analysis.m0_Classes.Experiment import \
     get_group_from_file_path
