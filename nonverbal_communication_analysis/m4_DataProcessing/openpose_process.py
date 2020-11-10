@@ -152,7 +152,7 @@ class OpenposeSubject(Subject):
                 scale_factor = SCALE_FACTOR[camera]
 
             polygon_area = edge_x * scale_factor * edge_y * scale_factor
-            expansiveness[camera]['area'] = np.round(polygon_area, 6)
+            expansiveness[camera]['area'] = polygon_area
 
         return expansiveness
 
@@ -274,7 +274,7 @@ class OpenposeSubject(Subject):
             center_proximity = center_proximity * scale_factor
 
         interaction = {
-            'value': np.round(center_proximity, 6),
+            'value': center_proximity,
             'subject_point': subject_point,
             'center': point_in_center_line
         }
