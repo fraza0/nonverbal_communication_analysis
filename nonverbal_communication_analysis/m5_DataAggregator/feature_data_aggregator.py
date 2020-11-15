@@ -647,6 +647,7 @@ class SubjectDataAggregator:
                         self.file_overlap.writerow(overlap_entry)
 
                 # Center interaction
+                ## TODO: no reason for inverto to be called here. Should be in the processing step instead of aggregation.
                 if PLOT_CENTER_INTERACTION in lib_subjects_data:
                     center_interaction_value = 0.0
                     if 'value' in lib_subjects_data['center_interaction']:
